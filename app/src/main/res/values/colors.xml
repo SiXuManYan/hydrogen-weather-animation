@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="weather_sun">#FF4A97D2</color>
+    <color name="weather_accent">#FF4A97D2</color>
+    <color name="weather_accent_dark">#FF2E6A99</color>
+    <color name="weather_overlay_scrim">#33000000</color>
+    <color name="weather_overlay_scrim_strong">#59000000</color>
+</resources>

@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">天气</string>
+    <string name="scene_button">场景</string>
+    <string name="scene_picker_title">动画场景</string>
+    <string name="scene_picker_scene">天气</string>
+    <string name="scene_picker_night">夜间模式</string>
+    <string name="scene_picker_simulate">触摸模拟倾斜</string>
+    <string name="scene_picker_debug">显示俯仰 / 横滚</string>
+    <string name="scene_picker_reset">重置视角</string>
+    <string name="scene_picker_hint">左右拖动改变横滚，上下拖动改变俯仰。</string>
+    <string name="no_sensor_hint">当前设备没有方向传感器，已自动启用触摸模拟。</string>
+    <string name="apply">应用</string>
+    <string name="cancel">取消</string>
+    <string name="day">日间</string>
+    <string name="night">夜间</string>
+    <string name="scene_format">%1$s · %2$s</string>
+    <string name="debug_format">pitch %1$.1f°   roll %2$.1f°   %3$s</string>
+    <string name="simulated">模拟</string>
+    <string name="sensor">传感器</string>
+</resources>
