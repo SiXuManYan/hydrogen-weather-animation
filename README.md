@@ -8,9 +8,29 @@
 
 > **免责声明**：本项目为非官方、非商业的学习与效果演示，仅对天气动画的视觉表现做复刻 / 模拟，与 OnePlus、Hydrogen OS 及相关天气应用无任何关联，也未获得其授权或背书；相关名称、商标及原应用素材归其权利人所有。请勿将本项目用于商业用途。
 
-## 演示视频
+## 场景录屏
 
-[点击查看完整演示视频（约 46MB）](docs/demo.mp4)
+单个场景约 1~3.5MB，点击后在 GitHub 文件页播放或下载。
+
+| 场景 | 日间录屏 | 夜间录屏 |
+| --- | --- | --- |
+| 晴天 | [日间](docs/scenes/sunny_day.mp4) | [夜间](docs/scenes/sunny_night.mp4) |
+| 多云 | [日间](docs/scenes/cloudy_day.mp4) | [夜间](docs/scenes/cloudy_night.mp4) |
+| 阴天 | [日间](docs/scenes/overcast_day.mp4) | [夜间](docs/scenes/overcast_night.mp4) |
+| 雾 | [日间](docs/scenes/fog_day.mp4) | [夜间](docs/scenes/fog_night.mp4) |
+| 霾 | [日间](docs/scenes/haze_day.mp4) | [夜间](docs/scenes/haze_night.mp4) |
+| 沙尘暴 | [日间](docs/scenes/sandstorm_day.mp4) | [夜间](docs/scenes/sandstorm_night.mp4) |
+| 小雨 | [日间](docs/scenes/light_rain_day.mp4) | [夜间](docs/scenes/light_rain_night.mp4) |
+| 中雨 | [日间](docs/scenes/rain_day.mp4) | [夜间](docs/scenes/rain_night.mp4) |
+| 大雨 | [日间](docs/scenes/heavy_rain_day.mp4) | [夜间](docs/scenes/heavy_rain_night.mp4) |
+| 暴雨 | [日间](docs/scenes/storm_day.mp4) | [夜间](docs/scenes/storm_night.mp4) |
+| 雷阵雨 | [日间](docs/scenes/thunder_day.mp4) | [夜间](docs/scenes/thunder_night.mp4) |
+| 雨夹雪 | [日间](docs/scenes/sleet_day.mp4) | [夜间](docs/scenes/sleet_night.mp4) |
+| 小雪 | [日间](docs/scenes/light_snow_day.mp4) | [夜间](docs/scenes/light_snow_night.mp4) |
+| 大雪 | [日间](docs/scenes/snow_day.mp4) | [夜间](docs/scenes/snow_night.mp4) |
+| 冰雹 | [日间](docs/scenes/hail_day.mp4) | [夜间](docs/scenes/hail_night.mp4) |
+
+> 目前共 30 段场景录屏，覆盖全部 15 个场景。
 
 ---
 
