@@ -27,6 +27,7 @@ enum class SceneType(
     SNOW("大雪", 0xFF3081CD.toInt(), 0xFF132F45.toInt()),
     HAIL("冰雹", 0xFF7C7699.toInt(), 0xFF7C7699.toInt());
 
+    /** 根据昼夜返回全屏背景色；具体天气图形由 [WeatherScene] 绘制。 */
     fun background(night: Boolean): Int = if (night) nightBackground else dayBackground
 
     /**

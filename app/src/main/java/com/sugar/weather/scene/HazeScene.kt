@@ -87,7 +87,10 @@ class HazeScene : WeatherScene {
     }
 
     private companion object {
+        /** 霾颗粒数量。 */
         const val COUNT = 230
+
+        /** 颗粒的黄褐色调色板。 */
         val COLORS = intArrayOf(
             0xFFD8C97A.toInt(),
             0xFFE2D58F.toInt(),

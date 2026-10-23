@@ -149,11 +149,16 @@ adb shell am start -n com.sugar.weather/.MainActivity \
 
 ```
 app/src/main/java/com/sugar/weather/
-├── MainActivity.kt                 # 单 Activity、全屏、场景面板、Intent 参数
+├── MainActivity.kt                 # ViewBinding、StateFlow 收集、场景面板
+├── ui/
+│   ├── MainViewModel.kt            # MVVM 状态与动作
+│   └── SceneUiState.kt             # 场景 / 昼夜 / 模拟 / 调试状态
+├── data/
+│   └── TiltSensorRepository.kt     # 方向传感器 → StateFlow
 ├── sensor/
-│   └── TiltSensorController.kt    # TYPE_ORIENTATION / TYPE_ROTATION_VECTOR 封装
+│   └── TiltSensorController.kt     # TYPE_ORIENTATION / TYPE_ROTATION_VECTOR 封装
 ├── view/
-│   └── WeatherBackdropView.kt     # 场景宿主：Choreographer 帧循环、传感器生命周期、触摸模拟
+│   └── WeatherBackdropView.kt      # 纯 Canvas 渲染 + Choreographer + 触摸姿态回调
 └── scene/
     ├── WeatherScene.kt            # 场景接口
     ├── SceneType.kt               # 场景枚举 + 背景色 + 场景工厂
@@ -180,7 +185,9 @@ app/src/main/res/
 
 ### 7.1 总体技术方案
 
-- **核心绘制**：Kotlin + XML + 自定义 `View`，所有天气场景直接绘制在 `Canvas` 上；没有使用 Compose、Lottie、视频或第三方动画库。
+- **架构**：ViewBinding + MVVM。`MainViewModel` 持有场景 / 昼夜 / 模拟 / 调试的 `StateFlow`，`TiltSensorRepository` 把传感器事件转成 `StateFlow`；`MainActivity` 只做布局绑定与事件转发，`WeatherBackdropView` 只负责 Canvas 渲染。
+- **数据流**：`TiltSensorRepository → MainViewModel → MainActivity → WeatherBackdropView`。
+- **核心绘制**：Kotlin + XML + ViewBinding + 自定义 `View`，所有天气场景直接绘制在 `Canvas` 上；没有使用 Compose、Lottie、视频或第三方动画库。
 - **旋转**：不是属性动画，而是每个光晕层、云朵、雪花或弧线自己维护角度累加器：
   `angle += speed × dt`，绘制时通过 `Canvas.rotate()`、`Canvas.scale()`、`Canvas.drawArc()` 体现。
   每帧的 `dt` 来自 `Choreographer`，上限 30ms。
@@ -216,13 +223,14 @@ app/src/main/res/
 
 - 优先注册 `TYPE_ORIENTATION`（`SENSOR_DELAY_GAME`，约 50Hz）。
 - 没有时回退 `TYPE_ROTATION_VECTOR`，通过旋转矩阵换算 pitch / roll。
-- `onResume` 注册、`onPause` 注销；`onDetachedFromWindow` 也会停止，避免泄漏。
+- `MainActivity` 在 `onStart/onStop` 调用 `MainViewModel.startSensors/stopSensors`；`MainViewModel.onCleared` 也会兜底停止，避免泄漏。
 - 完全静止时场景仍会自转、颜色呼吸、云层缩放，不依赖传感器持续变化。
 
 ### 7.6 渲染
 
 - `Choreographer` 驱动，按真实帧间隔更新，目标 60fps。
 - 绘制路径、Paint、Path、RectF、顶点数组全部复用；`onDraw` 内不创建新对象。
+- 帧循环保留在 `WeatherBackdropView` 内，不经过 ViewModel，避免高频姿态更新触发整页 UI 刷新。
 - 多云 / 阴天 / 雾等场景用 `Canvas` 实现；雨雪场景也统一使用 `Canvas` 粒子，以保持零依赖和易调参。
 
 ---

@@ -133,9 +133,13 @@ class CloudScene(private val overcast: Boolean) : WeatherScene {
     }
 
     private companion object {
+        /** 多云夜间显示的星点数量。 */
         const val STAR_COUNT = 50
+
+        /** 云层整体下移的基准距离（dp），避免云全部堆在状态栏附近。 */
         const val BASE_Y_SHIFT_DP = 88f
 
+        /** 把 0~255 的 RGB 分量拼成不透明 ARGB。 */
         fun rgb(r: Int, g: Int, b: Int): Int {
             return (0xFF shl 24) or (r shl 16) or (g shl 8) or b
         }

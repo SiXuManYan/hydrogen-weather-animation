@@ -117,8 +117,13 @@ class SandstormScene : WeatherScene {
     }
 
     private companion object {
+        /** 前景沙粒数量。 */
         const val COUNT = 170
+
+        /** 远景沙尘团数量。 */
         const val DUST_COUNT = 4
+
+        /** 沙粒颜色调色板。 */
         val COLORS = intArrayOf(
             0xFFE0CE96.toInt(),
             0xFFC9B47A.toInt(),

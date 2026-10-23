@@ -18,7 +18,7 @@ class SnowScene(private val heavy: Boolean) : WeatherScene {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val hexPath = Path()
 
-    private val count = if (heavy) 200 else 110
+    private val count = if (heavy) HEAVY_FLAKE_COUNT else LIGHT_FLAKE_COUNT
     private val baseX = FloatArray(count)
     private val y = FloatArray(count)
     private val radiusDp = FloatArray(count)
@@ -128,7 +128,7 @@ class SnowScene(private val heavy: Boolean) : WeatherScene {
             }
             paint.color = color
             paint.alpha = if (night) (alpha[i] * 0.85f).toInt() else alpha[i]
-            // 小颗粒画成圆点（绘制便宜），大颗粒画成旋转六边形，和原 App 的雪花形状一致。
+            // 小颗粒画成圆点（绘制便宜），大颗粒画成旋转六边形，和参考视觉中的雪花形状一致。
             if (radius < 2.6f * density) {
                 canvas.drawCircle(drawX, drawY, radius, paint)
             } else {
@@ -140,5 +140,13 @@ class SnowScene(private val heavy: Boolean) : WeatherScene {
                 canvas.restore()
             }
         }
+    }
+
+    private companion object {
+        /** 小雪场景的雪花数量。 */
+        const val LIGHT_FLAKE_COUNT = 110
+
+        /** 大雪场景的雪花数量。 */
+        const val HEAVY_FLAKE_COUNT = 200
     }
 }

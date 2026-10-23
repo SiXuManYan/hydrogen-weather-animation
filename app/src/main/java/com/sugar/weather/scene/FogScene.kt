@@ -85,22 +85,34 @@ class FogScene : WeatherScene {
     }
 
     private companion object {
+        /** 雾团数量。 */
         const val COUNT = 24
+
+        /** 参考画布尺寸，用于把原视觉坐标归一化到当前屏幕。 */
         const val REF_WIDTH = 1080f
         const val REF_HEIGHT = 1920f
+
+        /** 日间雾团的暗部 / 亮部颜色。 */
         const val DAY_BASE = 0xFF617D8F.toInt()
         const val DAY_HIGHLIGHT = 0xFF7798A9.toInt()
+
+        /** 夜间雾团的暗部 / 亮部颜色。 */
         const val NIGHT_BASE = 0xFF2A383F.toInt()
         const val NIGHT_HIGHLIGHT = 0xFF32424A.toInt()
 
+        /** 雾团中心的参考 x 坐标（基准宽度 1080）。 */
         val REF_X = floatArrayOf(
             872f, 196f, 80f, 836f, 1528f, 940f, 288f, 1467f, -260f, 1840f, 668f, -360f,
             229f, 1028f, 1459f, 654f, -72f, 1480f, 1028f, 220f, 604f, 1316f, 204f, 924f
         )
+
+        /** 雾团中心的参考 y 坐标（基准高度 1920）。 */
         val REF_Y = floatArrayOf(
             2436f, 2338f, 1876f, 1864f, 1784f, 1564f, 1356f, 1211f, 1184f, 1124f, 882f,
             699f, 609f, 532f, 532f, 263f, 244f, 12f, -201f, -350f, -618f, -604f, -731f, -828f
         )
+
+        /** 雾团参考半径（基准宽度 1080）。 */
         val REF_RADIUS = floatArrayOf(
             395.5f, 412f, 542.5f, 426.5f, 425.5f, 419f, 408f, 412.5f, 509f, 410.5f, 531f,
             515.5f, 460f, 250f, 317f, 296f, 484.5f, 509.5f, 391f, 492.5f, 561.5f, 233.5f,
