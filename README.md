@@ -233,6 +233,80 @@ app/src/main/res/
 - 帧循环保留在 `WeatherBackdropView` 内，不经过 ViewModel，避免高频姿态更新触发整页 UI 刷新。
 - 多云 / 阴天 / 雾等场景用 `Canvas` 实现；雨雪场景也统一使用 `Canvas` 粒子，以保持零依赖和易调参。
 
+### 7.7 运行时序图
+
+下图按当前实现绘制，重点区分两条高频数据流：传感器姿态和渲染帧循环。实线表示直接调用，虚线表示 StateFlow 发射或回调。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant MA as MainActivity
+    participant VM as MainViewModel
+    participant Repo as TiltSensorRepository
+    participant Sensor as TiltSensorController
+    participant View as WeatherBackdropView
+    participant Scene as WeatherScene
+
+    Note over MA: onCreate
+    MA->>MA: inflate ActivityMainBinding
+    MA->>VM: initialize(scene, night, simulate, pitch, roll, debug)
+    VM->>Repo: hasSensor
+    Repo-->>VM: 是否有方向传感器
+    MA->>VM: observe sceneState / tilt（STARTED）
+    VM-->>MA: sceneState / tilt 初始值
+    MA->>View: setScene / setTilt
+
+    Note over MA,View: 传感器循环与渲染循环在运行时并发
+    Note over MA,Sensor: onStart
+    MA->>VM: startSensors()
+    VM->>Repo: start()
+    Repo->>Sensor: registerListener(SENSOR_DELAY_GAME)
+
+    loop 传感器约 50Hz
+        Sensor-->>Repo: pitch / roll
+        Repo-->>VM: tilt StateFlow
+        alt 模拟倾斜关闭
+            VM-->>MA: tilt StateFlow
+            MA->>View: setTilt(tilt)
+        else 模拟倾斜开启
+            Note over VM,View: 忽略传感器，等待触摸姿态
+        end
+    end
+
+    Note over MA,Scene: onResume
+    MA->>View: start()
+    loop 每个渲染帧（Choreographer，dt ≤ 30ms）
+        View->>Scene: update(dt, tilt, night, elapsed)
+        View->>Scene: draw(canvas, night)
+        Scene-->>View: Canvas 图形
+    end
+
+    Note over MA: 用户打开“场景”面板
+    MA->>MA: showSceneDialog()
+    MA->>VM: selectScene / setSimulateTilt / setDebugVisible
+    VM-->>MA: sceneState StateFlow
+    MA->>View: setScene(type, night)
+    MA->>View: simulateTilt = state.simulateTilt
+    View->>Scene: createScene()（仅 type/night 变化）
+    View->>View: reset elapsedSec / invalidate
+
+    Note over MA,View: 触摸模拟（simulateTilt == true）
+    View->>View: onTouchEvent 计算 Tilt
+    View-->>MA: onSimulatedTiltChange(pitch, roll)
+    MA->>VM: updateSimulatedTilt(pitch, roll)
+    VM-->>MA: tilt StateFlow
+    MA->>View: setTilt(tilt)
+
+    Note over MA,View: onPause
+    MA->>View: stop() 停止帧循环
+    Note over MA,Sensor: onStop
+    MA->>VM: stopSensors()
+    VM->>Repo: stop()
+    Repo->>Sensor: unregisterListener()
+```
+
+Activity 只负责 ViewBinding 绑定和事件转发；`WeatherBackdropView` 不直接访问 `SensorManager`，传感器生命周期和 UI 状态都由 `MainViewModel` / `TiltSensorRepository` 管理。
+
 ---
 
 ## 8. 调参入口
