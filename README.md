@@ -10,25 +10,25 @@
 
 ## 场景录屏
 
-单个场景约 1~3.5MB，点击后在 GitHub 文件页播放或下载。
+单个场景约 1~3.5MB。点击链接会打开 raw 视频文件，浏览器可能直接播放或触发下载；GitHub 不支持在 README 中内嵌 MP4。
 
 | 场景 | 日间录屏 | 夜间录屏 |
 | --- | --- | --- |
-| 晴天 | [日间](docs/scenes/sunny_day.mp4) | [夜间](docs/scenes/sunny_night.mp4) |
-| 多云 | [日间](docs/scenes/cloudy_day.mp4) | [夜间](docs/scenes/cloudy_night.mp4) |
-| 阴天 | [日间](docs/scenes/overcast_day.mp4) | [夜间](docs/scenes/overcast_night.mp4) |
-| 雾 | [日间](docs/scenes/fog_day.mp4) | [夜间](docs/scenes/fog_night.mp4) |
-| 霾 | [日间](docs/scenes/haze_day.mp4) | [夜间](docs/scenes/haze_night.mp4) |
-| 沙尘暴 | [日间](docs/scenes/sandstorm_day.mp4) | [夜间](docs/scenes/sandstorm_night.mp4) |
-| 小雨 | [日间](docs/scenes/light_rain_day.mp4) | [夜间](docs/scenes/light_rain_night.mp4) |
-| 中雨 | [日间](docs/scenes/rain_day.mp4) | [夜间](docs/scenes/rain_night.mp4) |
-| 大雨 | [日间](docs/scenes/heavy_rain_day.mp4) | [夜间](docs/scenes/heavy_rain_night.mp4) |
-| 暴雨 | [日间](docs/scenes/storm_day.mp4) | [夜间](docs/scenes/storm_night.mp4) |
-| 雷阵雨 | [日间](docs/scenes/thunder_day.mp4) | [夜间](docs/scenes/thunder_night.mp4) |
-| 雨夹雪 | [日间](docs/scenes/sleet_day.mp4) | [夜间](docs/scenes/sleet_night.mp4) |
-| 小雪 | [日间](docs/scenes/light_snow_day.mp4) | [夜间](docs/scenes/light_snow_night.mp4) |
-| 大雪 | [日间](docs/scenes/snow_day.mp4) | [夜间](docs/scenes/snow_night.mp4) |
-| 冰雹 | [日间](docs/scenes/hail_day.mp4) | [夜间](docs/scenes/hail_night.mp4) |
+| 晴天 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sunny_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sunny_night.mp4) |
+| 多云 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/cloudy_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/cloudy_night.mp4) |
+| 阴天 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/overcast_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/overcast_night.mp4) |
+| 雾 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/fog_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/fog_night.mp4) |
+| 霾 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/haze_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/haze_night.mp4) |
+| 沙尘暴 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sandstorm_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sandstorm_night.mp4) |
+| 小雨 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_rain_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_rain_night.mp4) |
+| 中雨 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/rain_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/rain_night.mp4) |
+| 大雨 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/heavy_rain_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/heavy_rain_night.mp4) |
+| 暴雨 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/storm_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/storm_night.mp4) |
+| 雷阵雨 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/thunder_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/thunder_night.mp4) |
+| 雨夹雪 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sleet_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sleet_night.mp4) |
+| 小雪 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_snow_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_snow_night.mp4) |
+| 大雪 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/snow_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/snow_night.mp4) |
+| 冰雹 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/hail_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/hail_night.mp4) |
 
 > 目前共 30 段场景录屏，覆盖全部 15 个场景。
 
