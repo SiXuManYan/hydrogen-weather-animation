@@ -1,61 +1,63 @@
-# HydrogenOS10 风格天气动态背景复刻 Demo（非官方）
+# HydrogenOS 10 Style Weather Dynamic Background Recreation Demo (Unofficial)
 
-> 这段动画来自我使用过的 OnePlus 7 Pro（GM1901），系统为 Android 10 / Hydrogen OS 10.0.10.GM21。这个版本内置的天气应用动画非常出色，色彩层次、光影和随手机倾斜的视差都做得很极致。为了还原这个效果，我用 Android 原生 View + Canvas 做了一次非官方的复刻与模拟，向这个出色的系统应用致敬。
+[![中文](https://img.shields.io/badge/Language-%E4%B8%AD%E6%96%87-red?style=for-the-badge)](README.zh-CN.md)
 
-在传统 XML + 自定义 View 的 Android 工程里，参考氢气OS10 风格天气应用的晴天主页视觉效果，用纯 `Canvas` 程序化绘制做一个非官方模拟 Demo，并扩展到多云、阴天、雾、霾、沙尘暴、雨、雷雨、雪、冰雹等场景。
+> This animation comes from the OnePlus 7 Pro (GM1901) I used, running Android 10 / Hydrogen OS 10.0.10.GM21. The weather app built into that version had a stunning animation: the color layering, light and shadow, and the parallax that follows the phone's tilt were all pushed to the limit. To recreate that effect, I built an unofficial recreation and simulation using native Android View + Canvas, as a tribute to this excellent system app.
 
-所有画面均由 `Canvas` 程序化绘制，**不联网、不申请权限、不包含原应用的代码、图片、字体、图标或其他素材，不依赖第三方动画库**。
+In a traditional XML + custom View Android project, this unofficial demo recreates the sunny home screen of a Hydrogen OS 10 style weather app with pure programmatic `Canvas` drawing, and extends it to cloudy, overcast, fog, haze, sandstorm, rain, thunderstorm, snow, hail and other scenes.
 
-> **免责声明**：本项目为非官方、非商业的学习与效果演示，仅对天气动画的视觉表现做复刻 / 模拟，与 OnePlus、Hydrogen OS 及相关天气应用无任何关联，也未获得其授权或背书；相关名称、商标及原应用素材归其权利人所有。请勿将本项目用于商业用途。
+Every frame is drawn programmatically with `Canvas`. The project is **offline, requests no permissions, contains no code, images, fonts, icons or other assets from the original app, and depends on no third-party animation libraries**.
 
-## 场景录屏
+> **Disclaimer**: This is an unofficial, non-commercial project for learning and visual demonstration. It only recreates / simulates the visual appearance of the weather animations. It is not affiliated with, authorized by, or endorsed by OnePlus, Hydrogen OS, or the related weather app. All related names, trademarks and original app assets belong to their respective owners. Do not use this project for commercial purposes.
 
-单个场景约 1~3.5MB。点击链接会打开 raw 视频文件，浏览器可能直接播放或触发下载；GitHub 不支持在 README 中内嵌 MP4。
+## Scene Recordings
 
-| 场景 | 日间录屏 | 夜间录屏 |
+Each clip is about 1–3.5 MB. Clicking a link opens the raw video file; the browser may play it inline or start a download. GitHub does not support embedding MP4 files in a README.
+
+| Scene | Day recording | Night recording |
 | --- | --- | --- |
-| 晴天 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sunny_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sunny_night.mp4) |
-| 多云 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/cloudy_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/cloudy_night.mp4) |
-| 阴天 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/overcast_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/overcast_night.mp4) |
-| 雾 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/fog_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/fog_night.mp4) |
-| 霾 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/haze_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/haze_night.mp4) |
-| 沙尘暴 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sandstorm_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sandstorm_night.mp4) |
-| 小雨 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_rain_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_rain_night.mp4) |
-| 中雨 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/rain_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/rain_night.mp4) |
-| 大雨 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/heavy_rain_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/heavy_rain_night.mp4) |
-| 暴雨 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/storm_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/storm_night.mp4) |
-| 雷阵雨 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/thunder_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/thunder_night.mp4) |
-| 雨夹雪 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sleet_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sleet_night.mp4) |
-| 小雪 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_snow_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_snow_night.mp4) |
-| 大雪 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/snow_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/snow_night.mp4) |
-| 冰雹 | [日间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/hail_day.mp4) | [夜间](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/hail_night.mp4) |
+| Sunny | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sunny_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sunny_night.mp4) |
+| Cloudy | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/cloudy_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/cloudy_night.mp4) |
+| Overcast | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/overcast_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/overcast_night.mp4) |
+| Fog | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/fog_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/fog_night.mp4) |
+| Haze | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/haze_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/haze_night.mp4) |
+| Sandstorm | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sandstorm_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sandstorm_night.mp4) |
+| Light rain | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_rain_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_rain_night.mp4) |
+| Moderate rain | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/rain_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/rain_night.mp4) |
+| Heavy rain | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/heavy_rain_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/heavy_rain_night.mp4) |
+| Rainstorm | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/storm_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/storm_night.mp4) |
+| Thunderstorm | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/thunder_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/thunder_night.mp4) |
+| Sleet | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sleet_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/sleet_night.mp4) |
+| Light snow | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_snow_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/light_snow_night.mp4) |
+| Heavy snow | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/snow_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/snow_night.mp4) |
+| Hail | [Day](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/hail_day.mp4) | [Night](https://github.com/SiXuManYan/hydrogen-weather-animation/raw/main/docs/scenes/hail_night.mp4) |
 
-> 目前共 30 段场景录屏，覆盖全部 15 个场景。
+> There are currently 30 scene recordings covering all 15 scenes.
 
 ---
 
-## 1. 运行环境
+## 1. Requirements
 
-| 项目 | 要求 |
+| Item | Requirement |
 | --- | --- |
-| Android Studio | 2026.1+（当前工程使用 AGP 9.3.3 / Gradle 9.5） |
+| Android Studio | 2026.1+ (this project uses AGP 9.3.3 / Gradle 9.5) |
 | JDK | 21+ |
 | compileSdk / targetSdk | 37 |
 | minSdk | 29 |
-| 屏幕方向 | 竖屏锁定 |
-| 权限 | 无 |
+| Screen orientation | Locked to portrait |
+| Permissions | None |
 
 ---
 
-## 2. 运行方式
+## 2. How to Run
 
 ### Android Studio
 
-1. `File → Open` 选择你克隆或解压后的项目根目录（包含 `settings.gradle.kts` 的目录）。
-2. 等待 Gradle Sync 完成（首次需要联网下载依赖）。
-3. 选择 `app` 运行配置，点击 Run。
+1. `File → Open` and select the project root directory you cloned or extracted (the directory containing `settings.gradle.kts`).
+2. Wait for Gradle Sync to finish (the first sync needs network access to download dependencies).
+3. Select the `app` run configuration and click Run.
 
-### 命令行
+### Command Line
 
 ```bash
 # Windows / Git Bash
@@ -65,7 +67,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -n com.sugar.weather/.MainActivity
 ```
 
-生成的 APK 位于：
+The generated APK is located at:
 
 ```
 app/build/outputs/apk/debug/app-debug.apk
@@ -73,169 +75,169 @@ app/build/outputs/apk/debug/app-debug.apk
 
 ---
 
-## 3. 操作说明
+## 3. Controls
 
-- **倾斜手机**：左右横滚（roll）驱动场景横向视差；前后俯仰（pitch）驱动纵向移动与轻微缩放。
-- **右下角「场景」按钮**：打开场景面板，可切换天气、日间/夜间、触摸模拟、调试信息。
-- **触摸模拟倾斜**：
-  - 关闭时使用真实方向传感器；
-  - 打开后可用手指拖动模拟倾斜（无方向传感器的设备会自动打开）；
-  - 左右拖动改变横滚，上下拖动改变俯仰。
-- **重置视角**：把模拟角度恢复到竖直握持状态（pitch = 90°，roll = 0°）。
-- **显示俯仰 / 横滚**：左上角显示实时 `pitch`、`roll`，以及数据来源（传感器 / 模拟）。
+- **Tilt the phone**: left/right roll drives the horizontal parallax of the scene; front/back pitch drives vertical movement and slight scaling.
+- **"Scenes" button at the bottom right**: opens the scene panel to switch weather, day/night, touch simulation and debug info.
+- **Touch-simulated tilt**:
+  - When off, the real orientation sensor is used;
+  - When on, drag with a finger to simulate tilt (automatically enabled on devices without an orientation sensor);
+  - Drag left/right to change roll, drag up/down to change pitch.
+- **Reset view**: restores the simulated angles to an upright holding pose (pitch = 90°, roll = 0°).
+- **Show pitch / roll**: displays real-time `pitch`, `roll` and the data source (sensor / simulated) in the top-left corner.
 
-> 如果倾斜手机没有反应，先检查「触摸模拟倾斜」是否被打开；打开时会覆盖真实传感器数据。
-
----
-
-## 4. 支持的场景
-
-| SceneType | 中文 | 实现方式 |
-| --- | --- | --- |
-| `SUNNY` | 晴天 | 8 层多边形光晕 + 4 个六边形云；夜间切换为流星弧线 |
-| `CLOUDY` | 多云 | 9 个半透明圆形云团 + 太阳；夜间增加星点 |
-| `OVERCAST` | 阴天 | 同多云，使用灰蓝色云团色板 |
-| `FOG` | 雾 | 24 个线性渐变圆，缓慢漂移、旋转、叠加 |
-| `HAZE` | 霾 | 大量半透明黄褐色颗粒漂移、闪烁 |
-| `SANDSTORM` | 沙尘暴 | 暖色渐变 + 沙尘团 + 高速横向沙粒 |
-| `LIGHT_RAIN` | 小雨 | 雨滴线段粒子 |
-| `RAIN` | 中雨 | 密度、速度、线宽更高的雨滴粒子 |
-| `HEAVY_RAIN` | 大雨 | 更密集的雨滴粒子 |
-| `STORM` | 暴雨 | 最高密度的雨滴粒子 |
-| `THUNDER` | 雷阵雨 | 雨滴粒子 + 随机闪电闪光 |
-| `SLEET` | 雨夹雪 | 小雨 + 小雪叠加 |
-| `LIGHT_SNOW` | 小雪 | 少量雪花（圆点 / 六边形） |
-| `SNOW` | 大雪 | 密集雪花 |
-| `HAIL` | 冰雹 | 雨滴 + 白色冰雹颗粒 |
-
-夜间模式为手动切换，主要影响背景色板、云层配色、星点和晴天夜间流星效果。
+> If tilting the phone has no effect, first check whether "Touch-simulated tilt" is enabled; when enabled, it overrides the real sensor data.
 
 ---
 
-## 5. 直接启动指定场景（方便截图 / 验收）
+## 4. Supported Scenes
 
-`MainActivity` 支持以下 Intent extra：
-
-| key | 类型 | 说明 |
+| SceneType | Name | Implementation |
 | --- | --- | --- |
-| `scene` | String | `SceneType` 名称，如 `SUNNY`、`RAIN`、`SNOW` |
-| `night` | boolean | 是否夜间 |
-| `simulate` | boolean | 是否启用触摸模拟 |
-| `pitch` | float | 模拟俯仰角（配合 `simulate=true`） |
-| `roll` | float | 模拟横滚角（配合 `simulate=true`） |
-| `debug` | boolean | 是否显示左上角调试信息 |
+| `SUNNY` | Sunny | 8 polygonal halo layers + 4 hexagonal clouds; switched to meteor arcs at night |
+| `CLOUDY` | Cloudy | 9 translucent circular cloud clusters + sun; extra stars at night |
+| `OVERCAST` | Overcast | Same as cloudy, using a gray-blue cloud palette |
+| `FOG` | Fog | 24 linear-gradient circles drifting, rotating and blending slowly |
+| `HAZE` | Haze | Many translucent yellow-brown particles drifting and flickering |
+| `SANDSTORM` | Sandstorm | Warm gradient + dust clusters + high-speed horizontal sand particles |
+| `LIGHT_RAIN` | Light rain | Raindrop line-segment particles |
+| `RAIN` | Moderate rain | Raindrop particles with higher density, speed and line width |
+| `HEAVY_RAIN` | Heavy rain | Denser raindrop particles |
+| `STORM` | Rainstorm | Highest-density raindrop particles |
+| `THUNDER` | Thunderstorm | Raindrop particles + random lightning flashes |
+| `SLEET` | Sleet | Light rain + light snow combined |
+| `LIGHT_SNOW` | Light snow | A small number of snowflakes (dots / hexagons) |
+| `SNOW` | Heavy snow | Dense snowflakes |
+| `HAIL` | Hail | Raindrops + white hail particles |
 
-示例：
+Night mode is toggled manually. It mainly affects the background palette, cloud colors, stars, and the sunny-night meteor effect.
+
+---
+
+## 5. Launching a Specific Scene (for screenshots / acceptance)
+
+`MainActivity` supports the following Intent extras:
+
+| key | Type | Description |
+| --- | --- | --- |
+| `scene` | String | `SceneType` name, such as `SUNNY`, `RAIN`, `SNOW` |
+| `night` | boolean | Whether to use night mode |
+| `simulate` | boolean | Whether to enable touch simulation |
+| `pitch` | float | Simulated pitch angle (used with `simulate=true`) |
+| `roll` | float | Simulated roll angle (used with `simulate=true`) |
+| `debug` | boolean | Whether to show debug info in the top-left corner |
+
+Example:
 
 ```bash
-# 晴天日间，模拟竖直握持
+# Sunny daytime, simulated upright holding pose
 adb shell am start -n com.sugar.weather/.MainActivity \
   --es scene SUNNY --ez night false --ez simulate true --ef pitch 90 --ef roll 0
 
-# 雷阵雨夜间
+# Thunderstorm at night
 adb shell am start -n com.sugar.weather/.MainActivity \
   --es scene THUNDER --ez night true
 
-# 打开调试数值
+# Show debug values
 adb shell am start -n com.sugar.weather/.MainActivity \
   --es scene SUNNY --ez debug true
 ```
 
-> 同一个 Activity 已在运行时，使用 `am start` 可能只把旧实例带到前台。需要在多次截图之间切换场景时，先执行 `adb shell am force-stop com.sugar.weather`，或用系统「返回」退出后再启动。
+> If the same Activity is already running, `am start` may only bring the old instance to the foreground. To switch scenes between multiple screenshots, run `adb shell am force-stop com.sugar.weather` first, or exit via the system Back button before launching again.
 
 ---
 
-## 6. 代码结构
+## 6. Code Structure
 
 ```
 app/src/main/java/com/sugar/weather/
-├── MainActivity.kt                 # ViewBinding、StateFlow 收集、场景面板
+├── MainActivity.kt                 # ViewBinding, StateFlow collection, scene panel
 ├── ui/
-│   ├── MainViewModel.kt            # MVVM 状态与动作
-│   └── SceneUiState.kt             # 场景 / 昼夜 / 模拟 / 调试状态
+│   ├── MainViewModel.kt            # MVVM state and actions
+│   └── SceneUiState.kt             # Scene / day-night / simulation / debug state
 ├── data/
-│   └── TiltSensorRepository.kt     # 方向传感器 → StateFlow
+│   └── TiltSensorRepository.kt     # Orientation sensor → StateFlow
 ├── sensor/
-│   └── TiltSensorController.kt     # TYPE_ORIENTATION / TYPE_ROTATION_VECTOR 封装
+│   └── TiltSensorController.kt     # TYPE_ORIENTATION / TYPE_ROTATION_VECTOR wrapper
 ├── view/
-│   └── WeatherBackdropView.kt      # 纯 Canvas 渲染 + Choreographer + 触摸姿态回调
+│   └── WeatherBackdropView.kt      # Pure Canvas rendering + Choreographer + touch pose callback
 └── scene/
-    ├── WeatherScene.kt            # 场景接口
-    ├── SceneType.kt               # 场景枚举 + 背景色 + 场景工厂
-    ├── Tilt.kt                    # 设备姿态数据
-    ├── SunnyScene.kt              # 晴天（日/夜）
-    ├── SunnySceneConfig.kt        # 晴天全部可调参数
-    ├── CloudScene.kt              # 多云 / 阴天
-    ├── FogScene.kt                # 雾
-    ├── HazeScene.kt               # 霾
-    ├── SandstormScene.kt          # 沙尘暴
-    ├── RainScene.kt               # 雨 / 雷雨 / 冰雹
-    ├── SnowScene.kt               # 雪
-    └── CompositeScene.kt          # 叠加场景（雨夹雪）
+    ├── WeatherScene.kt            # Scene interface
+    ├── SceneType.kt               # Scene enum + background colors + scene factory
+    ├── Tilt.kt                    # Device pose data
+    ├── SunnyScene.kt              # Sunny (day/night)
+    ├── SunnySceneConfig.kt        # All tunable parameters for sunny
+    ├── CloudScene.kt              # Cloudy / overcast
+    ├── FogScene.kt                # Fog
+    ├── HazeScene.kt               # Haze
+    ├── SandstormScene.kt          # Sandstorm
+    ├── RainScene.kt               # Rain / thunder / hail
+    ├── SnowScene.kt               # Snow
+    └── CompositeScene.kt          # Composite scenes (sleet)
 
 app/src/main/res/
-├── layout/activity_main.xml       # 全屏背景 + 调试信息 + 右下角场景按钮
-├── layout/dialog_scene_picker.xml # 场景选择面板
-└── values/themes.xml              # 无 ActionBar、透明系统栏
+├── layout/activity_main.xml       # Full-screen background + debug info + bottom-right scene button
+├── layout/dialog_scene_picker.xml # Scene picker panel
+└── values/themes.xml              # No ActionBar, transparent system bars
 ```
 
 ---
 
-## 7. 实现方式与关键逻辑
+## 7. Implementation Details
 
-### 7.1 总体技术方案
+### 7.1 Overall Technical Approach
 
-- **架构**：ViewBinding + MVVM。`MainViewModel` 持有场景 / 昼夜 / 模拟 / 调试的 `StateFlow`，`TiltSensorRepository` 把传感器事件转成 `StateFlow`；`MainActivity` 只做布局绑定与事件转发，`WeatherBackdropView` 只负责 Canvas 渲染。
-- **数据流**：`TiltSensorRepository → MainViewModel → MainActivity → WeatherBackdropView`。
-- **核心绘制**：Kotlin + XML + ViewBinding + 自定义 `View`，所有天气场景直接绘制在 `Canvas` 上；没有使用 Compose、Lottie、视频或第三方动画库。
-- **旋转**：不是属性动画，而是每个光晕层、云朵、雪花或弧线自己维护角度累加器：
-  `angle += speed × dt`，绘制时通过 `Canvas.rotate()`、`Canvas.scale()`、`Canvas.drawArc()` 体现。
-  每帧的 `dt` 来自 `Choreographer`，上限 30ms。
-- **颜色呼吸**：在起始色和结束色之间做三角波插值，`colorT` 在 0~1 之间往返，而不是随机变色。
-- **倾斜视差**：`TYPE_ORIENTATION` 提供 `pitch/roll`，映射为全局横纵位移，再叠加每层的深度系数。
-- **性能**：`Paint`、`Path`、`RectF` 和顶点数组全部复用，`onDraw` 内不创建新对象。
+- **Architecture**: ViewBinding + MVVM. `MainViewModel` holds the `StateFlow`s for scene / day-night / simulation / debug, and `TiltSensorRepository` converts sensor events into a `StateFlow`; `MainActivity` only handles layout binding and event forwarding, while `WeatherBackdropView` only handles Canvas rendering.
+- **Data flow**: `TiltSensorRepository → MainViewModel → MainActivity → WeatherBackdropView`.
+- **Core drawing**: Kotlin + XML + ViewBinding + a custom `View`. All weather scenes are drawn directly on a `Canvas`; no Compose, Lottie, video or third-party animation library is used.
+- **Rotation**: this is not property animation. Each halo layer, cloud, snowflake or arc maintains its own angle accumulator:
+  `angle += speed × dt`, applied at draw time via `Canvas.rotate()`, `Canvas.scale()` and `Canvas.drawArc()`.
+  The per-frame `dt` comes from `Choreographer` and is capped at 30 ms.
+- **Color breathing**: triangular-wave interpolation between a start color and an end color; `colorT` oscillates between 0 and 1 instead of changing color randomly.
+- **Tilt parallax**: `TYPE_ORIENTATION` provides `pitch/roll`, which are mapped to global horizontal/vertical displacement and then multiplied by a per-layer depth factor.
+- **Performance**: `Paint`, `Path`, `RectF` and vertex arrays are all reused; `onDraw` allocates no new objects.
 
-### 7.2 晴天光晕
+### 7.2 Sunny Halo
 
-- 8 层光晕，每层是一个 12 边形（最内 3 层为 10 边形）。
-- 每层不是直接画多边形填充，而是取 12 个顶点的相邻两点中点，与对边中点连线，共画 6 条穿过圆心的粗线；线宽等于相邻顶点距离，叠加后形成带凹角的色带效果。
-- 半径按参考视觉比例缩放：
+- 8 halo layers; each layer is a 12-gon (the innermost 3 layers are 10-gons).
+- Each layer is not a directly filled polygon. Instead, the midpoints of adjacent pairs of the 12 vertices are connected to the midpoints of the opposite edges, drawing 6 thick lines through the center; the line width equals the distance between adjacent vertices, and the overlaps form bands with concave corners.
+- The radius is scaled according to the reference visual ratio:
 
   ```text
   radiusPx = radiusDp × density × floor(density × 5 / 3)
   ```
 
-- 每层独立自转、颜色在起始色与结束色之间缓慢往返；六边形云以 150/255 的最大透明度叠加。
-- 太阳中心位于屏幕上方，初始时最外圈光晕下沿落在屏幕约 1/3 处，适配不同屏幕比例。
+- Each layer rotates independently, and its color slowly oscillates between the start and end colors; hexagonal clouds are blended at a maximum alpha of 150/255.
+- The sun center is above the screen. Initially, the bottom edge of the outermost halo sits at about 1/3 of the screen height, adapting to different screen ratios.
 
-### 7.3 夜间晴天
+### 7.3 Sunny Night
 
-夜间不使用光晕，而是 23 条大圆弧组成的流星/光带：圆心位于屏幕左上方较远处，半径和线宽各不相同，其中一部分缓慢旋转。背景切换为 `#051325`。
+Night mode does not use the halo. Instead, 23 large arcs form meteor / light bands: the center is located far to the upper left of the screen, radii and line widths vary, and some of the arcs rotate slowly. The background switches to `#051325`.
 
-### 7.4 倾斜 → 视差
+### 7.4 Tilt → Parallax
 
-- 横向：`globalH = 266.7dp × roll / 90°`；每层再叠加 `depthPx × globalH / 1000`。
-- 纵向：以竖直握持为中性（pitch = 90°），俯仰变化驱动太阳上下移动。
-- 平滑：以最大约 900dp/s 追踪目标，距离目标小于 133dp 时按比例减速，避免抖动和瞬移。
-- 帧间隔上限 30ms，防止切后台回来时跳变。
+- Horizontal: `globalH = 266.7dp × roll / 90°`; each layer adds `depthPx × globalH / 1000`.
+- Vertical: upright holding is neutral (pitch = 90°); pitch changes drive the sun up and down.
+- Smoothing: the target is tracked at a maximum of about 900dp/s, decelerating proportionally when within 133dp of the target, avoiding jitter and teleporting.
+- The frame interval is capped at 30 ms to prevent jumps after returning from the background.
 
-### 7.5 传感器
+### 7.5 Sensors
 
-- 优先注册 `TYPE_ORIENTATION`（`SENSOR_DELAY_GAME`，约 50Hz）。
-- 没有时回退 `TYPE_ROTATION_VECTOR`，通过旋转矩阵换算 pitch / roll。
-- `MainActivity` 在 `onStart/onStop` 调用 `MainViewModel.startSensors/stopSensors`；`MainViewModel.onCleared` 也会兜底停止，避免泄漏。
-- 完全静止时场景仍会自转、颜色呼吸、云层缩放，不依赖传感器持续变化。
+- Prefer `TYPE_ORIENTATION` (`SENSOR_DELAY_GAME`, about 50 Hz).
+- Fall back to `TYPE_ROTATION_VECTOR` when unavailable, converting pitch / roll via the rotation matrix.
+- `MainActivity` calls `MainViewModel.startSensors/stopSensors` in `onStart/onStop`; `MainViewModel.onCleared` also stops them as a fallback to avoid leaks.
+- When completely still, scenes still rotate, breathe colors and scale clouds; they do not depend on continuous sensor changes.
 
-### 7.6 渲染
+### 7.6 Rendering
 
-- `Choreographer` 驱动，按真实帧间隔更新，目标 60fps。
-- 绘制路径、Paint、Path、RectF、顶点数组全部复用；`onDraw` 内不创建新对象。
-- 帧循环保留在 `WeatherBackdropView` 内，不经过 ViewModel，避免高频姿态更新触发整页 UI 刷新。
-- 多云 / 阴天 / 雾等场景用 `Canvas` 实现；雨雪场景也统一使用 `Canvas` 粒子，以保持零依赖和易调参。
+- Driven by `Choreographer`, updated at real frame intervals, targeting 60fps.
+- Drawing paths, Paint, Path, RectF and vertex arrays are all reused; `onDraw` allocates no new objects.
+- The frame loop stays inside `WeatherBackdropView` and does not go through the ViewModel, avoiding full-page UI refreshes caused by high-frequency pose updates.
+- Cloudy / overcast / fog scenes are implemented with `Canvas`; rain and snow also use `Canvas` particles uniformly, keeping zero dependencies and easy tuning.
 
-### 7.7 运行时序图
+### 7.7 Runtime Sequence Diagram
 
-下图按当前实现绘制，重点区分两条高频数据流：传感器姿态和渲染帧循环。实线表示直接调用，虚线表示 StateFlow 发射或回调。
+The diagram below reflects the current implementation and highlights two high-frequency data flows: sensor pose and the render frame loop. Solid lines are direct calls; dashed lines are StateFlow emissions or callbacks.
 
 ```mermaid
 sequenceDiagram
@@ -251,111 +253,111 @@ sequenceDiagram
     MA->>MA: inflate ActivityMainBinding
     MA->>VM: initialize(scene, night, simulate, pitch, roll, debug)
     VM->>Repo: hasSensor
-    Repo-->>VM: 是否有方向传感器
-    MA->>VM: observe sceneState / tilt（STARTED）
-    VM-->>MA: sceneState / tilt 初始值
+    Repo-->>VM: orientation sensor available?
+    MA->>VM: observe sceneState / tilt (STARTED)
+    VM-->>MA: initial sceneState / tilt
     MA->>View: setScene / setTilt
 
-    Note over MA,View: 传感器循环与渲染循环在运行时并发
+    Note over MA,View: Sensor loop and render loop run concurrently at runtime
     Note over MA,Sensor: onStart
     MA->>VM: startSensors()
     VM->>Repo: start()
     Repo->>Sensor: registerListener(SENSOR_DELAY_GAME)
 
-    loop 传感器约 50Hz
+    loop Sensor at ~50Hz
         Sensor-->>Repo: pitch / roll
         Repo-->>VM: tilt StateFlow
-        alt 模拟倾斜关闭
+        alt Touch simulation off
             VM-->>MA: tilt StateFlow
             MA->>View: setTilt(tilt)
-        else 模拟倾斜开启
-            Note over VM,View: 忽略传感器，等待触摸姿态
+        else Touch simulation on
+            Note over VM,View: Ignore sensor, wait for touch pose
         end
     end
 
     Note over MA,Scene: onResume
     MA->>View: start()
-    loop 每个渲染帧（Choreographer，dt ≤ 30ms）
+    loop Each render frame (Choreographer, dt ≤ 30ms)
         View->>Scene: update(dt, tilt, night, elapsed)
         View->>Scene: draw(canvas, night)
-        Scene-->>View: Canvas 图形
+        Scene-->>View: Canvas graphics
     end
 
-    Note over MA: 用户打开“场景”面板
+    Note over MA: User opens the "Scenes" panel
     MA->>MA: showSceneDialog()
     MA->>VM: selectScene / setSimulateTilt / setDebugVisible
     VM-->>MA: sceneState StateFlow
     MA->>View: setScene(type, night)
     MA->>View: simulateTilt = state.simulateTilt
-    View->>Scene: createScene()（仅 type/night 变化）
+    View->>Scene: createScene() (only on type/night change)
     View->>View: reset elapsedSec / invalidate
 
-    Note over MA,View: 触摸模拟（simulateTilt == true）
-    View->>View: onTouchEvent 计算 Tilt
+    Note over MA,View: Touch simulation (simulateTilt == true)
+    View->>View: onTouchEvent computes Tilt
     View-->>MA: onSimulatedTiltChange(pitch, roll)
     MA->>VM: updateSimulatedTilt(pitch, roll)
     VM-->>MA: tilt StateFlow
     MA->>View: setTilt(tilt)
 
     Note over MA,View: onPause
-    MA->>View: stop() 停止帧循环
+    MA->>View: stop() stops the frame loop
     Note over MA,Sensor: onStop
     MA->>VM: stopSensors()
     VM->>Repo: stop()
     Repo->>Sensor: unregisterListener()
 ```
 
-Activity 只负责 ViewBinding 绑定和事件转发；`WeatherBackdropView` 不直接访问 `SensorManager`，传感器生命周期和 UI 状态都由 `MainViewModel` / `TiltSensorRepository` 管理。
+The Activity is only responsible for ViewBinding and event forwarding; `WeatherBackdropView` never accesses `SensorManager` directly. Sensor lifecycle and UI state are managed by `MainViewModel` / `TiltSensorRepository`.
 
 ---
 
-## 8. 调参入口
+## 8. Tuning Entry Points
 
-| 想改什么 | 修改位置 |
+| What you want to change | Where to change it |
 | --- | --- |
-| 晴天光晕半径、旋转速度、颜色、深度、夜间弧线 | `SunnySceneConfig.kt` |
-| 晴天云朵大小 / 位置 / 透明度 | `SunnySceneConfig.kt` 的 `CLOUD_*` |
-| 晴天视差范围、平滑速度 | `SunnySceneConfig.kt` 的 `HORIZONTAL_RANGE_DP`、`FOLLOW_*` |
-| 各天气的背景色 | `SceneType.kt` |
-| 多云 / 阴天云团参数 | `CloudScene.kt` 的 `init` 表 |
-| 雨量、速度、线宽、冰雹 | `RainScene.kt` 的 `Intensity` 配置块 |
-| 雪量、雪花大小、数量 | `SnowScene.kt` 的 `count` 与 `init` |
-| 霾 / 沙尘颗粒密度 | `HazeScene.kt`、`SandstormScene.kt` 的 `COUNT` |
+| Sunny halo radius, rotation speed, colors, depth, night arcs | `SunnySceneConfig.kt` |
+| Sunny cloud size / position / alpha | `CLOUD_*` in `SunnySceneConfig.kt` |
+| Sunny parallax range, smoothing speed | `HORIZONTAL_RANGE_DP`, `FOLLOW_*` in `SunnySceneConfig.kt` |
+| Background colors for each weather type | `SceneType.kt` |
+| Cloudy / overcast cloud parameters | The `init` table in `CloudScene.kt` |
+| Rain intensity, speed, line width, hail | The `Intensity` config block in `RainScene.kt` |
+| Snow amount, flake size, count | `count` and `init` in `SnowScene.kt` |
+| Haze / sand particle density | `COUNT` in `HazeScene.kt`, `SandstormScene.kt` |
 
 ---
 
-## 9. 常见问题
+## 9. FAQ
 
-### 9.1 手机倾斜没有反应
+### 9.1 Tilting the phone does nothing
 
-- 打开场景面板，确认「触摸模拟倾斜」已关闭；
-- 打开调试信息，观察 `pitch` / `roll` 是否变化；
-- 部分设备没有 `TYPE_ORIENTATION` 时，会回退到旋转矢量传感器；
-- 模拟器没有真实姿态变化，请使用触摸模拟。
+- Open the scene panel and make sure "Touch-simulated tilt" is off;
+- Enable debug info and check whether `pitch` / `roll` change;
+- Some devices lack `TYPE_ORIENTATION` and fall back to the rotation vector sensor;
+- Emulators have no real pose changes; use touch simulation instead.
 
-### 9.2 切换场景后还是旧场景
+### 9.2 The old scene still shows after switching
 
-通过 adb 多次 `am start` 启动同一 Activity 时，系统可能复用旧实例。先 `adb shell am force-stop com.sugar.weather` 再启动，或在 App 内用场景面板切换。
+When the same Activity is launched multiple times via adb `am start`, the system may reuse the old instance. Run `adb shell am force-stop com.sugar.weather` before launching again, or switch scenes in the app's scene panel.
 
-### 9.3 画面构图和参考图略有差异
+### 9.3 The composition differs slightly from the reference image
 
-光晕半径按屏幕密度缩放；不同分辨率 / 显示缩放下，色带覆盖屏幕的比例会略有不同。已在 `SunnyScene.kt` 中按「最外圈下沿约在 1/3 屏高」做了归一化，可通过 `initialVertical` 一行微调。
-
----
-
-## 10. 已知范围
-
-- 只做动态背景，不包含城市、温度、小时预报、六日预报等 UI。
-- 不接入任何天气数据 / 定位 / 网络。
-- 晴天场景按参考截图做了较完整的视觉模拟；其余场景为基于同类天气效果的程序化近似实现。
-- 夜间模式为手动切换，不读取系统深色模式。
+The halo radius is scaled by screen density; at different resolutions / display scales, the proportion of the screen covered by the color bands varies slightly. `SunnyScene.kt` normalizes it so that "the bottom edge of the outermost ring is at about 1/3 of the screen height"; fine-tune it with the `initialVertical` line.
 
 ---
 
-## 11. 版权与免责声明
+## 10. Scope
 
-- 本项目是独立实现的学习 / 演示项目，仅以程序化绘制方式复刻、模拟天气动画的视觉表现。
-- 项目不包含任何原应用的代码、图片、字体、图标或其他素材，也未获得相关权利人的授权、合作或背书。
-- OnePlus、Hydrogen OS 等产品名称、系统名称和商标仅用于说明参考设备与参考对象，归各自权利人所有。
-- 本项目不授予任何商业使用许可；如需商用，请自行确认并取得相关权利人的许可。
-- 若相关权利人认为本项目存在不当之处，可通过仓库 Issue 联系作者处理。
+- Only the dynamic background is implemented; there is no UI for city, temperature, hourly forecast, 6-day forecast, etc.
+- No weather data / location / network integration.
+- The sunny scene is a fairly complete visual simulation based on reference screenshots; the other scenes are programmatic approximations based on similar weather effects.
+- Night mode is toggled manually and does not read the system dark mode.
+
+---
+
+## 11. Copyright and Disclaimer
+
+- This project is an independently implemented learning / demonstration project that recreates and simulates the visual appearance of weather animations only through programmatic drawing.
+- The project contains no code, images, fonts, icons or other assets from the original app, and has not been authorized, partnered with, or endorsed by the relevant rights holders.
+- Product names, system names and trademarks such as OnePlus and Hydrogen OS are used only to describe the reference device and reference target, and belong to their respective owners.
+- This project grants no commercial-use license; if you need commercial use, please verify and obtain permission from the relevant rights holders yourself.
+- If a rights holder believes this project is inappropriate, please contact the author via the repository Issues.
