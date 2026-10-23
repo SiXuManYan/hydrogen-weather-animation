@@ -2,48 +2,41 @@ package com.sugar.weather
 
 import android.graphics.Color
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.SystemClock
 import android.view.View
 import android.widget.ArrayAdapter
-import android.widget.Spinner
-import android.widget.TextView
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import com.google.android.material.button.MaterialButton
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.sugar.weather.databinding.ActivityMainBinding
+import com.sugar.weather.databinding.DialogScenePickerBinding
 import com.sugar.weather.scene.SceneType
-import com.sugar.weather.view.WeatherBackdropView
+import com.sugar.weather.scene.Tilt
+import com.sugar.weather.ui.MainViewModel
+import com.sugar.weather.ui.SceneUiState
+import kotlinx.coroutines.launch
 
 /**
- * 单 Activity 演示入口：全屏动态天气背景，右下角“场景”按钮用于切换天气、昼夜和传感器模式。
- * 支持通过 Intent extra 直接打开指定场景，方便截图与验收（见 README）。
+ * View 层入口：
+ * - ViewBinding 负责布局绑定，不再使用 findViewById；
+ * - 观察 MainViewModel 的 StateFlow，把场景/昼夜/模拟状态交给 WeatherBackdropView；
+ * - 把触摸模拟产生的姿态回传给 ViewModel；
+ * - 场景面板只负责收集用户输入，提交给 ViewModel 处理。
  */
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var backdropView: WeatherBackdropView
-    private lateinit var debugText: TextView
-    private lateinit var sceneLabel: TextView
+    private lateinit var binding: ActivityMainBinding
+    private val viewModel: MainViewModel by viewModels()
 
-    private var debugVisible = false
-    private val handler = Handler(Looper.getMainLooper())
-    private val debugUpdater = object : Runnable {
-        override fun run() {
-            if (!debugVisible) return
-            val source = getString(if (backdropView.isSimulating) R.string.simulated else R.string.sensor)
-            debugText.text = getString(
-                R.string.debug_format,
-                backdropView.tiltPitch,
-                backdropView.tiltRoll,
-                source
-            )
-            handler.postDelayed(this, 200L)
-        }
-    }
+    /** 调试文本最多 5Hz 更新一次，避免 50Hz 传感器事件频繁刷新 TextView。 */
+    private var lastDebugUpdate = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,14 +51,11 @@ class MainActivity : AppCompatActivity() {
             isAppearanceLightNavigationBars = false
         }
 
-        setContentView(R.layout.activity_main)
-        backdropView = findViewById(R.id.weather_backdrop)
-        debugText = findViewById(R.id.text_debug)
-        sceneLabel = findViewById(R.id.text_scene)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        val overlay = findViewById<View>(R.id.ui_overlay)
         // 只给覆盖层加系统栏内边距，背景 View 仍然铺满全屏。
-        ViewCompat.setOnApplyWindowInsetsListener(overlay) { view, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.uiOverlay) { view, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
             )
@@ -78,164 +68,223 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        restoreState(savedInstanceState)
-        updateSceneLabel()
-        setDebugVisible(debugVisible)
-        findViewById<MaterialButton>(R.id.button_scene).setOnClickListener {
+        binding.weatherBackdrop.onSimulatedTiltChange = { pitch, roll ->
+            viewModel.updateSimulatedTilt(pitch, roll)
+        }
+        binding.buttonScene.setOnClickListener {
             showSceneDialog()
         }
+
+        initializeViewModel(savedInstanceState)
+        observeState()
     }
 
-    private fun restoreState(savedInstanceState: Bundle?) {
+    /**
+     * 优先级：进程重建保存的状态 > adb/外部启动参数 > 默认晴天日间。
+     * 具体的默认姿态、模拟开关由 ViewModel 统一处理。
+     */
+    private fun initializeViewModel(savedInstanceState: Bundle?) {
         // 优先级：进程重建保存的状态 > adb/外部启动参数 > 默认晴天日间。
         val sceneName = savedInstanceState?.getString(KEY_SCENE)
             ?: intent.getStringExtra(EXTRA_SCENE)
             ?: SceneType.SUNNY.name
-        val type = SceneType.entries.firstOrNull { it.name.equals(sceneName, ignoreCase = true) }
-            ?: SceneType.SUNNY
-        val night = savedInstanceState?.getBoolean(KEY_NIGHT)
+        val sceneType = SceneType.entries.firstOrNull {
+            it.name.equals(sceneName, ignoreCase = true)
+        } ?: SceneType.SUNNY
+        val isNight = savedInstanceState?.getBoolean(KEY_NIGHT)
             ?: intent.getBooleanExtra(EXTRA_NIGHT, false)
-        backdropView.setScene(type, night)
+        val showDebug = savedInstanceState?.getBoolean(KEY_DEBUG)
+            ?: intent.getBooleanExtra(EXTRA_DEBUG, false)
+        val simulate = when {
+            savedInstanceState != null -> savedInstanceState.getBoolean(KEY_SIMULATE, false)
+            intent.hasExtra(EXTRA_SIMULATE) -> intent.getBooleanExtra(EXTRA_SIMULATE, false)
+            else -> null
+        }
+        val pitch = savedInstanceState?.getFloat(KEY_PITCH, Tilt.NEUTRAL_PITCH_DEG)
+            ?: intent.getFloatExtra(EXTRA_PITCH, Tilt.NEUTRAL_PITCH_DEG)
+        val roll = savedInstanceState?.getFloat(KEY_ROLL, Tilt.NEUTRAL_ROLL_DEG)
+            ?: intent.getFloatExtra(EXTRA_ROLL, Tilt.NEUTRAL_ROLL_DEG)
+        viewModel.initialize(sceneType, isNight, simulate, pitch, roll, showDebug)
+    }
 
-        if (savedInstanceState != null) {
-            if (savedInstanceState.getBoolean(KEY_SIMULATE, backdropView.isSimulating)) {
-                backdropView.setSimulatedTilt(
-                    savedInstanceState.getFloat(KEY_PITCH, 90f),
-                    savedInstanceState.getFloat(KEY_ROLL, 0f)
-                )
-            } else {
-                backdropView.simulateTilt = false
-            }
-            debugVisible = savedInstanceState.getBoolean(KEY_DEBUG, false)
-        } else {
-            if (intent.hasExtra(EXTRA_SIMULATE)) {
-                if (intent.getBooleanExtra(EXTRA_SIMULATE, false)) {
-                    backdropView.setSimulatedTilt(
-                        intent.getFloatExtra(EXTRA_PITCH, 90f),
-                        intent.getFloatExtra(EXTRA_ROLL, 0f)
-                    )
-                } else {
-                    backdropView.simulateTilt = false
+    /**
+     * 低频场景状态和高频姿态分开收集：
+     * 场景状态只在用户操作时变化，姿态可能来自 50Hz 传感器；分开可以避免整页 UI 重组。
+     */
+    private fun observeState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // 低频 UI 状态和 50Hz 姿态分开收集，避免每帧刷新标签/开关。
+                launch {
+                    viewModel.sceneState.collect { state -> render(state) }
+                }
+                launch {
+                    viewModel.tilt.collect { tilt ->
+                        binding.weatherBackdrop.setTilt(tilt)
+                        maybeUpdateDebug(tilt)
+                    }
                 }
             }
-            debugVisible = intent.getBooleanExtra(EXTRA_DEBUG, false)
         }
     }
 
-    private fun updateSceneLabel() {
-        val dayPart = getString(if (backdropView.isNight) R.string.night else R.string.day)
-        sceneLabel.text = getString(
+    /** 把 ViewModel 的低频状态映射到 ViewBinding 和背景 View。 */
+    private fun render(state: SceneUiState) {
+        binding.weatherBackdrop.setScene(state.sceneType, state.isNight)
+        binding.weatherBackdrop.simulateTilt = state.simulateTilt
+        binding.textDebug.visibility = if (state.showDebug) View.VISIBLE else View.GONE
+        val dayPart = getString(if (state.isNight) R.string.night else R.string.day)
+        binding.textScene.text = getString(
             R.string.scene_format,
-            backdropView.currentScene.label,
+            state.sceneType.label,
             dayPart
+        )
+        if (state.showDebug) {
+            lastDebugUpdate = 0L
+            maybeUpdateDebug(viewModel.tilt.value)
+        }
+    }
+
+    /** 调试文本节流更新，并标注数据来源是真实传感器还是触摸模拟。 */
+    private fun maybeUpdateDebug(tilt: Tilt) {
+        val state = viewModel.sceneState.value
+        if (!state.showDebug) return
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastDebugUpdate < DEBUG_INTERVAL_MS) return
+        lastDebugUpdate = now
+        val source = getString(
+            if (state.simulateTilt) R.string.simulated else R.string.sensor
+        )
+        binding.textDebug.text = getString(
+            R.string.debug_format,
+            tilt.pitchDeg,
+            tilt.rollDeg,
+            source
         )
     }
 
-    private fun setDebugVisible(visible: Boolean) {
-        debugVisible = visible
-        debugText.visibility = if (visible) View.VISIBLE else View.GONE
-        handler.removeCallbacks(debugUpdater)
-        if (visible) {
-            debugUpdater.run()
-        }
-    }
-
+    /** 场景面板只负责收集输入，状态变更全部提交给 ViewModel。 */
     private fun showSceneDialog() {
-        val content = layoutInflater.inflate(R.layout.dialog_scene_picker, null)
-        val spinner = content.findViewById<Spinner>(R.id.spinner_scene)
+        val dialogBinding = DialogScenePickerBinding.inflate(layoutInflater)
+        val state = viewModel.sceneState.value
+
         val labels = SceneType.entries.map { it.label }
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, labels)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
-        spinner.setSelection(backdropView.currentScene.ordinal)
+        dialogBinding.spinnerScene.adapter = adapter
+        dialogBinding.spinnerScene.setSelection(state.sceneType.ordinal)
+        dialogBinding.switchNight.isChecked = state.isNight
+        dialogBinding.switchSimulate.isChecked = state.simulateTilt
+        dialogBinding.switchDebug.isChecked = state.showDebug
 
-        val nightSwitch = content.findViewById<SwitchCompat>(R.id.switch_night)
-        nightSwitch.isChecked = backdropView.isNight
-
-        val simulateSwitch = content.findViewById<SwitchCompat>(R.id.switch_simulate)
-        simulateSwitch.isChecked = backdropView.isSimulating
-
-        val debugSwitch = content.findViewById<SwitchCompat>(R.id.switch_debug)
-        debugSwitch.isChecked = debugVisible
-
-        if (!backdropView.hasTiltSensor) {
-            simulateSwitch.isChecked = true
-            content.findViewById<TextView>(R.id.text_hint).text =
+        if (!viewModel.hasTiltSensor) {
+            dialogBinding.switchSimulate.isChecked = true
+            dialogBinding.textHint.text =
                 getString(R.string.no_sensor_hint) + "\n" + getString(R.string.scene_picker_hint)
         }
 
         var resetRequested = false
-        content.findViewById<MaterialButton>(R.id.button_reset).setOnClickListener {
+        dialogBinding.buttonReset.setOnClickListener {
             // 只记录“待重置”，等用户点“应用”后再真正修改，取消时不影响当前画面。
             resetRequested = true
-            simulateSwitch.isChecked = true
+            dialogBinding.switchSimulate.isChecked = true
         }
 
         val dialog = AlertDialog.Builder(this)
             .setTitle(R.string.scene_picker_title)
-            .setView(content)
+            .setView(dialogBinding.root)
             .setPositiveButton(R.string.apply, null)
             .setNegativeButton(R.string.cancel, null)
             .create()
 
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val selected = SceneType.entries[spinner.selectedItemPosition]
-                val wantNight = nightSwitch.isChecked
-                val wantSimulate = simulateSwitch.isChecked
-                // 先切换模拟/重置姿态，再换场景，避免新场景用旧姿态做首帧。
+                val selected = SceneType.entries[dialogBinding.spinnerScene.selectedItemPosition]
+                viewModel.selectScene(selected, dialogBinding.switchNight.isChecked)
                 if (resetRequested) {
-                    backdropView.resetSimulatedTilt()
-                } else if (wantSimulate != backdropView.isSimulating) {
-                    backdropView.simulateTilt = wantSimulate
+                    viewModel.resetSimulatedTilt()
+                } else {
+                    viewModel.setSimulateTilt(dialogBinding.switchSimulate.isChecked)
                 }
-                backdropView.setScene(selected, wantNight)
-                setDebugVisible(debugSwitch.isChecked)
-                updateSceneLabel()
+                viewModel.setDebugVisible(dialogBinding.switchDebug.isChecked)
                 dialog.dismiss()
             }
         }
         dialog.show()
     }
 
+    override fun onStart() {
+        super.onStart()
+        // 传感器只在页面可见时注册，避免后台耗电。
+        viewModel.startSensors()
+    }
+
+    override fun onStop() {
+        viewModel.stopSensors()
+        super.onStop()
+    }
+
     override fun onResume() {
         super.onResume()
-        // 帧循环和传感器只在可见时运行。
-        backdropView.start()
-        if (debugVisible) {
-            debugUpdater.run()
-        }
+        binding.weatherBackdrop.start()
     }
 
     override fun onPause() {
-        handler.removeCallbacks(debugUpdater)
-        backdropView.stop()
+        binding.weatherBackdrop.stop()
         super.onPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putString(KEY_SCENE, backdropView.currentScene.name)
-        outState.putBoolean(KEY_NIGHT, backdropView.isNight)
-        outState.putBoolean(KEY_SIMULATE, backdropView.isSimulating)
-        outState.putFloat(KEY_PITCH, backdropView.tiltPitch)
-        outState.putFloat(KEY_ROLL, backdropView.tiltRoll)
-        outState.putBoolean(KEY_DEBUG, debugVisible)
+        // 保存最新 UI 状态和姿态，进程被回收后由 initializeViewModel 恢复。
+        val state = viewModel.sceneState.value
+        val tilt = viewModel.tilt.value
+        outState.putString(KEY_SCENE, state.sceneType.name)
+        outState.putBoolean(KEY_NIGHT, state.isNight)
+        outState.putBoolean(KEY_SIMULATE, state.simulateTilt)
+        outState.putFloat(KEY_PITCH, tilt.pitchDeg)
+        outState.putFloat(KEY_ROLL, tilt.rollDeg)
+        outState.putBoolean(KEY_DEBUG, state.showDebug)
     }
 
     companion object {
+        /** adb/外部启动参数：场景枚举名，例如 SUNNY、RAIN。 */
         const val EXTRA_SCENE = "scene"
+
+        /** adb/外部启动参数：是否夜间。 */
         const val EXTRA_NIGHT = "night"
+
+        /** adb/外部启动参数：是否开启触摸模拟。 */
         const val EXTRA_SIMULATE = "simulate"
+
+        /** adb/外部启动参数：触摸模拟的俯仰角。 */
         const val EXTRA_PITCH = "pitch"
+
+        /** adb/外部启动参数：触摸模拟的横滚角。 */
         const val EXTRA_ROLL = "roll"
+
+        /** adb/外部启动参数：是否显示调试信息。 */
         const val EXTRA_DEBUG = "debug"
 
+        /** 进程重建时保存的场景名。 */
         private const val KEY_SCENE = "state_scene"
+
+        /** 进程重建时保存的昼夜状态。 */
         private const val KEY_NIGHT = "state_night"
+
+        /** 进程重建时保存的触摸模拟开关。 */
         private const val KEY_SIMULATE = "state_simulate"
+
+        /** 进程重建时保存的俯仰角。 */
         private const val KEY_PITCH = "state_pitch"
+
+        /** 进程重建时保存的横滚角。 */
         private const val KEY_ROLL = "state_roll"
+
+        /** 进程重建时保存的调试开关。 */
         private const val KEY_DEBUG = "state_debug"
+
+        /** 调试数值刷新间隔，避免每帧格式化字符串。 */
+        private const val DEBUG_INTERVAL_MS = 200L
     }
 }

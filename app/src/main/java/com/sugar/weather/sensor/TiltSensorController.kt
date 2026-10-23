@@ -31,14 +31,11 @@ class TiltSensorController(
     // 记录当前已注册的传感器，避免重复注册和重复注销。
     private var registeredSensor: Sensor? = null
 
+    /** 当前设备是否存在可用的方向传感器或旋转矢量传感器。 */
     val hasSensor: Boolean
         get() = orientationSensor != null || rotationVectorSensor != null
 
-    var lastPitch = 90f
-        private set
-    var lastRoll = 0f
-        private set
-
+    /** 注册传感器；重复调用安全，已有注册时直接返回。 */
     fun start() {
         if (registeredSensor != null) return
         val sensor = orientationSensor ?: rotationVectorSensor ?: return
@@ -53,6 +50,7 @@ class TiltSensorController(
         }
     }
 
+    /** 注销传感器；重复调用安全。 */
     fun stop() {
         if (registeredSensor == null) return
         sensorManager.unregisterListener(this)
@@ -74,11 +72,14 @@ class TiltSensorController(
             roll = Math.toDegrees(angles[2].toDouble()).toFloat()
         }
         // 部分设备启动瞬间会给出全 0 的无效值，直接丢弃。
-        if (abs(pitch) < 0.001f && abs(roll) < 0.001f) return
-        lastPitch = pitch
-        lastRoll = roll
+        if (abs(pitch) < INVALID_SENSOR_EPSILON && abs(roll) < INVALID_SENSOR_EPSILON) return
         onTilt(pitch, roll)
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+
+    private companion object {
+        /** 用于过滤启动瞬间全 0 的无效传感器值。 */
+        const val INVALID_SENSOR_EPSILON = 0.001f
+    }
 }
