@@ -7,4 +7,21 @@
     <color name="weather_accent_dark">#FF2E6A99</color>
     <color name="weather_overlay_scrim">#33000000</color>
     <color name="weather_overlay_scrim_strong">#59000000</color>
+    <!-- 深色天气页文字层级(DESIGN.md §10.2):主文字亮白、次要文字半透明白 -->
+    <color name="text_primary_on_dark">#D8FFFFFF</color>
+    <color name="text_secondary_on_dark">#89FFFFFF</color>
+    <!-- 深色页分割线(§6.2:详情卡行间分割线) -->
+    <color name="divider_on_dark">#1AFFFFFF</color>
+    <!-- 15 天详情页深蓝夜空底(取 SceneType.SUNNY 夜背景同系色) -->
+    <color name="fifteen_day_bg">#FF051325</color>
+    <!-- 城市管理/关于/搜索页(DESIGN.md §10.2 截图近似取样:工具栏 #FF1E1F22、页面 #FFF2F3F5、关于页 #FFF7F7F7) -->
+    <color name="city_manage_toolbar_bg">#FF1E1F22</color>
+    <color name="city_manage_page_bg">#FFF2F3F5</color>
+    <color name="about_page_bg">#FFF7F7F7</color>
+    <color name="about_text_primary">#FF263238</color>
+    <color name="about_text_secondary">#FF9E9E9E</color>
+    <color name="about_link">#FF42A5F5</color>
+    <!-- 热门城市 tag(APK uiNotes 实测色,§6.4) -->
+    <color name="city_tag_bg">#FFEBEBEB</color>
+    <color name="city_tag_ripple">#29000000</color>
 </resources>

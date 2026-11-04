@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 主页面(DESIGN.md §6.2/§10.2) -->
+    <!-- 当前温度大字 -->
+    <dimen name="temp_big_size">88sp</dimen>
+    <!-- 逐小时条列宽 -->
+    <dimen name="hour_item_width">64dp</dimen>
+    <!-- 温度曲线区(高低曲线 + 上下数值标签留白) -->
+    <dimen name="trend_view_height">170dp</dimen>
+    <!-- 详情卡最小行高(标签 + 数值 + 上下呼吸) -->
+    <dimen name="detail_card_min_height">88dp</dimen>
+    <!-- 城市管理页(DESIGN.md §6.5/§10.2) -->
+    <dimen name="city_card_radius">24dp</dimen>
+    <dimen name="city_card_height">160dp</dimen>
+    <!-- 热门城市 tag 圆角(§6.4) -->
+    <dimen name="tag_corner_radius">20dp</dimen>
+</resources>

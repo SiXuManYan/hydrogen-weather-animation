@@ -67,5 +67,16 @@
             android:layout_marginTop="8dp"
             android:text="@string/scene_picker_reset"
             android:textAllCaps="false" />
+
+        <!-- 退出调试预览(§7.6):点「应用」后背景恢复由天气驱动 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_restore_weather"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="4dp"
+            android:text="@string/scene_picker_restore_weather"
+            android:textAllCaps="false" />
     </LinearLayout>
 </ScrollView>

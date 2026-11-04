@@ -7,6 +7,7 @@
     <string name="scene_picker_simulate">触摸模拟倾斜</string>
     <string name="scene_picker_debug">显示俯仰 / 横滚</string>
     <string name="scene_picker_reset">重置视角</string>
+    <string name="scene_picker_restore_weather">恢复天气背景</string>
     <string name="scene_picker_hint">左右拖动改变横滚，上下拖动改变俯仰。</string>
     <string name="no_sensor_hint">当前设备没有方向传感器，已自动启用触摸模拟。</string>
     <string name="apply">应用</string>
@@ -17,4 +18,45 @@
     <string name="debug_format">pitch %1$.1f°   roll %2$.1f°   %3$s</string>
     <string name="simulated">模拟</string>
     <string name="sensor">传感器</string>
+    <!-- 主页面(DESIGN.md §6.2/§10.2) -->
+    <string name="fifteen_day_forecast">15 天天气预报</string>
+    <string name="just_now">刚刚更新</string>
+    <string name="updated_min_ago">%1$d 分钟前更新</string>
+    <string name="empty_state_hint">添加城市，查看天气</string>
+    <string name="add_city">添加城市</string>
+    <string name="offline_toast">更新失败，请检查网络</string>
+    <string name="retry">重试</string>
+    <string name="load_failed">加载失败，请检查网络</string>
+    <string name="menu_about">关于</string>
+    <string name="menu_anim_debug">动画调试</string>
+    <!-- 15 天详情页(§3/§8.2) -->
+    <string name="tomorrow">明天</string>
+    <string name="precip_probability">降水概率 %1$d%%</string>
+    <string name="choose_city">选择城市</string>
+    <!-- 详情卡标签(§6.2 第 6 条,对齐截图 005344) -->
+    <string name="today">今天</string>
+    <string name="date_md">%1$d月%2$d日</string>
+    <string name="card_air_quality">空气质量</string>
+    <string name="card_feels_like">体感温度</string>
+    <string name="card_humidity">湿度</string>
+    <string name="card_visibility">能见度</string>
+    <string name="card_uv">紫外线</string>
+    <string name="card_pressure">气压</string>
+    <!-- 城市管理页(§6.5,截图 005350) -->
+    <string name="back">返回</string>
+    <string name="city_manage_empty">暂无城市，点击右下角添加</string>
+    <!-- 搜索添加页(§6.4) -->
+    <string name="search_hint">输入城市全名，如 大连市</string>
+    <string name="search_no_result">没有找到相关城市</string>
+    <string name="search_failed">搜索失败，请检查网络</string>
+    <string name="clear_input">清空输入</string>
+    <!-- 关于页(§7,截图 005425) -->
+    <string name="about_title">关于</string>
+    <string name="about_version_format">氢天气 V%1$s</string>
+    <string name="about_changelog_title">更新日志：</string>
+    <string name="about_changelog_body">注意：\n由于更换了数据源，更新后请重新添加城市。\n\n1. 致敬氢 OS 一加天气 V2.6.1.1 的开源复刻\n2. 数据来源：Open-Meteo（CC-BY 4.0）\n3. 支持多城市管理、城市搜索与 15 天天气预报\n4. 优化搜索城市后的结果\n5. 常规问题修复</string>
+    <string name="about_data_source">数据来源：Open-Meteo（CC-BY 4.0）</string>
+    <string name="about_user_agreement">用户协议</string>
+    <string name="about_privacy_policy">隐私政策</string>
+    <string name="about_copyright">©2026, Sugar Weather. All Rights Reserved.</string>
 </resources>

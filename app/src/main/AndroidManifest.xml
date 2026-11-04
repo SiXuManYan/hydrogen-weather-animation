@@ -2,7 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 数据层(DESIGN.md §10.3):Open-Meteo 网络访问 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- 框架 LocationManager 定位(决策 D7,不依赖 GMS);权限申请由 UI 层发起 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
+        android:name=".WeatherApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -26,6 +34,38 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 15 天天气预报详情页(DESIGN.md §3/D9,主页「15 天天气预报」按钮入口) -->
+        <activity
+            android:name=".ui.fifteenday.FifteenDayActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Weather" />
+
+        <!-- 城市管理页(§6.5):setResult(cityId) 回传主页切页 -->
+        <activity
+            android:name=".ui.city.CityManageActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Weather" />
+
+        <!-- 搜索添加页(§6.4):防抖搜索 + 热门城市,添加成功回传城市 id -->
+        <activity
+            android:name=".ui.search.CitySearchActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Weather"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- 关于页(§7):静态页 -->
+        <activity
+            android:name=".ui.about.AboutActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Weather" />
     </application>
 
 </manifest>

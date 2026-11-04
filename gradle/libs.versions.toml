@@ -9,6 +9,15 @@ material = "1.14.0"
 activityKtx = "1.10.1"
 lifecycle = "2.11.0"
 coroutines = "1.10.2"
+# 数据层(DESIGN.md §10.1):全部为纯运行时依赖,零编译器插件(决策 D4/D5)
+retrofit = "3.0.0"
+gson = "2.13.1"
+okhttp = "4.12.0"
+datastore = "1.3.0"
+viewpager2 = "1.1.0"
+recyclerview = "1.4.0"
+swiperefreshlayout = "1.2.0"
+constraintlayout = "2.2.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -21,6 +30,17 @@ androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", ve
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+androidx-viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
+androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
+androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+
+# [plugins] 不新增任何条目 —— 全部依赖免编译器插件,这是 D4 的核心收益
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 15 天详情行(§8.2 FifteenDayRowUi):星期/日期 + 图标 + 描述 + 降水概率 + 高低温 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:baselineAligned="false"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="24dp"
+    android:paddingTop="14dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="14dp">
+
+    <LinearLayout
+        android:layout_width="92dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/text_week"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            tools:text="明天" />
+
+        <TextView
+            android:id="@+id/text_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/text_secondary_on_dark"
+            android:textSize="13sp"
+            tools:text="11月6日" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/image_icon"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginStart="8dp"
+        android:contentDescription="@null"
+        tools:src="@drawable/ic_sun" />
+
+    <TextView
+        android:id="@+id/text_desc"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_weight="1"
+        android:textColor="@color/text_primary_on_dark"
+        android:textSize="15sp"
+        tools:text="晴" />
+
+    <TextView
+        android:id="@+id/text_precip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:textColor="@color/text_secondary_on_dark"
+        android:textSize="12sp"
+        tools:text="降水概率 35%" />
+
+    <TextView
+        android:id="@+id/text_high"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        tools:text="16°" />
+
+    <TextView
+        android:id="@+id/text_low"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:textColor="@color/text_secondary_on_dark"
+        android:textSize="16sp"
+        tools:text="3°" />
+</LinearLayout>
