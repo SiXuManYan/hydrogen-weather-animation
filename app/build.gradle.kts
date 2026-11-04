@@ -54,7 +54,6 @@ dependencies {
     implementation(libs.androidx.viewpager2)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.swiperefreshlayout)
-    implementation(libs.androidx.constraintlayout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

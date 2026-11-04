@@ -486,7 +486,6 @@ datastore = "1.3.0"
 viewpager2 = "1.1.0"
 recyclerview = "1.4.0"
 swiperefreshlayout = "1.2.0"
-constraintlayout = "2.2.2"
 
 [libraries]  # 追加
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
@@ -497,7 +496,6 @@ androidx-datastore-preferences = { group = "androidx.datastore", name = "datasto
 androidx-viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
-androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 
 # [plugins] 不新增任何条目 —— 全部依赖免编译器插件,这是 D4 的核心收益
 ```
@@ -513,10 +511,9 @@ implementation(libs.androidx.datastore.preferences)
 implementation(libs.androidx.viewpager2)
 implementation(libs.androidx.recyclerview)
 implementation(libs.androidx.swiperefreshlayout)
-implementation(libs.androidx.constraintlayout)
 ```
 
-版本依据(本会话 Maven Central / Google Maven 实查):retrofit 与 converter-gson 最新稳定 3.0.0;converter-gson 3.0.0 传递 gson 2.13.1(显式声明同版防漂移);retrofit 3.0.0 传递 okhttp 4.12.0、kotlin-stdlib 2.1.21;datastore-preferences 1.3.0;viewpager2 1.1.0;recyclerview 1.4.0;swiperefreshlayout 1.2.0;constraintlayout 2.2.2。okhttp 5.x 虽已稳定(5.5.1)但 4.12 是多年生产验证版,保守取 4.12。
+版本依据(本会话 Maven Central / Google Maven 实查):retrofit 与 converter-gson 最新稳定 3.0.0;converter-gson 3.0.0 传递 gson 2.13.1(显式声明同版防漂移);retrofit 3.0.0 传递 okhttp 4.12.0、kotlin-stdlib 2.1.21;datastore-preferences 1.3.0;viewpager2 1.1.0;recyclerview 1.4.0;swiperefreshlayout 1.2.0。okhttp 5.x 虽已稳定(5.5.1)但 4.12 是多年生产验证版,保守取 4.12。(constraintlayout 2.2.2 曾同期列入,实现复核确认全库零引用后移除,见 §13 第 6 条。)
 
 ### 10.2 新建文件(相对 `app/src/main/java/com/sugar/weather/`)
 
@@ -599,7 +596,7 @@ implementation(libs.androidx.constraintlayout)
 | `curl geocoding-api.open-meteo.com/v1/search?name=大连` | 5 个同名村镇,population 均 null |
 | `curl geocoding-api.open-meteo.com/v1/search?name=大连市` | 辽宁·大连市 38.91222/121.60222 pop=7450785 |
 | `curl hourly=visibility`(forecast) | 单位米(样本 4980.0/2280.0/…) |
-| Maven Central metadata ×5 + Google Maven metadata ×5 | retrofit/converter-gson 3.0.0;gson 至 2.15.0(取 2.13.1 对齐 converter-gson);okhttp 至 5.5.1(取 4.12.0);datastore-preferences 1.3.0;viewpager2 1.1.0;recyclerview 1.4.0;swiperefreshlayout 1.2.0;constraintlayout 2.2.2 |
+| Maven Central metadata ×5 + Google Maven metadata ×5 | retrofit/converter-gson 3.0.0;gson 至 2.15.0(取 2.13.1 对齐 converter-gson);okhttp 至 5.5.1(取 4.12.0);datastore-preferences 1.3.0;viewpager2 1.1.0;recyclerview 1.4.0;swiperefreshlayout 1.2.0 |
 | `curl retrofit-3.0.0.pom` / `converter-gson-3.0.0.pom` | 传递依赖 okhttp 4.12.0 + kotlin-stdlib 2.1.21 / gson 2.13.1 |
 | WebSearch(AGP 9 built-in Kotlin) | 内置 Kotlin 捆绑 KGP 2.2.10;`org.jetbrains.kotlin.plugin.*` 子插件不支持,workaround 均需改构建配置 |
 
@@ -632,3 +629,4 @@ https://news.heytapdownload.com/weather/indexnew.do?language=zh-cn&unit=c&countr
 3. 其余与 §10 清单一致,实际新增还包括:`data/WeatherFormat.kt`、`data/WeatherDataException.kt`、`ui/weather/DailyTrendAdapter.kt`、`HourlyAdapter.kt`、`item_daily_forecast.xml`、`item_hour_forecast.xml`、`menu/menu_main_overflow.xml`;内置热门城市表(12 城)落在 `ui/search/CitySearchUiState.kt` 的 `PopularCity.ALL`。
 4. **连通性复核**:本文档更新会话对三接口复测 curl,forecast / air-quality / geocoding 均返回 200(2026-11-05)。
 5. **构建仍未验证**:§11 第 1 条仍有效——本次按用户要求跳过命令行编译验证,未执行 `gradlew`;仓库 `gradlew` 无可执行位,命令行构建用 `sh ./gradlew`。
+6. **依赖收敛**:§10.1 原列入的 `constraintlayout` 经实现复核全库(代码 + 布局)零引用,已从 `libs.versions.toml` 与 `app/build.gradle.kts` 移除;详情区两列布局由权重 `LinearLayout` 承担,不引入 ConstraintLayout。
