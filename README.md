@@ -61,7 +61,7 @@ Each clip is about 1–3.5 MB. Clicking a link opens the raw video file; the bro
 
 ### Search and add a city
 
-- The search box grabs focus automatically; after a 300 ms debounce the query hits the Open-Meteo geocoding API. Results are ranked by population first (avoiding the short-name trap where "Dalian" only matches villages of the same name), each row shows `city · region · country`.
+- The search box grabs focus automatically; after a 300 ms debounce the query hits the Open-Meteo geocoding API. Results are ranked by population first; the hint asks for the full city name because a short name like "Dalian" can match only same-named villages. Each row shows `city · region · country`.
 - 12 built-in popular-city tags (Beijing / Shanghai / Guangzhou / Shenzhen / Chengdu / Hangzhou / Wuhan / Xi'an / Shenyang / Dalian / Harbin / Urumqi — no network needed); tapping a result or a tag adds the city and returns to the main page on it.
 - Cities with the same id or the same coordinates (within ~11 m) are de-duplicated.
 
@@ -87,16 +87,16 @@ All weather and city-search data comes from three free [Open-Meteo](https://open
 
 | Endpoint | Purpose |
 | --- | --- |
-| `https://api.open-meteo.com/v1/forecast` | Current conditions + hourly + daily (`forecast_days=16`, i.e. today + next 15 days) + sunrise/sunset |
+| `https://api.open-meteo.com/v1/forecast` | Current conditions + hourly + daily (`best_match`, `forecast_days=16`, i.e. today + next 15 days) + sunrise/sunset; for China, an additional CMA GRAPES request covers the first 5 days |
 | `https://air-quality-api.open-meteo.com/v1/air-quality` | Live PM2.5 (air-quality level card) |
 | `https://geocoding-api.open-meteo.com/v1/search` | City search (search page) |
 
 - **Model selection (2026-11)**: for coordinates inside China (rough bounding box 18–54°N, 73–135°E), the first five days are requested from the **CMA GRAPES** global model (`models=cma_grapes_global`, `forecast_days=5`); days 6–15 and locations outside China use Open-Meteo `best_match`. Both forecast requests run in parallel; a CMA failure silently falls back to `best_match` and does not fail the refresh. Current conditions, time zone and `observedAt` prefer CMA; daily entries are merged by date (CMA wins for the days it covers) and hourly entries by time.
-- **Daily condition sampling (2026-11)**: Open-Meteo's `daily.weather_code` means "the most severe hourly condition of the day", so a two-hour heavy-snow period would label the whole day "heavy snow". The app now derives the daily condition from hourly codes between **08:00 and 20:00 local time**: the most frequent code becomes the icon and short label on the home screen (ties break conservatively toward precipitation over cloud over clear, and snow over rain); significant segments produce transition text such as "Drizzle turning clear" or "Rain turning to moderate snow" on the 15-day page. Night-time precipitation does not affect the daytime description.
+- **Daily condition sampling (2026-11)**: Open-Meteo's `daily.weather_code` means "the most severe hourly condition of the day", so a two-hour heavy-snow period would label the whole day "heavy snow". The app derives the daily condition from hourly codes between **08:00 and 20:00 local time**: the most frequent code becomes the icon and short label on the home screen (ties break conservatively toward precipitation over cloud over clear, and snow over rain); significant segments produce transition text such as "Drizzle turning clear" or "Rain turning to moderate snow" on the 15-day page. Night-time precipitation does not affect the daytime description.
 - **Attribution**: Open-Meteo is licensed under **CC-BY 4.0**, which requires crediting the source — this project shows "Data source: Open-Meteo (CC-BY 4.0)" plus the CMA / sampling notes on its About page. Regarding quota, Open-Meteo is a free public service; the project's on-demand, low-frequency requests (page entry / pull-to-refresh / city management) stay well within the published non-commercial limits, and there is no background polling.
-- **Connectivity**: the design session's full curl test of the three endpoints (with field samples) is recorded in [docs/DESIGN.md](docs/DESIGN.md) §1.1 / §12.1; the three endpoints were re-tested while updating this README and all returned HTTP 200.
-- **Failure semantics**: a failed forecast request fails the whole refresh (cached data stays on screen with "updated X min ago"; with no cache an error state with retry is shown); a failed air-quality request does not fail the refresh — the previous PM2.5 value is kept (or "—" when missing). All network errors are wrapped into a single `WeatherDataException` type in the data layer.
-- **Purpose of the heytap web page**: in the original OnePlus weather app, the "15-day forecast" button opens a mobileLink web page signed by its server (the OPPO/heytap ecosystem). This project does **not** use the heytap APIs or web page (rationale in [docs/DESIGN.md](docs/DESIGN.md) D2/§1.2, endpoints archived in its Appendix A): the button opens an **in-app 15-day detail page** (`FifteenDayActivity`) instead, fed by `daily[1..15]` (tomorrow through +15 days) of the same forecast response, with zero extra network requests; when no cache exists it fetches fresh data, and if the network also fails the page shows "Load failed, check network" with a retry button — there is no "browser jump failed" scenario.
+- **Connectivity**: the design session's full curl test of the three endpoints (with field samples) is recorded in [docs/DESIGN.md](docs/DESIGN.md) §1.1 / §12.1; all three were re-tested on 2026-11-05 and returned HTTP 200.
+- **Failure semantics**: a failed `best_match` forecast fails the whole refresh (cached data stays on screen with "updated X min ago"; with no cache an error state with retry is shown); a failed CMA request falls back silently, and a failed air-quality request keeps the previous PM2.5 value (or "—" when missing). All network errors are wrapped into a single `WeatherDataException` type in the data layer.
+- **heytap page**: the original "15-day forecast" button opened a signed OPPO/heytap web page. This project does **not** use that API or page (rationale in [docs/DESIGN.md](docs/DESIGN.md) §1.2); the button opens an in-app 15-day page (`FifteenDayActivity`) fed by `daily[1..15]` from the same response, with no extra request. If no cache exists it fetches fresh data; on failure it shows an in-page retry.
 - **Related documents**: [CHANGELOG.md](CHANGELOG.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/free-weather-apis.md](docs/free-weather-apis.md) · [docs/DESIGN.md](docs/DESIGN.md)
 
 ---
@@ -110,7 +110,7 @@ All weather and city-search data comes from three free [Open-Meteo](https://open
 | compileSdk / targetSdk | 37 |
 | minSdk | 29 |
 | Screen orientation | Locked to portrait |
-| Permissions | `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` |
+| Permissions | `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` (`ACCESS_NETWORK_STATE` is declared but currently unused) |
 
 ---
 
@@ -140,7 +140,7 @@ The generated APK is located at:
 app/build/outputs/apk/debug/app-debug.apk
 ```
 
-> Note: per the user's request, command-line build verification was skipped for this round of changes (`gradlew` was not executed). The commands above are the standard build flow — for the first build, trust the Android Studio Gradle Sync result. Version rationale and the risk list are in [docs/DESIGN.md](docs/DESIGN.md) §10.1/§11.
+> Build verified on 2026-11-05 with `.\gradlew.bat :app:testDebugUnitTest` (5/5 tests) and `:app:assembleDebug`. On Windows use `.\gradlew.bat assembleDebug`; on macOS/Linux use `sh ./gradlew assembleDebug`. Version rationale and the risk list are in [docs/DESIGN.md](docs/DESIGN.md) §10.1/§11.
 
 ---
 
@@ -228,7 +228,7 @@ app/src/main/java/com/sugar/weather/
 ├── MainActivity.kt                 # Main page: ViewPager2 + header overlay + location flow + debug dialog
 ├── WeatherApplication.kt           # Application, holds the AppContainer
 ├── di/
-│   └── AppContainer.kt             # Hand-written DI: 3 Open-Meteo instances / repository / store / location
+│   └── AppContainer.kt             # Hand-written DI: 3 Retrofit instances (forecast / air-quality / geocoding) + repository / store / location
 ├── data/
 │   ├── model/                      # City, WeatherReport and other domain models
 │   ├── remote/                     # OpenMeteoApi (Retrofit) + DTOs + OkHttpClient
@@ -238,6 +238,8 @@ app/src/main/java/com/sugar/weather/
 │   ├── WeatherCodes.kt             # WMO code → text/scene + AQI/UV/wind mappings (pure functions)
 │   ├── WeatherFormat.kt            # Number & unit formatting (pure functions)
 │   ├── WeatherMapper.kt            # DTO → domain model + hourly window cropping
+│   ├── ChinaRegion.kt              # China bounding-box check for CMA model selection
+│   ├── DailyCondition.kt           # Daytime hourly aggregation → representative code + transition text
 │   ├── WeatherDataException.kt     # Unified data-layer error type
 │   └── TiltSensorRepository.kt     # Orientation sensor → StateFlow
 ├── sensor/
@@ -256,7 +258,7 @@ app/src/main/java/com/sugar/weather/
 │   ├── WeatherTrendView.kt         # High/low temperature curves (custom-drawn)
 │   ├── WeatherSingleInfoView.kt    # Two-column detail card cell
 │   └── WeatherCardBackdropView.kt  # City-card mini animation background (24 fps throttle)
-└── scene/                          # 15 weather scenes (pure Canvas, unchanged this round)
+└── scene/                          # 15 weather scenes (pure Canvas)
     ├── WeatherScene.kt / SceneType.kt / Tilt.kt
     ├── SunnyScene.kt / SunnySceneConfig.kt
     ├── CloudScene.kt / FogScene.kt / HazeScene.kt / SandstormScene.kt
@@ -294,7 +296,7 @@ sequenceDiagram
     participant VM as MainViewModel
     participant WVM as WeatherViewModel (per city page)
     participant Repo as WeatherRepository
-    participant API as Open-Meteo ×3
+    participant API as Open-Meteo (3 endpoints)
     participant Store as CityStore (DataStore)
     participant View as WeatherBackdropView
     participant Scene as WeatherScene
@@ -313,7 +315,7 @@ sequenceDiagram
 
     Note over WVM,Store: Per-city data flow (low frequency)
     WVM->>Repo: on page entry: refresh only if cache older than 30 min
-    Repo->>API: forecast + air-quality in parallel
+    Repo->>API: best_match + air-quality in parallel (China also CMA GRAPES)
     API-->>Repo: ForecastResponse / AirQualityResponse
     Repo->>Store: persist weather_cache_{cityId}
     Repo-->>WVM: reports StateFlow → WeatherUiState (rendered after formatting)
@@ -397,7 +399,7 @@ The halo radius is scaled by screen density; at different resolutions / display 
 - Not implemented: weather warnings (no free China warning data source; the header alert icon is a hidden placeholder), weather videos, home-screen widgets / share / feedback / settings page, background scheduled refresh (foreground only: page entry when cache is older than 30 minutes, pull-to-refresh, batch refresh on the city management page).
 - Air quality shows only the PM2.5 concentration and level text; the US AQI field returned by the API stays in the DTO and is not shown in the UI.
 - `HAZE` / `SANDSTORM` / `SLEET` are never selected automatically from live data (no matching WMO codes); they are reachable only through "Animation debug".
-- Units are fixed to metric (°C, km/h, hPa, km); the user agreement / privacy policy entries on the About page are placeholders without real links.
+- Units are fixed to metric (°C, km/h, hPa, km); the user agreement entry is a placeholder, while the privacy policy entry opens an in-app summary (full policy in [docs/PRIVACY.md](docs/PRIVACY.md)).
 - The sunny scene is a fairly complete visual simulation based on reference screenshots; the other scenes are programmatic approximations based on similar weather effects.
 
 ---

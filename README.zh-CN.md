@@ -61,7 +61,7 @@
 
 ### 搜索添加城市
 
-- 顶部搜索框自动聚焦，输入 300ms 防抖后调用 Open-Meteo geocoding 搜索；结果按 population 优先排序（避免「大连」只命中同名村镇的短名陷阱），行内显示 `城市 · 省份 · 国家`。
+- 顶部搜索框自动聚焦，输入 300ms 防抖后调用 Open-Meteo geocoding 搜索；结果按 population 优先排序。输入提示要求使用城市全名，因为「大连」这类短名可能只命中同名村镇；行内显示 `城市 · 省份 · 国家`。
 - 内置 12 个热门城市 tag（北京/上海/广州/深圳/成都/杭州/武汉/西安/沈阳/大连/哈尔滨/乌鲁木齐，不走网络）；点击结果或热门 tag 即添加城市并返回主页切到新城市。
 - 同 id 或同坐标（约 ±11m）的城市自动去重。
 
@@ -87,16 +87,16 @@
 
 | 接口 | 用途 |
 | --- | --- |
-| `https://api.open-meteo.com/v1/forecast` | 实况 + 逐小时 + 逐日（`forecast_days=16`，即今天 + 未来 15 天）+ 日出日落 |
+| `https://api.open-meteo.com/v1/forecast` | 实况 + 逐小时 + 逐日（`best_match`，`forecast_days=16`，即今天 + 未来 15 天）+ 日出日落；中国境内额外请求 CMA GRAPES 覆盖前 5 天 |
 | `https://air-quality-api.open-meteo.com/v1/air-quality` | PM2.5 实况（空气质量等级卡） |
 | `https://geocoding-api.open-meteo.com/v1/search` | 城市搜索（搜索添加页） |
 
 - **模型选择（2026-11）**：中国境内坐标（粗略包围盒：北纬 18°–54°、东经 73°–135°）前 5 天请求 **CMA GRAPES** 全球模型（`models=cma_grapes_global`、`forecast_days=5`）；第 6–15 天与非中国坐标使用 Open-Meteo `best_match`。两个 forecast 请求并行执行，CMA 失败时静默回退，不影响整体刷新。实况、时区与 `observedAt` 优先 CMA；逐日按日期合并（CMA 覆盖的日期优先），逐时按时间合并。
 - **日天气取样（2026-11）**：Open-Meteo 的 `daily.weather_code` 表示“当天最严重的小时天气”，一场两小时大雪会把全天标成「大雪」。现在改为按城市本地 **08:00–20:00** 的逐小时天气聚合：出现次数最多的天气码作为图标与首页短文案（同票按降水 > 云 > 晴、雪 > 雨的保守顺序取舍）；存在显著连续分段时生成转折文案，如「毛毛雨转晴」「小雨转中雪」，在 15 天页展示。夜间降水不参与白天描述。
 - **署名要求**：Open-Meteo 采用 **CC-BY 4.0** 许可，使用其数据必须注明来源——本项目已在「关于页」展示「数据来源：Open-Meteo（CC-BY 4.0）」及 CMA / 取样方式说明。额度方面 Open-Meteo 为公益免费服务（API 文档公布的非商用限流内即可满足本项目这类低频请求），本项目仅在进入页面 / 下拉刷新 / 打开城市管理时按需请求，无后台轮询。
-- **连通性**：设计会话对三接口的完整 curl 实测（含字段样本）记录在 [docs/DESIGN.md](docs/DESIGN.md) §1.1 / §12.1；本次文档更新时对三接口复测，均返回 HTTP 200。
-- **失败语义**：forecast 请求失败按整体失败处理（有缓存显示旧数据 + 「X 分钟前更新」，无缓存显示错误 + 重试）；air-quality 失败不拖垮整体，PM2.5 沿用旧值（缺失显示「—」）。所有网络异常在数据层统一包装为 `WeatherDataException`。
-- **heytap 网页的用途**：原版一加天气的『15 天天气预报』按钮会外跳其服务端签发的 mobileLink 网页（OPPO/heytap 体系）。本项目**不使用** heytap 接口与网页（决策依据见 [docs/DESIGN.md](docs/DESIGN.md) D2/§1.2，接口存档见其附录 A）：按钮改为打开**应用内 15 天详情页**（`FifteenDayActivity`），数据取同一份 forecast 响应的 `daily[1..15]`（明天起 15 天），零额外网络请求；无缓存时现场重新拉取，网络也失败则页内显示「加载失败，请检查网络」+ 重试按钮——不存在「跳浏览器失败」的场景。
+- **连通性**：设计会话对三接口的完整 curl 实测（含字段样本）记录在 [docs/DESIGN.md](docs/DESIGN.md) §1.1 / §12.1；2026-11-05 复测三接口均返回 HTTP 200。
+- **失败语义**：`best_match` forecast 请求失败按整体失败处理（有缓存显示旧数据 + 「X 分钟前更新」，无缓存显示错误 + 重试）；CMA 请求失败静默回退；air-quality 失败不拖垮整体，PM2.5 沿用旧值（缺失显示「—」）。所有网络异常在数据层统一包装为 `WeatherDataException`。
+- **heytap 网页**：原版『15 天天气预报』按钮会外跳 OPPO/heytap 签发的网页。本项目**不使用**该接口与网页（依据见 [docs/DESIGN.md](docs/DESIGN.md) §1.2）；按钮改为打开应用内 15 天页（`FifteenDayActivity`），数据取同一份响应的 `daily[1..15]`，零额外请求。无缓存时现场拉取，失败则页内显示重试。
 - **相关文档**：[CHANGELOG.md](CHANGELOG.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/free-weather-apis.md](docs/free-weather-apis.md) · [docs/DESIGN.md](docs/DESIGN.md)
 
 ---
@@ -110,7 +110,7 @@
 | compileSdk / targetSdk | 37 |
 | minSdk | 29 |
 | 屏幕方向 | 竖屏锁定 |
-| 权限 | `INTERNET`、`ACCESS_NETWORK_STATE`、`ACCESS_FINE_LOCATION`、`ACCESS_COARSE_LOCATION` |
+| 权限 | `INTERNET`、`ACCESS_FINE_LOCATION`、`ACCESS_COARSE_LOCATION`（另声明了 `ACCESS_NETWORK_STATE`，当前版本未使用） |
 
 ---
 
@@ -140,7 +140,7 @@ adb shell am start -n com.sugar.weather/.MainActivity
 app/build/outputs/apk/debug/app-debug.apk
 ```
 
-> 说明：本次实现按用户要求跳过了命令行编译验证（未执行 `gradlew` 构建）；以上为标准构建流程，首次构建请以 Android Studio Gradle Sync 结果为准。版本依据与风险清单见 [docs/DESIGN.md](docs/DESIGN.md) §10.1/§11。
+> 构建验证：2026-11-05 已通过 `.\gradlew.bat :app:testDebugUnitTest`（5/5 单测）与 `:app:assembleDebug`。Windows 使用 `.\gradlew.bat assembleDebug`，macOS/Linux 使用 `sh ./gradlew assembleDebug`。版本依据与风险清单见 [docs/DESIGN.md](docs/DESIGN.md) §10.1/§11。
 
 ---
 
@@ -228,7 +228,7 @@ app/src/main/java/com/sugar/weather/
 ├── MainActivity.kt                 # 主页：ViewPager2 + 头部 overlay + 定位流程 + 调试对话框
 ├── WeatherApplication.kt           # Application，持有 AppContainer
 ├── di/
-│   └── AppContainer.kt             # 手写 DI：3 个 Open-Meteo 实例 / 仓库 / 存储 / 定位
+│   └── AppContainer.kt             # 手写 DI：3 个 Retrofit 实例（forecast / air-quality / geocoding）/ 仓库 / 存储 / 定位
 ├── data/
 │   ├── model/                      # City、WeatherReport 等领域模型
 │   ├── remote/                     # OpenMeteoApi（Retrofit）+ DTO + OkHttpClient
@@ -238,6 +238,8 @@ app/src/main/java/com/sugar/weather/
 │   ├── WeatherCodes.kt             # WMO 码 → 描述/场景 + 空气质量/紫外线/风向映射（纯函数）
 │   ├── WeatherFormat.kt            # 数值与单位格式化（纯函数）
 │   ├── WeatherMapper.kt            # DTO → 领域模型 + 逐小时窗口裁剪
+│   ├── ChinaRegion.kt              # 中国坐标包围盒判定（用于选择 CMA 模型）
+│   ├── DailyCondition.kt           # 白天逐小时聚合 → 代表天气码与转折文案
 │   ├── WeatherDataException.kt     # 数据层统一错误类型
 │   └── TiltSensorRepository.kt     # 方向传感器 → StateFlow
 ├── sensor/
@@ -256,7 +258,7 @@ app/src/main/java/com/sugar/weather/
 │   ├── WeatherTrendView.kt         # 高/低双温度曲线（自绘）
 │   ├── WeatherSingleInfoView.kt    # 两列详情卡单元
 │   └── WeatherCardBackdropView.kt  # 城市卡小动画背景（24fps 节流）
-└── scene/                          # 15 种天气场景（纯 Canvas，未随本次改动）
+└── scene/                          # 15 种天气场景（纯 Canvas）
     ├── WeatherScene.kt / SceneType.kt / Tilt.kt
     ├── SunnyScene.kt / SunnySceneConfig.kt
     ├── CloudScene.kt / FogScene.kt / HazeScene.kt / SandstormScene.kt
@@ -294,7 +296,7 @@ sequenceDiagram
     participant VM as MainViewModel
     participant WVM as WeatherViewModel（每城市页）
     participant Repo as WeatherRepository
-    participant API as Open-Meteo ×3
+    participant API as Open-Meteo（3 个接口）
     participant Store as CityStore（DataStore）
     participant View as WeatherBackdropView
     participant Scene as WeatherScene
@@ -313,7 +315,7 @@ sequenceDiagram
 
     Note over WVM,Store: 每城市页数据流（低频）
     WVM->>Repo: 进入页面：缓存 > 30 分钟才发起刷新
-    Repo->>API: forecast + air-quality 并行
+    Repo->>API: best_match + air-quality 并行（中国区另有 CMA GRAPES）
     API-->>Repo: ForecastResponse / AirQualityResponse
     Repo->>Store: weather_cache_{cityId} 落盘
     Repo-->>WVM: reports StateFlow → WeatherUiState（格式化后渲染）
@@ -397,7 +399,7 @@ Activity 只负责 ViewBinding 绑定和事件转发；`WeatherBackdropView` 不
 - 未实现：气象预警（无免费中国预警数据源，头部告警图标为占位隐藏）、天气视频、桌面小部件 / 分享 / 反馈 / 设置页、后台定时刷新（仅前台：进入页面缓存超 30 分钟、下拉刷新、城市管理页批量刷新）。
 - 空气质量只展示 PM2.5 浓度与等级文字，接口返回的 US AQI 字段保留在 DTO 中未上 UI。
 - `HAZE` / `SANDSTORM` / `SLEET` 不参与实况自动映射（WMO 码表无对应），仅「动画调试」可达。
-- 单位固定公制（°C、km/h、hPa、km）；用户协议 / 隐私政策为关于页占位文案，无实际链接。
+- 单位固定公制（°C、km/h、hPa、km）；用户协议为占位入口，隐私政策入口会弹出应用内摘要（完整政策见 [docs/PRIVACY.md](docs/PRIVACY.md)）。
 - 晴天场景按参考截图做了较完整的视觉模拟；其余场景为基于同类天气效果的程序化近似实现。
 
 ---

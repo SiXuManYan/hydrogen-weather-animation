@@ -18,8 +18,8 @@
 ### 新增
 
 - 新增 `docs/PRIVACY.md`（中英双语隐私政策）。
-- 新增 `docs/free-weather-apis.md`（免费天气 API 调研与选型记录）。
-- 新增 `ChinaRegion` 与 `DailyCondition` 单元测试，覆盖白天天气聚合与回退逻辑。
+- 将 `docs/free-weather-apis.md`（免费天气 API 调研与选型记录）纳入版本库。
+- 新增 `ChinaRegion` / `DailyCondition` 实现，并为白天天气聚合与回退逻辑补充 5 个单元测试。
 - 关于页新增隐私政策摘要弹窗，并补充数据来源与取样方式说明。
 
 ### 变更

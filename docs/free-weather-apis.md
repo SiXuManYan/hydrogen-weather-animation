@@ -149,8 +149,8 @@ https://air-quality-api.open-meteo.com/v1/air-quality
 | --- | --- | --- |
 | 当前温度 | `current=temperature_2m` | `/v7/weather/now` 的 `temp` |
 | 今日最高 / 最低温 | `daily=temperature_2m_max,temperature_2m_min` | `15d` 的 `tempMax` / `tempMin` |
-| 未来 6 天天气 | `daily` 的 `weather_code` | `15d` 的 `textDay` / `iconDay` |
-| 15 天预报 | `forecast_days=15` | `/v7/weather/15d` |
+| 未来 6 天天气 | `daily` 的 `weather_code`（展示层按白天逐小时聚合） | `15d` 的 `textDay` / `iconDay` |
+| 15 天预报 | `forecast_days=16`（今天 + 未来 15 天） | `/v7/weather/15d` |
 | 逐小时温度 | `hourly=temperature_2m` | `/v7/weather/24h` 的 `temp` |
 | 体感温度 | `current` / `hourly` 的 `apparent_temperature` | `now` / `24h` 的 `feelsLike` |
 | 湿度 | `hourly=relative_humidity_2m` | `now` / `24h` / `15d` 的 `humidity` |
@@ -162,14 +162,12 @@ https://air-quality-api.open-meteo.com/v1/air-quality
 
 > Open-Meteo 的 `visibility` 是逐小时变量，当前实况若需要能见度，可从当前小时对应的逐小时数据中取。
 
-## 6. 接入建议
+## 6. 当前接入状态
 
-1. **先用 Open-Meteo 打通数据链路**：新增 `data/weather` 包，定义 `WeatherRepository` 接口和 DTO，把网络请求结果映射为 UI 状态；不把 JSON 或网络错误直接暴露给 ViewModel 之外的 UI 层。
-2. **再做 Key 型数据源**：如果后续切换到和风天气，可以保留同一套 Repository 接口，仅替换 DTO 和字段映射，避免页面逻辑跟着数据源变化。
-3. **申请 `INTERNET` 权限**：当前 Manifest 没有网络权限；接入后需要在 `AndroidManifest.xml` 中声明，并同步更新 README 的权限说明。
-4. **合理缓存**：实况和逐小时数据建议缓存 10–30 分钟，15 天预报建议缓存数小时；刷新时保留旧数据，避免网络失败导致页面空白。
-5. **遵守署名和条款**：Open-Meteo 需要标注数据来源；和风天气、彩云等平台也需要遵守各自的授权和商业使用条款。
-6. **不要把真实 Key 提交到 Git**：开源仓库只保留占位符或示例配置；正式发布时优先使用服务端代理，或让用户自行配置 Key。
+1. **数据链路已接入**：Open-Meteo 的 forecast / air-quality / geocoding 三个接口已接入；DTO 位于 `data/remote/dto/`，映射在 `data/WeatherMapper.kt`，网络访问统一收敛在 `WeatherRepository`。
+2. **权限**：Manifest 已声明 `INTERNET`、`ACCESS_FINE_LOCATION`、`ACCESS_COARSE_LOCATION`，并保留未使用的 `ACCESS_NETWORK_STATE`；定位权限仅在需要定位城市时申请，拒绝后仍可手动搜索添加城市。
+3. **缓存与刷新**：内存 `reports` + DataStore `weather_cache_{cityId}`；进入页面时缓存超过 30 分钟才刷新，另支持下拉刷新与城市管理页并行刷新（并发 4）。
+4. **署名与取样**：关于页与 README 已标注 Open-Meteo CC-BY 4.0；中国区前 5 天使用 CMA GRAPES、日天气按白天 08:00–20:00 逐小时聚合的规则也已注明。
 
 ## 7. 参考链接
 

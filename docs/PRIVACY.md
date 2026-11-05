@@ -26,7 +26,7 @@
 | 权限 | 用途 | 是否必需 |
 | --- | --- | --- |
 | `INTERNET` | 请求 Open-Meteo 天气、空气质量和城市搜索接口 | 是 |
-| `ACCESS_NETWORK_STATE` | 判断网络状态，用于失败提示 | 是 |
+| `ACCESS_NETWORK_STATE` | 预留网络状态判断；当前版本未主动查询，网络失败由请求异常触发提示 | 否（预留） |
 | `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` | 获取一次城市级坐标，用于定位城市天气；不进行后台定位或轨迹记录 | 否，可拒绝 |
 
 拒绝定位权限时，你仍然可以手动搜索并添加城市。
@@ -39,16 +39,13 @@
 - `air-quality-api.open-meteo.com`：PM2.5 / 空气质量。
 - `geocoding-api.open-meteo.com`：城市搜索与坐标查询。
 
-请求会携带经纬度、搜索词以及网络请求固有的 IP 地址等信息。这些信息由 Open-Meteo 按其隐私政策处理，本项目无法控制其收集、存储和保留行为。Open-Meteo 的隐私政策与使用条款请见：
-
-- <https://open-meteo.com/en/terms>
-- <https://open-meteo.com/en/pricing>
+请求会携带经纬度、搜索词以及网络请求固有的 IP 地址等信息。这些信息由 Open-Meteo 按其隐私政策处理，本项目无法控制其收集、存储和保留行为。Open-Meteo 的使用条款与隐私政策见 <https://open-meteo.com/en/terms>，定价见 <https://open-meteo.com/en/pricing>。
 
 天气数据采用 **CC-BY 4.0** 许可，应用「关于页」已注明数据来源。
 
 ### 5. 本地存储与删除
 
-城市列表和天气缓存使用 Android DataStore 保存在应用私有目录中，不会自动同步到云端。你可以通过以下方式删除：
+城市列表和天气缓存使用 Android DataStore 保存在应用私有目录中。应用本身不做云同步；但如果设备启用了 Android 系统自动备份，应用数据可能被纳入用户自己的系统备份，本项目无法访问该备份。你可以通过以下方式删除本地数据：
 
 - 在应用内删除城市或清除应用数据；
 - 卸载应用；
@@ -98,7 +95,7 @@ The app has **no backend server** and does not upload this data to any server co
 | Permission | Purpose | Required |
 | --- | --- | --- |
 | `INTERNET` | Fetch weather, air quality and city search data from Open-Meteo | Yes |
-| `ACCESS_NETWORK_STATE` | Detect connectivity for error messages | Yes |
+| `ACCESS_NETWORK_STATE` | Reserved for network-state checks; not queried in the current version, and failures are reported from request exceptions | No (reserved) |
 | `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` | Obtain a one-shot city-level coordinate for located-city weather; no background tracking | No, can be denied |
 
 You can still search and add cities manually if location permission is denied.
@@ -111,16 +108,13 @@ The app directly calls these Open-Meteo domains:
 - `air-quality-api.open-meteo.com`: PM2.5 / air quality.
 - `geocoding-api.open-meteo.com`: city search and coordinate lookup.
 
-Requests include coordinates, search terms and network metadata such as your IP address. Open-Meteo processes this information under its own privacy policy, which this project does not control. See:
-
-- <https://open-meteo.com/en/terms>
-- <https://open-meteo.com/en/pricing>
+Requests include coordinates, search terms and network metadata such as your IP address. Open-Meteo processes this information under its own privacy policy, which this project does not control. See the Open-Meteo terms and privacy policy at <https://open-meteo.com/en/terms>; pricing is at <https://open-meteo.com/en/pricing>.
 
 Weather data is used under the **CC-BY 4.0** license and is credited on the app's About page.
 
 ### 5. Local Storage and Deletion
 
-The city list and weather cache are stored in the app's private DataStore directory and are not automatically synced to the cloud. You can delete them by:
+The city list and weather cache are stored in the app's private DataStore directory. The app does not run its own cloud sync; however, if Android system backup is enabled, app data may be included in the user's own system backup, which this project cannot access. You can delete local data by:
 
 - removing cities in the app or clearing app data;
 - uninstalling the app;
