@@ -51,7 +51,7 @@ class AppContainer(context: Context) {
 
     companion object {
         /** 关于页版本号(AGP 9 默认关闭 buildConfig,直接硬编码,§7)。 */
-        const val APP_VERSION = "1.0"
+        const val APP_VERSION = "1.1"
 
         /** 三个 Open-Meteo 域名(§1.1 实测;Retrofit 要求 baseUrl 以 `/` 结尾)。 */
         const val FORECAST_BASE_URL = "https://api.open-meteo.com/"

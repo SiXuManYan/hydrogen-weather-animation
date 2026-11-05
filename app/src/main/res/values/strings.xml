@@ -54,9 +54,10 @@
     <string name="about_title">关于</string>
     <string name="about_version_format">氢天气 V%1$s</string>
     <string name="about_changelog_title">更新日志：</string>
-    <string name="about_changelog_body">注意：\n由于更换了数据源，更新后请重新添加城市。\n\n1. 致敬氢 OS 一加天气 V2.6.1.1 的开源复刻\n2. 数据来源：Open-Meteo（CC-BY 4.0）\n3. 支持多城市管理、城市搜索与 15 天天气预报\n4. 优化搜索城市后的结果\n5. 常规问题修复</string>
-    <string name="about_data_source">数据来源：Open-Meteo（CC-BY 4.0）</string>
+    <string name="about_changelog_body">V1.1（2026-11 数据准确性更新）：\n1. 中国境内前 5 天优先使用 CMA GRAPES 模型，其余日期使用 Open-Meteo best_match\n2. 日天气改为白天 08:00–20:00 逐小时聚合，减少短时大雪误报为全天大雪\n3. 修复城市搜索页启动崩溃与 Fragment ViewModel 编译问题\n4. 关于页新增数据来源、取样方式与隐私说明\n\nV1.0：\n1. 致敬氢 OS 一加天气 V2.6.1.1 的开源复刻\n2. 数据来源：Open-Meteo（CC-BY 4.0）\n3. 支持多城市管理、城市搜索与 15 天天气预报\n4. 优化搜索城市后的结果\n5. 常规问题修复</string>
+    <string name="about_data_source">数据来源：Open-Meteo（CC-BY 4.0）\n中国境内前 5 天：CMA GRAPES 模型\n日天气：白天 08:00–20:00 逐小时聚合</string>
     <string name="about_user_agreement">用户协议</string>
     <string name="about_privacy_policy">隐私政策</string>
+    <string name="about_privacy_summary">本应用不收集账号、广告或分析数据。定位权限仅在首次打开且需要定位城市时申请，用于获取城市坐标并向 Open-Meteo 请求天气；坐标与搜索词会发送至 Open-Meteo，不会上传到本项目自有服务器。城市列表与最近一次天气缓存在本机 DataStore 中，卸载应用或清除数据即可删除。\n\n完整政策见项目 docs/PRIVACY.md。</string>
     <string name="about_copyright">©2026, Sugar Weather. All Rights Reserved.</string>
 </resources>

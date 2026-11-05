@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 关于页(DESIGN.md §7,截图 005425):深色工具栏「关于」+ 白底居中云朵 logo + 氢天气 V1.0 + 更新日志 + 底部占位 -->
+<!-- 关于页(DESIGN.md §7,截图 005425):深色工具栏「关于」+ 白底居中云朵 logo + 氢天气 V1.1 + 更新日志 + 数据来源/取样方式 + 底部隐私入口 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -126,6 +126,7 @@
                     android:layout_height="wrap_content" />
 
                 <TextView
+                    android:id="@+id/text_privacy_policy"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:padding="8dp"
