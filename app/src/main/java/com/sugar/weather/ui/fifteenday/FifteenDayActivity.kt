@@ -5,21 +5,20 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.sugar.weather.R
 import com.sugar.weather.databinding.ActivityFifteenDayBinding
+import com.sugar.weather.ui.applySafeInsets
+import com.sugar.weather.ui.configureEdgeToEdge
 import kotlinx.coroutines.launch
 
 /**
  * 15 天天气预报详情页(DESIGN.md §3,D9:应用内页,替代原版外跳 mobileLink):
- * 只调 Repository.cachedOrRefresh(cityId),展示 daily[1..15];无缓存且失败 → 页内错误 + 重试。
+ * 通过 Repository.cachedOrRefresh(cityId) 展示今天之后最多 15 个日期，失败或缺有效日期时可重试。
  */
 class FifteenDayActivity : AppCompatActivity() {
 
@@ -29,21 +28,15 @@ class FifteenDayActivity : AppCompatActivity() {
     }
     private val adapter = FifteenDayAdapter()
 
+    /** 初始化预报列表，并为工具栏与末行预留系统安全区。 */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        configureEdgeToEdge()
         binding = ActivityFifteenDayBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 深蓝夜空底全屏绘制,工具栏让出状态栏(以 XML 内边距为基准,幂等,避免 insets 重复派发时累加)。
-        var toolbarBaseTop = -1
-        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { view, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-            if (toolbarBaseTop < 0) toolbarBaseTop = view.paddingTop
-            view.updatePadding(top = toolbarBaseTop + bars.top)
-            insets
-        }
+        binding.toolbar.applySafeInsets(top = true)
+        binding.recyclerRows.applySafeInsets(bottom = true)
 
         binding.recyclerRows.layoutManager = LinearLayoutManager(this)
         binding.recyclerRows.adapter = adapter
@@ -57,12 +50,15 @@ class FifteenDayActivity : AppCompatActivity() {
         }
     }
 
+    /** 显示加载、错误或有效预报；旧缓存没有未来日期时给出重试入口。 */
     private fun render(state: FifteenDayUiState) {
         binding.textTitle.text = state.cityName.ifEmpty { getString(R.string.fifteen_day_forecast) }
         adapter.submitList(state.days)
         binding.progressLoading.isVisible = state.loading
-        binding.errorContainer.isVisible = state.error
-        binding.recyclerRows.isVisible = !state.loading && !state.error
+        val empty = !state.loading && !state.error && state.days.isEmpty()
+        binding.errorContainer.isVisible = state.error || empty
+        binding.textError.setText(if (empty) R.string.no_future_forecast else R.string.load_failed)
+        binding.recyclerRows.isVisible = !state.loading && !state.error && !empty
     }
 
     companion object {

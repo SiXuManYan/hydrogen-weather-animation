@@ -12,7 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/white"
-        android:textSize="16sp"
+        android:textSize="14sp"
         tools:text="今天" />
 
     <TextView
@@ -21,23 +21,26 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:textColor="@color/text_secondary_on_dark"
-        android:textSize="13sp"
+        android:textSize="11sp"
         tools:text="11月5日" />
 
     <ImageView
         android:id="@+id/image_icon"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:layout_marginTop="10dp"
         android:contentDescription="@null"
         tools:src="@drawable/ic_sun" />
 
     <TextView
         android:id="@+id/text_desc"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
+        android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="end"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:textColor="@color/text_secondary_on_dark"
-        android:textSize="14sp"
+        android:textSize="12sp"
         tools:text="晴" />
 </LinearLayout>

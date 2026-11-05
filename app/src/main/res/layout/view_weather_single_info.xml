@@ -9,10 +9,10 @@
         android:layout_height="wrap_content"
         android:minHeight="@dimen/detail_card_min_height"
         android:orientation="vertical"
-        android:paddingStart="24dp"
-        android:paddingTop="18dp"
+        android:paddingStart="@dimen/space_medium"
+        android:paddingTop="@dimen/space_medium"
         android:paddingEnd="16dp"
-        android:paddingBottom="18dp">
+        android:paddingBottom="@dimen/space_medium">
 
         <TextView
             android:id="@+id/text_label"

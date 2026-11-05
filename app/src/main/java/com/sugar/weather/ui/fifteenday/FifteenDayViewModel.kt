@@ -10,8 +10,10 @@ import com.sugar.weather.R
 import com.sugar.weather.WeatherApplication
 import com.sugar.weather.data.formatTemperatureC
 import com.sugar.weather.data.model.WeatherReport
+import com.sugar.weather.data.localToday
 import com.sugar.weather.data.wmoDesc
 import com.sugar.weather.ui.weather.iconRes
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +24,9 @@ import kotlinx.coroutines.launch
 /**
  * 15 天详情页状态持有者(DESIGN.md §3/D9):
  * 数据入口 [com.sugar.weather.data.WeatherRepository.cachedOrRefresh] —— 优先内存/磁盘缓存,
- * 无缓存才现场刷新;daily 全量 16 天已在 forecast 响应内,零额外请求。
+ * 新鲜缓存直接复用，过期则刷新；失败仍可展示旧报告中尚未过期的日期。
+ * @param application 提供资源及应用级仓库。
+ * @property cityId 要展示预报的城市标识。
  */
 class FifteenDayViewModel(application: Application, private val cityId: String) :
     AndroidViewModel(application) {
@@ -32,19 +36,26 @@ class FifteenDayViewModel(application: Application, private val cityId: String) 
     private val _uiState = MutableStateFlow(FifteenDayUiState())
     val uiState: StateFlow<FifteenDayUiState> = _uiState.asStateFlow()
 
+    /** 避免连续重试产生重叠请求。 */
+    private var loadJob: Job? = null
+
     init {
         load()
     }
 
-    /** 失败重试(§3:无缓存且网络失败 → 页内「加载失败,请检查网络」+ 重试)。 */
-    fun retry() = load()
+    /** 用户重试强制请求，避免不完整但仍新鲜的缓存让重试失效。 */
+    fun retry() = load(forceRefresh = true)
 
-    private fun load() {
-        viewModelScope.launch {
+    /** 进入时复用缓存，显式重试时更新网络；同一时刻只保留一个加载任务。 */
+    private fun load(forceRefresh: Boolean = false) {
+        if (loadJob?.isActive == true) return
+        loadJob = viewModelScope.launch {
             _uiState.update { it.copy(loading = true, error = false) }
+            val result = if (forceRefresh) repository.refreshWeather(cityId)
+            else repository.cachedOrRefresh(cityId)
             val cityName = repository.cities.first()
                 .firstOrNull { it.id == cityId }?.name.orEmpty()
-            repository.cachedOrRefresh(cityId).fold(
+            result.fold(
                 onSuccess = { report ->
                     _uiState.update {
                         it.copy(
@@ -62,12 +73,13 @@ class FifteenDayViewModel(application: Application, private val cityId: String) 
         }
     }
 
-    /** UI 取 daily[1..15](§3):首页「明天」,其余星期;降水概率缺失整段隐藏(§8.2)。 */
+    /** 只展示城市本地今天之后的日期，避免旧缓存把过去的日期标成明天。 */
     private fun buildRows(report: WeatherReport): List<FifteenDayRowUi> {
         val app = getApplication<Application>()
-        return report.daily.drop(1).take(DAY_COUNT).mapIndexed { index, day ->
+        val today = report.localToday()
+        return report.daily.filter { it.date.isAfter(today) }.take(DAY_COUNT).map { day ->
             FifteenDayRowUi(
-                weekText = if (index == 0) app.getString(R.string.tomorrow)
+                weekText = if (day.date == today.plusDays(1)) app.getString(R.string.tomorrow)
                 else WEEKDAYS[day.date.dayOfWeek.value - 1],
                 dateText = app.getString(R.string.date_md, day.date.monthValue, day.date.dayOfMonth),
                 // 15 天页空间充足,优先展示白天转折(如「小雨转晴」);旧缓存无该字段时回退短文案。

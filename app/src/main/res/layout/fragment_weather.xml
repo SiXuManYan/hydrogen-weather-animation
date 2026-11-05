@@ -1,243 +1,258 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 单城市天气页(DESIGN.md §6.2):背景全透明,由 Activity 级 WeatherBackdropView 提供场景 -->
-<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 背景保持透明，内容按温度、预报、逐时和详情分组。 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/swipe_refresh"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/transparent">
+    android:layout_height="match_parent">
 
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/scroll_content"
+    <!-- SwipeRefreshLayout 只承载滚动内容；加载和错误态由外层 FrameLayout 居中。 -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@android:color/transparent"
-        android:clipToPadding="false"
-        android:fillViewport="true"
-        android:overScrollMode="never"
-        android:scrollbars="none">
+        android:layout_height="match_parent">
 
-        <LinearLayout
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scroll_content"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:orientation="vertical">
-
-            <!-- 顶部留白(§6.2 第 1 条):对齐截图 005322,温度块前保留约半屏纯背景动画留白,
-                 高度由 WeatherFragment 按 0.5 屏高设置(此处 0dp 仅占位)。 -->
-            <Space
-                android:id="@+id/top_spacing"
-                android:layout_width="match_parent"
-                android:layout_height="0dp" />
-
-            <!-- 当前温度块(§6.2 第 2 条) -->
-            <TextView
-                android:id="@+id/text_temp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:fontFamily="sans-serif-light"
-                android:includeFontPadding="false"
-                android:textColor="@color/white"
-                android:textSize="@dimen/temp_big_size"
-                tools:text="14°" />
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:overScrollMode="never"
+            android:scrollbars="none">
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:orientation="vertical"
+                android:paddingStart="@dimen/page_gutter"
+                android:paddingEnd="@dimen/page_gutter"
+                android:paddingBottom="@dimen/space_large">
+
+                <!-- 高度按当前窗口计算，温度区位于可用高度约 36% 处。 -->
+                <Space
+                    android:id="@+id/top_spacing"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp" />
 
                 <TextView
-                    android:id="@+id/text_condition"
+                    android:id="@+id/text_temp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-light"
+                    android:includeFontPadding="false"
                     android:textColor="@color/white"
-                    android:textSize="20sp"
-                    tools:text="小雨" />
+                    android:textSize="@dimen/temp_big_size"
+                    tools:text="14°" />
 
-                <TextView
-                    android:id="@+id/text_high_low"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:textColor="@color/text_secondary_on_dark"
-                    android:textSize="20sp"
-                    tools:text="16/3°C" />
+                    android:layout_marginTop="@dimen/space_small"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_marginStart="6dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_chevron_right"
-                    app:tint="@color/text_secondary_on_dark" />
+                    <TextView
+                        android:id="@+id/text_condition"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        tools:text="小雨" />
+
+                    <TextView
+                        android:id="@+id/text_high_low"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_medium"
+                        android:textColor="@color/text_secondary_on_dark"
+                        android:textSize="18sp"
+                        tools:text="16/3°C" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_large"
+                    android:background="@drawable/bg_weather_section"
+                    android:orientation="vertical"
+                    android:paddingTop="20dp"
+                    android:paddingBottom="@dimen/space_small">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recycler_daily"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_small"
+                        android:layout_marginEnd="@dimen/space_small"
+                        android:overScrollMode="never"
+                        tools:itemCount="6"
+                        tools:listitem="@layout/item_daily_forecast" />
+
+                    <!-- 与日报条使用相同左右边界，列中心逐像素对齐。 -->
+                    <com.sugar.weather.view.WeatherTrendView
+                        android:id="@+id/trend_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/trend_view_height"
+                        android:layout_marginStart="@dimen/space_small"
+                        android:layout_marginEnd="@dimen/space_small" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/button_fifteen_day"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_medium"
+                        android:layout_marginEnd="@dimen/space_medium"
+                        android:minHeight="@dimen/touch_target"
+                        android:text="@string/fifteen_day_forecast"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        app:cornerRadius="16dp"
+                        app:icon="@drawable/ic_chevron_right"
+                        app:iconGravity="textEnd"
+                        app:iconSize="16dp"
+                        app:iconTint="@color/white"
+                        app:strokeColor="@color/divider_on_dark" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_medium"
+                    android:background="@drawable/bg_weather_section"
+                    android:orientation="vertical"
+                    android:paddingTop="@dimen/space_medium"
+                    android:paddingBottom="@dimen/space_medium">
+
+                    <TextView
+                        style="@style/Weather.SectionTitle"
+                        android:layout_marginStart="@dimen/space_medium"
+                        android:text="@string/hourly_forecast" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recycler_hourly"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_medium"
+                        android:clipToPadding="false"
+                        android:overScrollMode="never"
+                        android:paddingStart="@dimen/space_small"
+                        android:paddingEnd="@dimen/space_small"
+                        tools:itemCount="6"
+                        tools:listitem="@layout/item_hour_forecast" />
+                </LinearLayout>
+
+                <!-- 详情卡采用统一圆角、行内留白和分割线。 -->
+                <LinearLayout
+                    android:id="@+id/detail_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_medium"
+                    android:background="@drawable/bg_weather_section"
+                    android:padding="@dimen/space_small"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.sugar.weather.view.WeatherSingleInfoView
+                            android:id="@+id/card_air_quality"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <com.sugar.weather.view.WeatherSingleInfoView
+                            android:id="@+id/card_pm25"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="@dimen/space_medium"
+                        android:layout_marginEnd="@dimen/space_medium"
+                        android:background="@color/divider_on_dark" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.sugar.weather.view.WeatherSingleInfoView
+                            android:id="@+id/card_wind"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <com.sugar.weather.view.WeatherSingleInfoView
+                            android:id="@+id/card_feels_like"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="@dimen/space_medium"
+                        android:layout_marginEnd="@dimen/space_medium"
+                        android:background="@color/divider_on_dark" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.sugar.weather.view.WeatherSingleInfoView
+                            android:id="@+id/card_humidity"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <com.sugar.weather.view.WeatherSingleInfoView
+                            android:id="@+id/card_visibility"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="@dimen/space_medium"
+                        android:layout_marginEnd="@dimen/space_medium"
+                        android:background="@color/divider_on_dark" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.sugar.weather.view.WeatherSingleInfoView
+                            android:id="@+id/card_uv"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+
+                        <com.sugar.weather.view.WeatherSingleInfoView
+                            android:id="@+id/card_pressure"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1" />
+                    </LinearLayout>
+                </LinearLayout>
+
             </LinearLayout>
-
-            <!-- 6 天日报条:今天/星期 + 日期 + 图标 + 天气文字(§6.2 第 3 条) -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_daily"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:background="@android:color/transparent"
-                android:clipToPadding="false"
-                android:overScrollMode="never"
-                tools:itemCount="6"
-                tools:listitem="@layout/item_daily_forecast" />
-
-            <!-- 高低双温度曲线(§6.3 WeatherTrendView) -->
-            <com.sugar.weather.view.WeatherTrendView
-                android:id="@+id/trend_view"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/trend_view_height" />
-
-            <!-- 15 天天气预报入口(D9:应用内详情页) -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_fifteen_day"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="8dp"
-                android:paddingStart="36dp"
-                android:paddingEnd="36dp"
-                android:text="@string/fifteen_day_forecast"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                app:cornerRadius="20dp"
-                app:strokeColor="@color/text_secondary_on_dark" />
-
-            <!-- 逐小时条(§6.2 第 5 条):时间 + 图标 + 温度,64dp 列宽 -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="20dp"
-                android:background="@color/divider_on_dark" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_hourly"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@android:color/transparent"
-                android:clipToPadding="false"
-                android:overScrollMode="never"
-                android:paddingStart="8dp"
-                tools:itemCount="6"
-                tools:listitem="@layout/item_hour_forecast" />
-
-            <!-- 两列详情卡(§6.2 第 6 条):8 张 WeatherSingleInfoView + 行间分割线 -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="20dp"
-                android:background="@color/divider_on_dark" />
-
-            <LinearLayout
-                android:id="@+id/detail_container"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <com.sugar.weather.view.WeatherSingleInfoView
-                        android:id="@+id/card_air_quality"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-
-                    <com.sugar.weather.view.WeatherSingleInfoView
-                        android:id="@+id/card_pm25"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider_on_dark" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <com.sugar.weather.view.WeatherSingleInfoView
-                        android:id="@+id/card_wind"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-
-                    <com.sugar.weather.view.WeatherSingleInfoView
-                        android:id="@+id/card_feels_like"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider_on_dark" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <com.sugar.weather.view.WeatherSingleInfoView
-                        android:id="@+id/card_humidity"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-
-                    <com.sugar.weather.view.WeatherSingleInfoView
-                        android:id="@+id/card_visibility"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider_on_dark" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <com.sugar.weather.view.WeatherSingleInfoView
-                        android:id="@+id/card_uv"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-
-                    <com.sugar.weather.view.WeatherSingleInfoView
-                        android:id="@+id/card_pressure"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- 底部安全间距 -->
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="32dp" />
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+        </androidx.core.widget.NestedScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!-- 首次加载中(无缓存且请求中) -->
     <ProgressBar
@@ -251,8 +266,9 @@
     <!-- 错误态(无缓存且请求失败,§9):提示 + 重试 -->
     <LinearLayout
         android:id="@+id/error_container"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:padding="@dimen/page_gutter"
         android:layout_gravity="center"
         android:gravity="center"
         android:orientation="vertical"
@@ -280,4 +296,4 @@
             app:cornerRadius="20dp"
             app:strokeColor="@color/text_secondary_on_dark" />
     </LinearLayout>
-</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+</FrameLayout>

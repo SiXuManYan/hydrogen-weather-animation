@@ -3,13 +3,11 @@ package com.sugar.weather.ui.about
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import com.sugar.weather.R
 import com.sugar.weather.databinding.ActivityAboutBinding
 import com.sugar.weather.di.AppContainer
+import com.sugar.weather.ui.applySafeInsets
+import com.sugar.weather.ui.configureEdgeToEdge
 
 /**
  * 关于页(DESIGN.md §7,截图 005425):白底居中云朵 logo +「氢天气 V{版本}」+ 更新日志 +
@@ -18,25 +16,15 @@ import com.sugar.weather.di.AppContainer
  */
 class AboutActivity : AppCompatActivity() {
 
+    /** 展示版本与说明，保证底部隐私入口可完整滚入安全区。 */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        configureEdgeToEdge(lightNavigationBar = true)
         val binding = ActivityAboutBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 深色工具栏延伸到状态栏后(白图标),内容区白底 → 导航栏手势用深色前景。
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false
-            isAppearanceLightNavigationBars = true
-        }
-        var toolbarBaseTop = -1
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-            if (toolbarBaseTop < 0) toolbarBaseTop = binding.toolbar.paddingTop
-            binding.toolbar.updatePadding(top = toolbarBaseTop + bars.top)
-            insets
-        }
+        binding.toolbar.applySafeInsets(top = true)
+        binding.scrollContent.applySafeInsets(bottom = true)
 
         binding.buttonBack.setOnClickListener { finish() }
         binding.textPrivacyPolicy.setOnClickListener { showPrivacyPolicy() }

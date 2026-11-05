@@ -22,7 +22,10 @@ import com.sugar.weather.data.formatPm25
 import com.sugar.weather.data.formatRoundInt
 import com.sugar.weather.data.formatTemperatureC
 import com.sugar.weather.data.hourlyWindow
+import com.sugar.weather.data.isStale
+import com.sugar.weather.data.localToday
 import com.sugar.weather.data.model.WeatherReport
+import com.sugar.weather.data.sunEventsInWindow
 import com.sugar.weather.data.uvLevelText
 import com.sugar.weather.data.wmoDesc
 import com.sugar.weather.data.wmoScene
@@ -38,6 +41,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.Locale
 
@@ -45,9 +50,11 @@ import java.util.Locale
  * 单城市页状态持有者(DESIGN.md §8.2):每个 ViewPager2 页面一个实例。
  *
  * - 数据只来自 [com.sugar.weather.data.WeatherRepository] 的 `reports` / `cities` StateFlow;
- * - 进入页面:有缓存直接渲染,缓存超时([STALE_MS],§9「进入主页面缓存 > 30 分钟自动刷新」)才发起网络;
+ * - 进入或恢复页面时复查缓存，有缓存直接渲染，超过 30 分钟才发起网络;
  * - 下拉刷新走 `refreshWeather`;forecast 失败整体失败 → 有缓存保持 Success + Toast,无缓存转 Error;
  * - 所有文本格式化(§5 表)在本类完成,Fragment 零业务逻辑。
+ * @param application 提供应用资源与仓库。
+ * @property cityId 当前页面绑定的城市标识。
  */
 class WeatherViewModel(application: Application, private val cityId: String) :
     AndroidViewModel(application) {
@@ -63,6 +70,11 @@ class WeatherViewModel(application: Application, private val cityId: String) :
     val events: Flow<WeatherEvent> = _events.receiveAsFlow()
 
     private var refreshJob: Job? = null
+    /** 合并同一页面短时间内重复触发的缓存检查。 */
+    private var freshnessJob: Job? = null
+
+    /** 上次渲染的城市本地日期；跨日恢复时，即使更新失败也需重新标记日期。 */
+    private var renderedDate: LocalDate? = null
 
     init {
         viewModelScope.launch {
@@ -80,37 +92,44 @@ class WeatherViewModel(application: Application, private val cityId: String) :
         refreshIfStale()
     }
 
-    /** 下拉刷新(§6.2):强制走网络,air-quality 失败不拖垮整体(§9,由 Repository 保证)。 */
+    /** 强制刷新；成功报告统一由 reports 流渲染，避免重复构建列表与详情卡。 */
     fun refresh() {
         if (refreshJob?.isActive == true) return
         refreshJob = viewModelScope.launch {
+            if (_uiState.value.status != WeatherStatus.SUCCESS) {
+                _uiState.update { it.copy(status = WeatherStatus.LOADING) }
+            }
             val result = repository.refreshWeather(cityId)
             _events.send(WeatherEvent.RefreshFinished)
-            result.fold(
-                onSuccess = { report -> applyReport(report) },
-                onFailure = {
-                    // 无缓存且失败 → Error 态(重试按钮);有缓存保持 Success,仅提示(§9)
-                    if (_uiState.value.status != WeatherStatus.SUCCESS) {
-                        _uiState.update { it.copy(status = WeatherStatus.ERROR) }
-                    }
-                    _events.send(WeatherEvent.RefreshFailed)
+            if (result.isFailure) {
+                // 无缓存且失败进入错误态；已有缓存保持内容，仅提示刷新失败。
+                if (_uiState.value.status != WeatherStatus.SUCCESS) {
+                    _uiState.update { it.copy(status = WeatherStatus.ERROR) }
                 }
-            )
+                _events.send(WeatherEvent.RefreshFailed)
+            }
         }
     }
 
-    private fun refreshIfStale() {
-        val cached = repository.reports.value[cityId]
-        val stale = cached == null ||
-            System.currentTimeMillis() - cached.fetchedAtMillis > STALE_MS
-        if (stale) refresh()
+    /** 首次进入和恢复到前台时检查缓存；先等待磁盘预热，未过期时不请求网络。 */
+    fun refreshIfStale() {
+        if (freshnessJob?.isActive == true) return
+        freshnessJob = viewModelScope.launch {
+            val cached = repository.cachedReport(cityId)
+            if (cached != null && renderedDate != cached.localToday()) applyReport(cached)
+            if (cached == null || cached.isStale()) refresh()
+        }
     }
 
     // ———————————————————————— 状态合成(§5 全部格式化) ————————————————————————
 
+    /** 由报告合成页面状态，日报按城市当前日期过滤过期项。 */
     private fun applyReport(report: WeatherReport) {
         val current = report.current
-        val today = report.daily.firstOrNull()
+        val localToday = report.localToday()
+        renderedDate = localToday
+        val upcoming = report.daily.filter { !it.date.isBefore(localToday) }.take(TREND_DAYS)
+        val today = upcoming.firstOrNull { it.date == localToday }
         _uiState.update { state ->
             state.copy(
                 status = WeatherStatus.SUCCESS,
@@ -118,7 +137,7 @@ class WeatherViewModel(application: Application, private val cityId: String) :
                 tempText = current?.let { formatTemperatureC(it.temperatureC) },
                 conditionText = current?.let { wmoDesc(it.weatherCode) },
                 highLowText = today?.let { formatHighLowC(it.tempMaxC, it.tempMinC) },
-                trend = report.daily.take(TREND_DAYS),
+                trend = upcoming,
                 dailyRows = buildDailyRows(report),
                 hourlyRows = buildHourlyRows(report),
                 detailCards = buildDetailCards(report),
@@ -128,15 +147,15 @@ class WeatherViewModel(application: Application, private val cityId: String) :
         }
     }
 
-    /** 日报条(§6.2 第 3 条):今天列固定「今天」,其余星期;日期「M月d日」。 */
+    /** 六列日报使用紧凑月 / 日，避免窄屏中相邻日期挤在一起。 */
     private fun buildDailyRows(report: WeatherReport): List<DailyRowUi> {
-        val today = report.observedAt?.toLocalDate() ?: java.time.LocalDate.now()
-        return report.daily.take(TREND_DAYS).map { day ->
+        val today = report.localToday()
+        return report.daily.filter { !it.date.isBefore(today) }.take(TREND_DAYS).map { day ->
             DailyRowUi(
                 weekText = if (day.date == today) appContext.getString(R.string.today)
                 else WEEKDAYS[day.date.dayOfWeek.value - 1],
                 dateText = appContext.getString(
-                    R.string.date_md, day.date.monthValue, day.date.dayOfMonth
+                    R.string.date_short_md, day.date.monthValue, day.date.dayOfMonth
                 ),
                 // 首页 6 天列宽有限,使用白天代表天气的短文案;转折描述仅在 15 天页展示。
                 desc = wmoDesc(day.weatherCode),
@@ -147,47 +166,47 @@ class WeatherViewModel(application: Application, private val cityId: String) :
 
     /**
      * 逐小时条(§6.2 第 5 条):`hourlyWindow(24)` 起点 = 实况下一整点;
-     * 日出/日落节点由 daily[0].sunrise/sunset 生成,插到第一个晚于该时刻的时辰前,
-     * 节点温度取其后第一个整点(截图 005332:06:25 显示 14°);窗口起点之前的节点舍弃。
+     * 按完整日期提取窗口内的日出/日落，插在该时刻或下一整点之前，温度取该整点。
      */
     private fun buildHourlyRows(report: WeatherReport): List<HourRowUi> {
         val window = report.hourlyWindow(HOURS_COUNT)
         if (window.isEmpty()) return emptyList()
         val rows = ArrayList<HourRowUi>(window.size + 2)
-        val sunEvents = report.daily.firstOrNull()?.let { today ->
-            listOf(today.sunrise to R.drawable.ic_sunrise, today.sunset to R.drawable.ic_sunset)
-                .sortedBy { it.first }
-        } ?: emptyList()
+        val sunEvents = report.sunEventsInWindow(
+            start = window.first().time,
+            endInclusive = window.last().time
+        )
         var sunIndex = 0
-        val windowStart = window.first().time
         for (hour in window) {
-            while (sunIndex < sunEvents.size) {
-                val (sunTime, icon) = sunEvents[sunIndex]
-                if (sunTime < windowStart.toLocalTime()) {
-                    sunIndex++ // 窗口开始前的太阳节点(如下午才打开页面时的今日日出)不展示
-                    continue
-                }
-                if (!hour.time.toLocalTime().isAfter(sunTime)) break
+            while (sunIndex < sunEvents.size && !sunEvents[sunIndex].time.isAfter(hour.time)) {
+                val event = sunEvents[sunIndex]
                 rows += HourRowUi(
-                    timeText = formatTime(sunTime),
-                    iconRes = icon,
+                    timeText = formatTime(event.time.toLocalTime()),
+                    iconRes = if (event.isSunrise) R.drawable.ic_sunrise else R.drawable.ic_sunset,
                     tempText = formatTemperatureC(hour.temperatureC)
                 )
                 sunIndex++
             }
             rows += HourRowUi(
                 timeText = formatTime(hour.time.toLocalTime()),
-                iconRes = iconRes(hour.weatherCode, night = false),
+                iconRes = iconRes(hour.weatherCode, night = isNightHour(report, hour.time)),
                 tempText = formatTemperatureC(hour.temperatureC)
             )
         }
         return rows
     }
 
+    /** 根据对应日期的日出日落选择夜间图标，不把跨日的凌晨显示成太阳。 */
+    private fun isNightHour(report: WeatherReport, time: LocalDateTime): Boolean {
+        val day = report.daily.firstOrNull { it.date == time.toLocalDate() } ?: return false
+        val localTime = time.toLocalTime()
+        return localTime.isBefore(day.sunrise) || !localTime.isBefore(day.sunset)
+    }
+
     /** 8 张详情卡(§6.2 第 6 条,数值格式 §5.4;DetailCardUi 用 UNIT_* 常量拆 value/unit)。 */
     private fun buildDetailCards(report: WeatherReport): List<DetailCardUi> {
         val current = report.current ?: return emptyList()
-        val today = report.daily.firstOrNull()
+        val today = report.daily.firstOrNull { it.date == report.localToday() }
         return listOf(
             DetailCardUi(
                 label = appContext.getString(R.string.card_air_quality),
@@ -261,8 +280,5 @@ class WeatherViewModel(application: Application, private val cityId: String) :
 
         /** 逐时列数:下一整点起 24 小时(§6.2 第 5 条)。 */
         private const val HOURS_COUNT = 24
-
-        /** 缓存过期阈值:进入页面超 30 分钟自动刷新(§9)。 */
-        private const val STALE_MS = 30L * 60_000L
     }
 }

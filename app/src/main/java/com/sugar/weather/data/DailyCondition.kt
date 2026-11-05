@@ -23,6 +23,7 @@ internal data class DayCondition(
     val conditionText: String?
 )
 
+/** 按白天时段聚合代表天气，并保留按时间发生的显著转折。 */
 internal fun deriveDayCondition(
     hours: List<HourForecast>,
     date: LocalDate,
@@ -34,7 +35,7 @@ internal fun deriveDayCondition(
             !time.toLocalTime().isBefore(DAY_START) &&
             time.toLocalTime().isBefore(DAY_END)
     }
-    if (daytime.isEmpty()) return DayCondition(fallbackCode, null)
+    if (daytime.isEmpty()) return DayCondition(weatherCode = fallbackCode, conditionText = null)
 
     val representative = representativeCode(daytime.map { it.weatherCode })
 
@@ -46,7 +47,7 @@ internal fun deriveDayCondition(
         if (last != null && last.category == category) {
             last.codes += hour.weatherCode
         } else {
-            segments += Segment(category, mutableListOf(hour.weatherCode))
+            segments += Segment(category = category, codes = mutableListOf(hour.weatherCode))
         }
     }
 
@@ -59,16 +60,19 @@ internal fun deriveDayCondition(
             significant.first(),
             significant.subList(1, significant.lastIndex).maxByOrNull { it.codes.size },
             significant.last()
-        ).distinctBy { it.category }
+        )
     }
-    val text = when {
-        transition.size >= 2 &&
-            transition.first().category != transition.last().category ->
-            transition.joinToString(separator = "转") { segmentDesc(it) }
-        transition.isNotEmpty() -> segmentDesc(transition.first())
-        else -> wmoDesc(representative)
+    // 筛选可能让原先分离的同类段相邻；只合并相邻项，保留「晴→雨→晴」的回转。
+    val merged = mutableListOf<Segment>()
+    for (segment in transition) {
+        val last = merged.lastOrNull()
+        if (last?.category == segment.category) last.codes += segment.codes
+        else merged += Segment(category = segment.category, codes = segment.codes.toMutableList())
     }
-    return DayCondition(representative, text)
+    val text = merged.takeIf { it.isNotEmpty() }
+        ?.joinToString(separator = "转", transform = ::segmentDesc)
+        ?: wmoDesc(representative)
+    return DayCondition(weatherCode = representative, conditionText = text)
 }
 
 /** 单段连续天气(同类别内可能有 51/53/55 等不同强度码)。 */

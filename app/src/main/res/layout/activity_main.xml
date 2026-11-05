@@ -28,88 +28,92 @@
         android:clipChildren="false"
         android:clipToPadding="false">
 
-        <!-- 头部:图钉 + 城市名/更新时间 -->
+        <!-- 标题以剩余宽度排版，长城市名不会挤占右侧动作。 -->
         <LinearLayout
-            android:id="@+id/header_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|start"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/home_header_height"
+            android:layout_gravity="top"
+            android:paddingStart="@dimen/page_gutter"
+            android:paddingEnd="12dp"
+            android:baselineAligned="false"
             android:gravity="center_vertical"
             android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/image_pin"
-                android:layout_width="26dp"
-                android:layout_height="26dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_location_pin"
-                app:tint="@color/text_secondary_on_dark" />
 
             <LinearLayout
+                android:id="@+id/header_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/image_pin"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginEnd="@dimen/space_small"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_location_pin"
+                    app:tint="@color/text_primary_on_dark" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/text_city_name"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="@color/white"
+                        android:textSize="22sp"
+                        tools:text="沙河口区" />
+
+                    <TextView
+                        android:id="@+id/text_updated"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textColor="@color/text_secondary_on_dark"
+                        android:textSize="12sp"
+                        tools:text="刚刚更新" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/header_actions"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:orientation="vertical">
+                android:layout_marginStart="@dimen/space_small"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/text_city_name"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:textColor="@color/white"
-                    android:textSize="22sp"
-                    tools:text="沙河口区" />
+                <ImageView
+                    android:id="@+id/image_alert"
+                    style="@style/Weather.IconButton"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_alert"
+                    android:visibility="gone"
+                    app:tint="@color/white" />
 
-                <TextView
-                    android:id="@+id/text_updated"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:textColor="@color/text_secondary_on_dark"
-                    android:textSize="13sp"
-                    tools:text="刚刚更新" />
+                <ImageView
+                    android:id="@+id/image_city_manage"
+                    style="@style/Weather.IconButton"
+                    android:contentDescription="@string/choose_city"
+                    android:src="@drawable/ic_city_manage"
+                    app:tint="@color/white" />
+
+                <ImageView
+                    android:id="@+id/image_more"
+                    style="@style/Weather.IconButton"
+                    android:contentDescription="@string/more_options"
+                    android:src="@drawable/ic_more_vert"
+                    app:tint="@color/white" />
             </LinearLayout>
-        </LinearLayout>
-
-        <!-- 头部动作:告警占位(v1 GONE,§6.7)+ 城市管理 + 溢出菜单 -->
-        <LinearLayout
-            android:id="@+id/header_actions"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
-            android:layout_marginEnd="16dp"
-            android:layout_marginTop="12dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/image_alert"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:layout_marginEnd="22dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_alert"
-                android:visibility="gone"
-                app:tint="@color/white" />
-
-            <ImageView
-                android:id="@+id/image_city_manage"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:layout_marginEnd="22dp"
-                android:contentDescription="@string/choose_city"
-                android:src="@drawable/ic_city_manage"
-                app:tint="@color/white" />
-
-            <ImageView
-                android:id="@+id/image_more"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:contentDescription="@string/menu_about"
-                android:src="@drawable/ic_more_vert"
-                app:tint="@color/white" />
         </LinearLayout>
 
         <!-- 传感器调试文本(溢出菜单「动画调试」开关控制) -->
@@ -134,8 +138,9 @@
         <!-- 首启空状态(D8:不预置假城市):图钉 + 引导文案 + 添加城市 -->
         <LinearLayout
             android:id="@+id/empty_state"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:padding="@dimen/page_gutter"
             android:layout_gravity="center"
             android:gravity="center"
             android:orientation="vertical"

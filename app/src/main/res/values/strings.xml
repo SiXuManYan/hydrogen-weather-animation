@@ -16,6 +16,8 @@
     <string name="sensor">传感器</string>
     <!-- 主页面(DESIGN.md §6.2/§10.2) -->
     <string name="fifteen_day_forecast">15 天天气预报</string>
+    <string name="hourly_forecast">逐小时预报</string>
+    <string name="more_options">更多选项</string>
     <string name="just_now">刚刚更新</string>
     <string name="updated_min_ago">%1$d 分钟前更新</string>
     <string name="empty_state_hint">添加城市，查看天气</string>
@@ -23,6 +25,7 @@
     <string name="offline_toast">更新失败，请检查网络</string>
     <string name="retry">重试</string>
     <string name="load_failed">加载失败，请检查网络</string>
+    <string name="no_future_forecast">暂无有效的未来预报，请重试更新</string>
     <string name="menu_about">关于</string>
     <string name="menu_anim_debug">动画调试</string>
     <!-- 15 天详情页(§3/§8.2) -->
@@ -32,6 +35,7 @@
     <!-- 详情卡标签(§6.2 第 6 条,对齐截图 005344) -->
     <string name="today">今天</string>
     <string name="date_md">%1$d月%2$d日</string>
+    <string name="date_short_md">%1$d/%2$d</string>
     <string name="card_air_quality">空气质量</string>
     <string name="card_feels_like">体感温度</string>
     <string name="card_humidity">湿度</string>

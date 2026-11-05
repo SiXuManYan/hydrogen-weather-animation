@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 页面采用 8dp 间距节奏；图标触摸区与可见图形分别设置。 -->
+    <dimen name="page_gutter">24dp</dimen>
+    <dimen name="space_small">8dp</dimen>
+    <dimen name="space_medium">16dp</dimen>
+    <dimen name="space_large">32dp</dimen>
+    <dimen name="touch_target">48dp</dimen>
+    <dimen name="home_header_height">64dp</dimen>
+    <dimen name="section_radius">24dp</dimen>
     <!-- 主页面(DESIGN.md §6.2/§10.2) -->
     <!-- 当前温度大字 -->
     <dimen name="temp_big_size">88sp</dimen>
     <!-- 逐小时条列宽 -->
     <dimen name="hour_item_width">64dp</dimen>
     <!-- 温度曲线区(高低曲线 + 上下数值标签留白) -->
-    <dimen name="trend_view_height">170dp</dimen>
+    <dimen name="trend_view_height">144dp</dimen>
     <!-- 详情卡最小行高(标签 + 数值 + 上下呼吸) -->
     <dimen name="detail_card_min_height">88dp</dimen>
     <!-- 城市管理页(DESIGN.md §6.5/§10.2) -->

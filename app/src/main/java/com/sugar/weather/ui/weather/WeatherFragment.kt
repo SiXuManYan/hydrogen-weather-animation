@@ -5,10 +5,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -18,6 +16,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.sugar.weather.R
 import com.sugar.weather.databinding.FragmentWeatherBinding
+import com.sugar.weather.ui.applySafeInsets
 import com.sugar.weather.ui.fifteenday.FifteenDayActivity
 import kotlinx.coroutines.launch
 
@@ -46,19 +45,19 @@ class WeatherFragment : Fragment() {
         return binding.root
     }
 
+    /** 配置随窗口变化的留白、安全区及用户操作。 */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 让出状态栏(背景由 Activity 级 WeatherBackdropView 铺满,本页只负责内容排版)。
-        ViewCompat.setOnApplyWindowInsetsListener(binding.swipeRefresh) { view, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-            view.updatePadding(top = bars.top)
-            insets
+        val headerHeight = resources.getDimensionPixelSize(R.dimen.home_header_height)
+        binding.swipeRefresh.applySafeInsets(top = true, extraTop = headerHeight)
+        binding.scrollContent.applySafeInsets(bottom = true, horizontal = false)
+        binding.swipeRefresh.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updateTopSpacing(headerHeight)
         }
-        // §6.2 第 1 条:温度块前约半屏纯背景动画留白(截图 005322 中 14° 位于屏幕约 55-60% 处)。
-        binding.topSpacing.layoutParams.height = topSpacingHeight()
+        binding.scrollContent.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updateTopSpacing(headerHeight)
+        }
 
         binding.swipeRefresh.setColorSchemeResources(R.color.white)
         binding.recyclerDaily.layoutManager = GridLayoutManager(requireContext(), DAILY_COLUMNS)
@@ -70,7 +69,7 @@ class WeatherFragment : Fragment() {
         binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
         binding.buttonRetry.setOnClickListener { viewModel.refresh() }
         binding.buttonFifteenDay.setOnClickListener {
-            // D9:应用内 15 天详情页,数据入口 cachedOrRefresh(零额外请求时的缓存直读)
+            // 应用内预报优先复用新鲜缓存，过期时由仓库负责更新。
             FifteenDayActivity.start(requireContext(), viewModel.uiState.value.cityId)
         }
 
@@ -95,14 +94,32 @@ class WeatherFragment : Fragment() {
         }
     }
 
+    /** 页面视图销毁时断开适配器，避免保留对旧 RecyclerView 的引用。 */
     override fun onDestroyView() {
+        binding.recyclerDaily.adapter = null
+        binding.recyclerHourly.adapter = null
         _binding = null
         super.onDestroyView()
     }
 
-    /** 顶部留白高度 = 0.5 × 当前窗口屏高,onViewCreated(首帧布局前)写入。 */
-    private fun topSpacingHeight(): Int =
-        (resources.displayMetrics.heightPixels * TOP_SPACING_SCREEN_FRACTION).toInt()
+    /** 每次回到当前城市页都复查缓存，覆盖后台恢复及 ViewPager 保留页面的情况。 */
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshIfStale()
+    }
+
+    /** 按实际可用窗口上移温度区；尺寸变化时重算，短窗口仍为头部保留间距。 */
+    private fun updateTopSpacing(headerHeight: Int) {
+        val current = _binding ?: return
+        val usableHeight = current.swipeRefresh.height -
+            (current.swipeRefresh.paddingTop - headerHeight) - current.scrollContent.paddingBottom
+        val density = resources.displayMetrics.density
+        val height = (usableHeight * TOP_SPACING_WINDOW_FRACTION - headerHeight).toInt()
+            .coerceIn((32 * density).toInt(), (280 * density).toInt())
+        if (current.topSpacing.layoutParams.height != height) {
+            current.topSpacing.updateLayoutParams { this.height = height }
+        }
+    }
 
     /** 状态 → 视图:加载/错误/内容三态互斥,卡片按 §6.2 固定顺序绑定。 */
     private fun render(state: WeatherUiState) {
@@ -133,8 +150,8 @@ class WeatherFragment : Fragment() {
     companion object {
         private const val ARG_CITY_ID = "arg_city_id"
 
-        /** 顶部留白占整屏高度比例(§6.2 第 1 条,对齐截图 005322 的半屏动画留白)。 */
-        private const val TOP_SPACING_SCREEN_FRACTION = 0.5f
+        /** 温度区位于可用窗口约 36% 处，兼顾动画留白与首屏预报可见性。 */
+        private const val TOP_SPACING_WINDOW_FRACTION = 0.36f
 
         fun newInstance(cityId: String): WeatherFragment =
             WeatherFragment().apply {

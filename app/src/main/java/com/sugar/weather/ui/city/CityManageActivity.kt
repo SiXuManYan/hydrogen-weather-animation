@@ -3,22 +3,18 @@ package com.sugar.weather.ui.city
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.sugar.weather.R
 import com.sugar.weather.databinding.ActivityCityManageBinding
+import com.sugar.weather.ui.applySafeInsets
+import com.sugar.weather.ui.configureEdgeToEdge
 import com.sugar.weather.ui.search.CitySearchActivity
 import kotlinx.coroutines.launch
 
@@ -39,13 +35,14 @@ class CityManageActivity : AppCompatActivity() {
     private val touchCallback = object : ItemTouchHelper.Callback() {
         private var dragFrom = RecyclerView.NO_POSITION
 
+        /** 只锁定真正的定位城市，无效位置不接受手势。 */
         override fun getMovementFlags(
             recyclerView: RecyclerView,
             viewHolder: RecyclerView.ViewHolder
         ): Int {
             val position = viewHolder.bindingAdapterPosition
-            if (position == RecyclerView.NO_POSITION || position == LOCATED_POSITION) {
-                // 定位城市固定 0 位:不可拖拽、不可左滑(§2.4 第 4 条)
+            if (adapter.itemAt(position)?.isLocated != false) {
+                // 按城市身份保护定位卡，手动添加的首项仍可拖拽和删除。
                 return 0
             }
             return makeMovementFlags(ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.START)
@@ -54,6 +51,7 @@ class CityManageActivity : AppCompatActivity() {
         override fun isLongPressDragEnabled(): Boolean = true
         override fun isItemViewSwipeEnabled(): Boolean = true
 
+        /** 手动城市可互换顺序，但不能越过定位卡。 */
         override fun onMove(
             recyclerView: RecyclerView,
             viewHolder: RecyclerView.ViewHolder,
@@ -61,7 +59,8 @@ class CityManageActivity : AppCompatActivity() {
         ): Boolean {
             val from = viewHolder.bindingAdapterPosition
             val to = target.bindingAdapterPosition
-            if (from == LOCATED_POSITION || to == LOCATED_POSITION) return false
+            if (adapter.itemAt(from)?.isLocated != false ||
+                adapter.itemAt(to)?.isLocated != false) return false
             if (dragFrom == RecyclerView.NO_POSITION) dragFrom = from
             adapter.moveItem(from, to)
             return true
@@ -100,28 +99,15 @@ class CityManageActivity : AppCompatActivity() {
         }
     }
 
+    /** 初始化安全区、城市列表及拖拽交互。 */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        configureEdgeToEdge(lightNavigationBar = true)
         binding = ActivityCityManageBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 深色工具栏延伸到状态栏后(白图标保持),内容区是浅色底 → 导航栏手势用深色前景。
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false
-            isAppearanceLightNavigationBars = true
-        }
-        var toolbarBaseTop = -1
-        var listBaseBottom = -1
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-            if (toolbarBaseTop < 0) toolbarBaseTop = binding.toolbar.paddingTop
-            binding.toolbar.updatePadding(top = toolbarBaseTop + bars.top)
-            if (listBaseBottom < 0) listBaseBottom = binding.content.paddingBottom
-            binding.content.updatePadding(bottom = listBaseBottom + bars.bottom)
-            insets
-        }
+        binding.toolbar.applySafeInsets(top = true)
+        binding.content.applySafeInsets(bottom = true)
 
         binding.recyclerCities.layoutManager = LinearLayoutManager(this)
         binding.recyclerCities.adapter = adapter
@@ -139,11 +125,12 @@ class CityManageActivity : AppCompatActivity() {
         }
     }
 
+    /** 展示城市和后台刷新状态，保留已有卡片。 */
     private fun render(state: CityManageUiState) {
         adapter.submit(state.cities)
         binding.textEmpty.isVisible = state.cities.isEmpty()
         // 批量刷新是后台增强:已有缓存卡片照常展示,仅工具栏尾部的圈指示刷新中(§6.5)
-        binding.progressLoading.isVisible = state.loading && state.cities.isEmpty()
+        binding.progressLoading.isVisible = state.loading
     }
 
     /** 卡片点击 → 返回主页并切到该城市(§6.1 导航)。 */
@@ -157,9 +144,6 @@ class CityManageActivity : AppCompatActivity() {
         const val EXTRA_SELECTED_CITY_ID = "extra_selected_city_id"
 
         fun intent(context: Context): Intent = Intent(context, CityManageActivity::class.java)
-
-        /** 定位城市固定 0 位(§2.4)。 */
-        private const val LOCATED_POSITION = 0
 
         /** 拖拽中的卡片浮起高度。 */
         private const val DRAG_ELEVATION_DP = 8f

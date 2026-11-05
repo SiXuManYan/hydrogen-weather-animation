@@ -7,11 +7,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
-import androidx.core.view.updatePadding
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -21,6 +17,8 @@ import com.google.android.material.chip.Chip
 import androidx.core.content.ContextCompat
 import com.sugar.weather.R
 import com.sugar.weather.databinding.ActivityCitySearchBinding
+import com.sugar.weather.ui.applySafeInsets
+import com.sugar.weather.ui.configureEdgeToEdge
 import kotlinx.coroutines.launch
 
 /**
@@ -36,25 +34,15 @@ class CitySearchActivity : AppCompatActivity() {
     // ComponentActivity.getViewModelStore(),导致 "not yet attached to the Application" 崩溃。
     private val adapter by lazy { SearchResultAdapter(onItemClick = viewModel::addResult) }
 
+    /** 初始化搜索与列表，内容同时避让导航栏、刘海和输入法。 */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        configureEdgeToEdge()
         binding = ActivityCitySearchBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 深色工具栏延伸到状态栏后(白图标),页面主体也是深色底,导航栏保持白色前景。
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false
-            isAppearanceLightNavigationBars = false
-        }
-        var toolbarBaseTop = -1
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-            if (toolbarBaseTop < 0) toolbarBaseTop = binding.toolbar.paddingTop
-            binding.toolbar.updatePadding(top = toolbarBaseTop + bars.top)
-            insets
-        }
+        binding.root.applySafeInsets(bottom = true, ime = true)
+        binding.toolbar.applySafeInsets(top = true, horizontal = false)
 
         binding.recyclerResults.layoutManager = LinearLayoutManager(this)
         binding.recyclerResults.adapter = adapter
@@ -90,6 +78,7 @@ class CitySearchActivity : AppCompatActivity() {
         }
     }
 
+    /** 根据输入切换热门城市和结果，滚动区始终受键盘安全区约束。 */
     private fun render(state: CitySearchUiState) {
         if (binding.editQuery.text.toString() != state.query) {
             binding.editQuery.setText(state.query)
@@ -98,6 +87,7 @@ class CitySearchActivity : AppCompatActivity() {
         binding.buttonClear.isVisible = state.query.isNotEmpty()
         renderPopular(state.popular, showChips = state.query.isBlank())
 
+        binding.recyclerResults.isVisible = state.query.isNotBlank()
         adapter.submitList(state.results)
         val noResults = !state.searching && state.error == null &&
             state.query.isNotBlank() && state.results.isEmpty()
@@ -107,23 +97,20 @@ class CitySearchActivity : AppCompatActivity() {
         binding.textNoResult.isVisible = noResults
     }
 
-    /** 热门城市 tag(§6.4:ChipGroup,#FFEBEBEB 底 / 20dp 圆角 / #29000000 ripple)。 */
+    /** 热门城市标签只创建一次，输入切换时复用视图与监听器。 */
     private fun renderPopular(popular: List<PopularCity>, showChips: Boolean) {
-        if (!showChips) {
-            binding.chipGroup.removeAllViews()
-            binding.chipGroup.isVisible = false
-            return
-        }
-        binding.chipGroup.isVisible = popular.isNotEmpty()
+        binding.popularContainer.isVisible = showChips && popular.isNotEmpty()
+        if (!showChips) return
         if (binding.chipGroup.childCount == popular.size) return
         binding.chipGroup.removeAllViews()
         val tagBg = ContextCompat.getColor(this, R.color.city_tag_bg)
-        val tagText = ContextCompat.getColor(this, R.color.about_text_primary)
+        val tagText = ContextCompat.getColor(this, R.color.text_primary_on_dark)
         for (city in popular) {
             val chip = Chip(this)
             chip.text = city.name
             chip.isCheckable = false
             chip.isCloseIconVisible = false
+            chip.setEnsureMinTouchTargetSize(true)
             chip.chipStrokeWidth = 0f
             chip.chipBackgroundColor = android.content.res.ColorStateList.valueOf(tagBg)
             // chipCornerRadius setter 在 Material 1.12+ 已弃用,改用 shapeAppearanceModel

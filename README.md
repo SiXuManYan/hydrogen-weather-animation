@@ -9,7 +9,7 @@ This project is for non-commercial learning and demonstration. It is not affilia
 ## Features and controls
 
 - **Weather home**: swipe between cities to view current conditions, a 6-day trend including today, hourly forecasts and 8 weather details. Supports pull-to-refresh and cached data offline.
-- **15-day forecast**: open an in-app page showing up to 15 days starting tomorrow. Reuses cached weather when available and fetches it when missing.
+- **15-day forecast**: open an in-app page showing up to 15 days starting tomorrow. Reuses fresh cached weather and refreshes expired data, with an offline fallback.
 - **City management**: open the city icon in the header to add, reorder or delete cities. Each card has an animated background. The located city is intended to stay first.
 - **City search**: search with the full city name, or add one of 12 built-in popular cities.
 - **Location**: permission is requested when the app has no cities; manual search remains available if denied. Uses the system `LocationManager` without a GMS dependency.
@@ -52,7 +52,7 @@ Validation:
 sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 ```
 
-These checks passed on 2026-11-06. All 6 existing JVM tests passed, including 5 daytime-condition aggregation tests. This does not cover device interaction or performance testing.
+These checks passed on 2026-11-06. All 16 JVM tests passed, including 9 daytime-condition aggregation and 6 forecast-timeline tests. A small API 30 emulator was also used to inspect the home, search, city-management and 15-day layouts; this does not cover physical-device sensors or performance testing.
 
 ## Data and limitations
 
@@ -66,11 +66,11 @@ These checks passed on 2026-11-06. All 6 existing JVM tests passed, including 5 
 
 The CMA selection box includes parts of neighboring countries. Preferring that model does not guarantee a more accurate forecast. A failed `best_match` request fails the refresh; a CMA failure falls back to `best_match`; an air-quality failure retains the previous PM2.5 value, or displays “—” when none is available.
 
-The 30-minute cache check currently runs only when a city's ViewModel is created. Pull-to-refresh is also available, and city management refreshes the city list once when its ViewModel is created. Returning to an existing page does not repeat the cache check. There is no background polling; see [design §9](docs/DESIGN.md#9-数据流与刷新策略).
+City pages check the 30-minute cache on first entry and whenever they resume, after disk-cache initialization. Pull-to-refresh is also available, and city management refreshes once when its ViewModel is created. There is no background polling. Pages use 24dp gutters and 48dp touch targets; the home temperature starts around 36% of the usable window height. See the [design notes](docs/DESIGN.md#6-页面与动画).
 
 Weather data is attributed under **CC BY 4.0** on the About page. Open-Meteo's free service is intended for non-commercial use, has request limits and provides no availability guarantee. See the [official terms](https://open-meteo.com/en/terms).
 
-Weather alerts, weather videos, widgets, sharing, feedback and settings are not implemented. Hourly and daily icons always use daytime styling. `HAZE`, `SANDSTORM`, `SLEET` and `STORM` are currently available only through debug selection. Units are fixed to °C, km/h, hPa and km.
+Weather alerts, weather videos, widgets, sharing, feedback and settings are not implemented. Daily icons use daytime styling; hourly icons follow each day's sunrise and sunset. `HAZE`, `SANDSTORM`, `SLEET` and `STORM` are currently available only through debug selection. Units are fixed to °C, km/h, hPa and km.
 
 ## Scene recordings
 

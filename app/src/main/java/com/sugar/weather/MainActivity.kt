@@ -2,7 +2,6 @@ package com.sugar.weather
 
 import android.Manifest
 import android.content.Intent
-import android.graphics.Color
 import android.location.Geocoder
 import android.os.Bundle
 import android.os.SystemClock
@@ -14,10 +13,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -32,6 +27,8 @@ import com.sugar.weather.ui.CityPagesState
 import com.sugar.weather.ui.HeaderUiState
 import com.sugar.weather.ui.MainViewModel
 import com.sugar.weather.ui.SceneUiState
+import com.sugar.weather.ui.applySafeInsets
+import com.sugar.weather.ui.configureEdgeToEdge
 import com.sugar.weather.ui.about.AboutActivity
 import com.sugar.weather.ui.city.CityManageActivity
 import com.sugar.weather.ui.search.CitySearchActivity
@@ -76,35 +73,16 @@ class MainActivity : AppCompatActivity() {
             onCityPickerResult(result)
         }
 
+    /** 建立共用动画背景、城市分页与安全区内的头部动作。 */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // 全屏绘制到状态栏和导航栏后面；系统栏透明，图标保持白色。
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.TRANSPARENT
-        window.navigationBarColor = Color.TRANSPARENT
-        window.isStatusBarContrastEnforced = false
-        window.isNavigationBarContrastEnforced = false
-        WindowCompat.getInsetsController(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false
-            isAppearanceLightNavigationBars = false
-        }
+        configureEdgeToEdge()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         // 只给覆盖层加系统栏内边距，背景 View 仍然铺满全屏。
-        ViewCompat.setOnApplyWindowInsetsListener(binding.uiOverlay) { view, insets ->
-            val bars = insets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-            view.updatePadding(
-                left = bars.left,
-                top = bars.top,
-                right = bars.right,
-                bottom = bars.bottom
-            )
-            insets
-        }
+        binding.uiOverlay.applySafeInsets(top = true, bottom = true)
 
         binding.weatherBackdrop.onSimulatedTiltChange = { pitch, roll ->
             viewModel.updateSimulatedTilt(pitch, roll)
@@ -207,7 +185,7 @@ class MainActivity : AppCompatActivity() {
     private fun renderHeader(state: HeaderUiState) {
         binding.textCityName.text = state.cityName
         binding.textUpdated.text = state.updatedText
-        binding.imagePin.visibility = if (state.isLocated) View.VISIBLE else View.INVISIBLE
+        binding.imagePin.visibility = if (state.isLocated) View.VISIBLE else View.GONE
     }
 
     /** 背景跟随天气;调试预览激活时交由 renderDebug 驱动(§7.6)。 */

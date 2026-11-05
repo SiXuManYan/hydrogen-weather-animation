@@ -66,10 +66,13 @@ class WeatherTrendView @JvmOverloads constructor(
     /** 供日报条等分对齐使用的列中心(与 onDraw 完全一致)。 */
     fun columnCenters(): FloatArray = xs.copyOf()
 
-    /** 输入 daily[0..5];空列表清空绘制。数据/尺寸变化后统一重算路径与渐变。 */
+    /** 数据变化时重算并请求重绘；相同日报不重复分配路径，空列表立即清空画面。 */
     fun setDays(days: List<DailyForecast>) {
-        this.days = days.take(DAY_COUNT)
+        val updated = days.take(DAY_COUNT)
+        if (this.days == updated) return
+        this.days = updated
         recompute()
+        invalidate()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -107,6 +110,7 @@ class WeatherTrendView @JvmOverloads constructor(
 
     // ———————————————————————— 内部实现 ————————————————————————
 
+    /** 仅在日报或尺寸变化时构建几何与标签，绘制阶段不分配集合。 */
     private fun recompute() {
         val list = days
         highPath.reset()
@@ -129,7 +133,8 @@ class WeatherTrendView @JvmOverloads constructor(
         val bottomPad = LABEL_PAD_BOTTOM_DP * density
         val areaHeight = (height - topPad - bottomPad).coerceAtLeast(0f)
 
-        xs = FloatArray(n) { i -> (i + 0.5f) * width / n }
+        // 日报网格始终为六列，即使缓存缺少部分日期也不能拉伸曲线列距。
+        xs = FloatArray(n) { i -> (i + 0.5f) * width / DAY_COUNT }
         highYs = FloatArray(n) { i -> topPad + ((maxOfMax - list[i].tempMaxC) / range * areaHeight).toFloat() }
         lowYs = FloatArray(n) { i -> topPad + ((maxOfMax - list[i].tempMinC) / range * areaHeight).toFloat() }
         highLabels = list.map { "${it.tempMaxC.roundToInt()}°" }
@@ -154,12 +159,14 @@ class WeatherTrendView @JvmOverloads constructor(
             path.quadTo(xs[i - 1], ys[i - 1], (xs[i - 1] + xs[i]) / 2f, (ys[i - 1] + ys[i]) / 2f)
         }
         path.lineTo(xs[n - 1], ys[n - 1])
-        path.lineTo(width.toFloat(), ys[n - 1])
+        // 缺日数据时止于最后一个有效列，不向空列外推温度。
+        if (n == DAY_COUNT) path.lineTo(width.toFloat(), ys[n - 1])
     }
 
     /** 填充带:高温曲线前行 + 低温曲线逆行 + 两侧边缘闭合(§6.3)。 */
     private fun buildFill() {
         val n = xs.size
+        val endX = if (n == DAY_COUNT) width.toFloat() else xs[n - 1]
         fillPath.moveTo(0f, highYs[0])
         fillPath.lineTo(xs[0], highYs[0])
         for (i in 1 until n) {
@@ -168,8 +175,8 @@ class WeatherTrendView @JvmOverloads constructor(
                 (xs[i - 1] + xs[i]) / 2f, (highYs[i - 1] + highYs[i]) / 2f
             )
         }
-        fillPath.lineTo(width.toFloat(), highYs[n - 1])
-        fillPath.lineTo(width.toFloat(), lowYs[n - 1])
+        fillPath.lineTo(endX, highYs[n - 1])
+        fillPath.lineTo(endX, lowYs[n - 1])
         for (i in n - 1 downTo 1) {
             fillPath.quadTo(
                 xs[i], lowYs[i],

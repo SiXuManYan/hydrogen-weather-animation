@@ -10,32 +10,19 @@
 
     <LinearLayout
         android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="12dp"
-        android:paddingTop="10dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="10dp">
+        style="@style/Weather.Toolbar">
 
         <ImageView
             android:id="@+id/button_back"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:contentDescription="@null"
-            android:padding="8dp"
+            style="@style/Weather.IconButton"
+            android:contentDescription="@string/back"
             android:src="@drawable/ic_back"
             app:tint="@color/white" />
 
         <TextView
             android:id="@+id/text_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:text="@string/fifteen_day_forecast"
-            android:textColor="@color/white"
-            android:textSize="20sp" />
+            style="@style/Weather.ToolbarTitle"
+            android:text="@string/fifteen_day_forecast" />
     </LinearLayout>
 
     <FrameLayout
@@ -49,7 +36,7 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:overScrollMode="never"
-            android:paddingBottom="16dp"
+            android:paddingBottom="@dimen/page_gutter"
             tools:itemCount="8"
             tools:listitem="@layout/item_fifteen_day_row" />
 

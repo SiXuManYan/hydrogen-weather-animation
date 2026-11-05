@@ -65,6 +65,50 @@ class DailyConditionTest {
         assertEquals("晴", condition.conditionText)
     }
 
+    /** 首尾都是晴天时，中间持续降雨仍必须出现在描述中。 */
+    @Test
+    fun `clear rain clear preserves the rainy interval`() {
+        val condition = deriveDayCondition(
+            hours = daytimeCodes(0, 0, 0, 0, 61, 61, 61, 61, 0, 0, 0, 0),
+            date = date,
+            fallbackCode = 61
+        )
+        assertEquals("晴转小雨转晴", condition.conditionText)
+    }
+
+    /** 降雨暂停后再次出现，不得因类别重复而删除末段。 */
+    @Test
+    fun `rain clear rain preserves the second rain interval`() {
+        val condition = deriveDayCondition(
+            hours = daytimeCodes(61, 61, 61, 61, 0, 0, 0, 0, 61, 61, 61, 61),
+            date = date,
+            fallbackCode = 61
+        )
+        assertEquals("小雨转晴转小雨", condition.conditionText)
+    }
+
+    /** 超过三段的摘要仍按时间保留首段、最长中间段和末段。 */
+    @Test
+    fun `long summary keeps returning weather at the end`() {
+        val condition = deriveDayCondition(
+            hours = daytimeCodes(0, 0, 61, 61, 61, 2, 2, 0, 0, 0, 0, 0),
+            date = date,
+            fallbackCode = 61
+        )
+        assertEquals("晴转小雨转晴", condition.conditionText)
+    }
+
+    /** 忽略短暂插曲之后，只合并相邻同类，避免重复“晴转晴”。 */
+    @Test
+    fun `filtering a short interval merges adjacent clear segments`() {
+        val condition = deriveDayCondition(
+            hours = daytimeCodes(0, 0, 2, 0, 0, 61, 61, 61, 61, 61, 61, 61),
+            date = date,
+            fallbackCode = 61
+        )
+        assertEquals("晴转小雨", condition.conditionText)
+    }
+
     @Test
     fun `missing daytime hours fall back to daily code`() {
         val nighttime = listOf(

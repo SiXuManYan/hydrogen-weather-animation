@@ -1,14 +1,13 @@
 package com.sugar.weather.data
 
-import com.google.gson.JsonSyntaxException
 import com.sugar.weather.data.model.City
 import com.sugar.weather.data.model.CitySearchResult
 import com.sugar.weather.data.model.WeatherReport
 import com.sugar.weather.data.remote.OpenMeteoApi
-import java.io.IOException
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +18,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
+import kotlinx.coroutines.withContext
 
 /**
  * 天气数据仓库(DESIGN.md §9):唯一的数据出入口。
@@ -48,12 +47,16 @@ class WeatherRepository(
     val cities: StateFlow<List<City>> = cityStore.cities
         .stateIn(externalScope, SharingStarted.Eagerly, emptyList())
 
-    init {
-        // 进程重启后把磁盘缓存预热进内存,离线场景(15 天页/城市管理页)才有数据(§9)。
-        externalScope.launch {
-            val cached = cityStore.loadAllCachedWeather()
-            _reports.update { current -> current + cached.filterKeys { it !in current } }
-        }
+    /** 缓存预热完成后再判断是否缺数据，避免冷启动时先发一轮多余请求。 */
+    private val cacheReady = externalScope.launch {
+        val cached = cityStore.loadAllCachedWeather()
+        _reports.update { current -> current + cached.filterKeys { it !in current } }
+    }
+
+    /** 等待磁盘预热，取得当前城市缓存；此过程不访问网络。 */
+    suspend fun cachedReport(cityId: String): WeatherReport? {
+        cacheReady.join()
+        return _reports.value[cityId]
     }
 
     /**
@@ -100,14 +103,17 @@ class WeatherRepository(
             val cmaForecast = cmaDeferred?.await()
             val pm25 = air?.current?.pm2_5 ?: previous?.current?.pm25
             val fetchedAt = System.currentTimeMillis()
-            val fallbackReport = fallbackForecast.toDomain(cityId, fetchedAt, pm25)
-            val report = cmaForecast
-                ?.toDomain(cityId, fetchedAt, pm25)
-                ?.let { mergeReports(fallback = fallbackReport, cma = it) }
-                ?: fallbackReport
+            // 小时聚合、模型合并移出主线程，刷新时不阻塞滚动和动画。
+            val report = withContext(Dispatchers.Default) {
+                val fallbackReport = fallbackForecast.toDomain(cityId, fetchedAt, pm25)
+                cmaForecast
+                    ?.toDomain(cityId, fetchedAt, pm25)
+                    ?.let { mergeReports(fallback = fallbackReport, cma = it) }
+                    ?: fallbackReport
+            }
             _reports.update { it + (cityId to report) }
             try {
-                cityStore.saveWeather(cityId, report)
+                withContext(Dispatchers.IO) { cityStore.saveWeather(cityId, report) }
             } catch (storeError: Exception) {
                 // 缓存写失败不影响本次展示;内存层已更新,下次刷新重试落盘
                 if (storeError is CancellationException) throw storeError
@@ -121,13 +127,13 @@ class WeatherRepository(
     }
 
     /**
-     * 『15 天天气预报』页的数据入口(§3:应用内详情页,零额外网络请求):
-     * 优先返回内存缓存(含启动时预热的磁盘缓存),无缓存才现场 refreshWeather。
-     * daily 共 16 条(今天 + 未来 15 天),UI 取 [WeatherReport.daily] 前 6 条画趋势、[1..15] 画详情。
+     * 详情页优先复用新鲜缓存；过期或无缓存时刷新，失败则保留旧报告供离线查看。
      */
     suspend fun cachedOrRefresh(cityId: String): Result<WeatherReport> {
-        _reports.value[cityId]?.let { return Result.success(it) }
-        return refreshWeather(cityId)
+        val cached = cachedReport(cityId)
+        if (cached != null && !cached.isStale()) return Result.success(cached)
+        val result = refreshWeather(cityId)
+        return if (result.isFailure && cached != null) Result.success(cached) else result
     }
 
     /** 城市搜索(§6.4):population 非空且大的排前,同人口按 name 长度升序。 */
