@@ -138,6 +138,7 @@ class WeatherViewModel(application: Application, private val cityId: String) :
                 dateText = appContext.getString(
                     R.string.date_md, day.date.monthValue, day.date.dayOfMonth
                 ),
+                // 首页 6 天列宽有限,使用白天代表天气的短文案;转折描述仅在 15 天页展示。
                 desc = wmoDesc(day.weatherCode),
                 iconRes = iconRes(day.weatherCode, night = false)
             )

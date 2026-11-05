@@ -75,10 +75,36 @@ class WeatherRepository(
                     null // air-quality 失败不拖垮整体(§9),pm25 沿用旧值
                 }
             }
-            val forecast = forecastApi.forecast(city.latitude, city.longitude)
+            // 中国境内并行请求 CMA GRAPES 前 5 天;失败静默回退 best_match。
+            // 国内官方 App 通常使用 CMA 数据,优先它可以显著减少降水相态(雨/雪)偏差。
+            val cmaDeferred = if (isInChina(city.latitude, city.longitude)) {
+                async {
+                    try {
+                        forecastApi.forecast(
+                            latitude = city.latitude,
+                            longitude = city.longitude,
+                            forecastDays = CMA_FORECAST_DAYS,
+                            models = OpenMeteoApi.CMA_MODEL
+                        )
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (error: Exception) {
+                        null
+                    }
+                }
+            } else {
+                null
+            }
+            val fallbackForecast = forecastApi.forecast(city.latitude, city.longitude)
             val air = airDeferred.await()
+            val cmaForecast = cmaDeferred?.await()
             val pm25 = air?.current?.pm2_5 ?: previous?.current?.pm25
-            val report = forecast.toDomain(cityId, System.currentTimeMillis(), pm25)
+            val fetchedAt = System.currentTimeMillis()
+            val fallbackReport = fallbackForecast.toDomain(cityId, fetchedAt, pm25)
+            val report = cmaForecast
+                ?.toDomain(cityId, fetchedAt, pm25)
+                ?.let { mergeReports(fallback = fallbackReport, cma = it) }
+                ?: fallbackReport
             _reports.update { it + (cityId to report) }
             try {
                 cityStore.saveWeather(cityId, report)
@@ -187,6 +213,29 @@ class WeatherRepository(
     // ———————————————————————— 内部实现 ————————————————————————
 
     /**
+     * 合并中国区 CMA 与 best_match 报告:
+     * - 实况/时区优先 CMA(更贴近国内官方预报);
+     * - 逐日:CMA 覆盖的前 5 天优先,其余日期保留 best_match;
+     * - 逐时:按时间合并,CMA 优先(其 5 天完整覆盖首页 24h 窗口)。
+     */
+    private fun mergeReports(fallback: WeatherReport, cma: WeatherReport): WeatherReport {
+        val cmaDates = cma.daily.mapTo(HashSet()) { it.date }
+        val daily = (cma.daily + fallback.daily.filter { it.date !in cmaDates }).sortedBy { it.date }
+        val hourly = (cma.hourly + fallback.hourly)
+            .distinctBy { it.time }
+            .sortedBy { it.time }
+        return WeatherReport(
+            cityId = fallback.cityId,
+            fetchedAtMillis = fallback.fetchedAtMillis,
+            timezone = cma.timezone ?: fallback.timezone,
+            observedAt = cma.observedAt ?: fallback.observedAt,
+            current = cma.current ?: fallback.current,
+            daily = daily,
+            hourly = hourly
+        )
+    }
+
+    /**
      * 城市列表读-改-写:以 DataStore 的最新值为基准(避免 cities StateFlow 尚未就绪时的竞态),
      * 写前经 [normalize] 归一化。返回列表是否发生实际变化。
      */
@@ -225,5 +274,8 @@ class WeatherRepository(
 
         /** 同坐标判重的经纬度容差(约 11m)。 */
         private const val COORDINATE_EPSILON = 1e-4
+
+        /** CMA GRAPES 可用预报天数;超出部分回退 best_match。 */
+        private const val CMA_FORECAST_DAYS = 5
     }
 }

@@ -32,6 +32,9 @@ interface OpenMeteoApi {
 
         /** 空气质量实况字段串。 */
         const val AIR_CURRENT_PARAMS = "pm2_5,us_aqi"
+
+        /** 中国气象局 CMA GRAPES 全球模型;中国境内优先用于前 5 天,贴合国内官方预报。 */
+        const val CMA_MODEL = "cma_grapes_global"
     }
 
     /**
@@ -47,7 +50,8 @@ interface OpenMeteoApi {
         @Query("daily") daily: String = DAILY_PARAMS,
         @Query("timezone") timezone: String = "auto",
         @Query("forecast_days") forecastDays: Int = 16,
-        @Query("wind_speed_unit") windSpeedUnit: String = "kmh"
+        @Query("wind_speed_unit") windSpeedUnit: String = "kmh",
+        @Query("models") models: String? = null
     ): ForecastResponse
 
     /** PM2.5 / US AQI 实况。失败时由调用方降级(§9:保留旧 pm25,卡片显示「—」)。 */

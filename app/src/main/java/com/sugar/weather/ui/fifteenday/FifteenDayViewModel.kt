@@ -70,7 +70,8 @@ class FifteenDayViewModel(application: Application, private val cityId: String) 
                 weekText = if (index == 0) app.getString(R.string.tomorrow)
                 else WEEKDAYS[day.date.dayOfWeek.value - 1],
                 dateText = app.getString(R.string.date_md, day.date.monthValue, day.date.dayOfMonth),
-                desc = wmoDesc(day.weatherCode),
+                // 15 天页空间充足,优先展示白天转折(如「小雨转晴」);旧缓存无该字段时回退短文案。
+                desc = day.conditionText ?: wmoDesc(day.weatherCode),
                 iconRes = iconRes(day.weatherCode, night = false),
                 precipProbText = day.precipProbabilityMaxPercent
                     ?.let { app.getString(R.string.precip_probability, it) },

@@ -30,6 +30,7 @@ import java.time.temporal.ChronoUnit
  */
 fun ForecastResponse.toDomain(cityId: String, fetchedAtMillis: Long, pm25: Double?): WeatherReport {
     val observedAt = current?.time?.let { parseLocalDateTime(it) }
+    val hourlyForecasts = mapHourly(hourly)
     val currentWeather = current?.let { block ->
         // 气温与 weather_code 是实况块的硬前提,缺失则整块视为不可用
         val temperature = block.temperature_2m ?: return@let null
@@ -53,8 +54,8 @@ fun ForecastResponse.toDomain(cityId: String, fetchedAtMillis: Long, pm25: Doubl
         timezone = timezone,
         observedAt = observedAt,
         current = currentWeather,
-        daily = mapDaily(daily),
-        hourly = mapHourly(hourly)
+        daily = mapDaily(daily, hourlyForecasts),
+        hourly = hourlyForecasts
     )
 }
 
@@ -124,7 +125,7 @@ private fun mapHourly(block: HourlyBlock?): List<HourForecast> {
     return result
 }
 
-private fun mapDaily(block: DailyBlock?): List<DailyForecast> {
+private fun mapDaily(block: DailyBlock?, hourly: List<HourForecast>): List<DailyForecast> {
     if (block == null) return emptyList()
     val dates = block.time ?: return emptyList()
     val codes = block.weather_code
@@ -135,12 +136,15 @@ private fun mapDaily(block: DailyBlock?): List<DailyForecast> {
     val result = ArrayList<DailyForecast>(dates.size)
     for (i in dates.indices) {
         val date = dates[i].let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: continue
-        val code = codes?.getOrNull(i) ?: continue
+        val rawCode = codes?.getOrNull(i) ?: continue
         val max = maxes?.getOrNull(i) ?: continue
         val min = mins?.getOrNull(i) ?: continue
+        // 日天气取白天主导/转折,避免 Open-Meteo 的 daily.weather_code(当天最严重)
+        // 把两小时大雪夸大成全天大雪。
+        val condition = deriveDayCondition(hourly, date, rawCode)
         result += DailyForecast(
             date = date,
-            weatherCode = code,
+            weatherCode = condition.weatherCode,
             tempMaxC = max,
             tempMinC = min,
             precipProbabilityMaxPercent = block.precipitation_probability_max?.getOrNull(i),
@@ -148,7 +152,8 @@ private fun mapDaily(block: DailyBlock?): List<DailyForecast> {
             sunrise = sunrises?.getOrNull(i)?.let(::parseLocalDateTime)?.toLocalTime()
                 ?: LocalTime.MIN,
             sunset = sunsets?.getOrNull(i)?.let(::parseLocalDateTime)?.toLocalTime()
-                ?: LocalTime.MAX
+                ?: LocalTime.MAX,
+            conditionText = condition.conditionText
         )
     }
     return result

@@ -60,13 +60,14 @@ data class CurrentWeather(
  * 单日预报(今天 + 未来 15 天)。
  *
  * @property date 日期(城市本地)
- * @property weatherCode WMO weather_code
+ * @property weatherCode 白天主导天气的 WMO weather_code(由逐小时预报聚合,不再直接取日最大值)
  * @property tempMaxC 最高气温(°C)
  * @property tempMinC 最低气温(°C)
  * @property precipProbabilityMaxPercent 当日最大降水概率(%);API 缺失为 null
  * @property uvIndexMax 当日紫外线指数最大值;夜间/极地等缺失为 null → 界面显示「—」
  * @property sunrise 日出时刻(城市本地);API 异常缺失时回退 00:00
  * @property sunset 日落时刻(城市本地);API 异常缺失时回退 23:59
+ * @property conditionText 白天天气转折描述(如「小雨转晴」);无转折或旧缓存为 null,UI 回退 [weatherCode]
  */
 data class DailyForecast(
     val date: LocalDate,
@@ -76,7 +77,8 @@ data class DailyForecast(
     val precipProbabilityMaxPercent: Int?,
     val uvIndexMax: Double?,
     val sunrise: LocalTime,
-    val sunset: LocalTime
+    val sunset: LocalTime,
+    val conditionText: String? = null
 )
 
 /**
