@@ -11,7 +11,7 @@
 
 | # | 决策项 | 结论 |
 |---|--------|------|
-| D1 | 天气数据源 | **Open-Meteo**(forecast + air-quality + geocoding 三接口),本会话 curl 实测全部 200 |
+| D1 | 天气数据源 | **Open-Meteo**(forecast + air-quality + geocoding 三接口);中国境内前 5 天优先 **CMA GRAPES**(`models=cma_grapes_global`),其余日期回退 `best_match` |
 | D2 | heytap 接口 | **不用**。OPPO 内部域名、无文档/SLA、cityId 无公开编码规则与转换接口,仅作附录记录 |
 | D3 | weather.1plus.io | **不用**。需 Bearer 鉴权 + 硬编码 apiKey,服务存活未验证(静态解包未发请求) |
 | D4 | JSON/网络 | **Retrofit 3.0.0 + converter-gson 3.0.0(Gson 反射)**,零编译器插件,兼容 AGP 9 内置 Kotlin |
@@ -19,7 +19,7 @@
 | D6 | 依赖注入 | **手写 AppContainer + Application**,不用 Hilt(需 KAPT/KSP,同 D5 风险) |
 | D7 | 定位 | **框架 LocationManager**(不依赖 GMS),Android 10 运行时权限,失败/无权限回退手动选城 |
 | D8 | 默认城市 | **不预置假城市**;首启无权限/定位失败 → 空状态引导添加城市 |
-| D9 | 『15 天天气预报』 | **应用内详情页**(不做浏览器跳转)。Open-Meteo `forecast_days=16` = 今天+未来 15 天,零额外请求 |
+| D9 | 『15 天天气预报』 | **应用内详情页**(不做浏览器跳转)。Open-Meteo `forecast_days=16` = 今天+未来 15 天;中国区前 5 天由 CMA 覆盖,仍复用缓存报告 |
 | D10 | 多城市主页 | **ViewPager2 + 每城市一个 WeatherFragment + WeatherViewModel**,全局单实例 WeatherBackdropView |
 | D11 | 告警图标/天气视频/小部件/分享/设置页 | v1 不做(无预警数据源;其余超出致敬范围) |
 
@@ -27,7 +27,7 @@
 
 ## 1. 数据源决策(D1~D3)
 
-### 1.1 结论:Open-Meteo,三接口分工
+### 1.1 结论:Open-Meteo 三接口 + 中国区 CMA GRAPES
 
 | 接口 | 用途 | 本会话实测(2026-11-05, lat=38.907 lon=121.592) |
 |------|------|------|
@@ -50,6 +50,28 @@ curl "https://geocoding-api.open-meteo.com/v1/search?name=大连市&count=10&lan
 - geocoding:`大连` 仅命中 5 个同名村镇(福建/海南/江苏/广西/河南,population 均为 null);`大连市` 命中辽宁·大连市。**搜索策略必须应对短名陷阱**(见 §6.4)。
 
 免费、无需 key、CC-BY 4.0(仅需在关于页署名,见 §7.5)。与数据源侦察报告结论一致:该报告实测延迟 1.28~1.56s、三域名均可达。
+
+**2026-11 数据准确性修订**:
+
+- **中国境内坐标**优先请求 CMA GRAPES 全球模型(`models=cma_grapes_global`,`forecast_days=5`),超出 5 天的日期回退 `best_match`;CMA 请求失败静默回退,不拖垮整体刷新。实测大连 11/8:`best_match` 返回 75(大雪),CMA 返回 61(小雨),逐小时后 CMA 白天转晴。
+- **逐日天气不再直接使用 `daily.weather_code`**:Open-Meteo 将其定义为“当天最严重的小时天气”,一场两小时大雪会把全天标成大雪。现在按白天 08:00–20:00 的逐小时数据推导代表天气与转折描述(如「毛毛雨转晴」「小雨转中雪」)。
+- 首页 6 天列宽有限,显示代表天气短文案;15 天页显示完整转折描述。非中国坐标仍使用 `best_match`。
+
+### 1.1.1 中国区取样与日天气聚合(2026-11)
+
+**坐标范围**:粗略包围盒北纬 18°–54°、东经 73°–135°。边界外(朝鲜半岛、蒙古等)可能被误判为境内;CMA 是 Open-Meteo 提供的全球模型,边界误判不会导致请求失败,仅影响模型偏好。
+
+**请求策略**:
+
+| 数据段 | 模型 | 请求参数 | 覆盖 |
+|---|---|---|---|
+| 实况 + 前 5 天逐时/逐日 | CMA GRAPES | `models=cma_grapes_global`, `forecast_days=5` | 今天起 5 天 |
+| 第 6–15 天 / 非中国坐标 | Open-Meteo best_match | 默认 `forecast_days=16` | 今天起 16 天 |
+
+- 两个 forecast 请求并行执行,空气质量请求也并行;CMA 失败时仅使用 best_match,不拖垮整体刷新。
+- 合并规则:实况、时区、`observedAt` 优先 CMA;逐日按日期合并,CMA 覆盖的日期优先,其余保留 best_match;逐时按时间合并,CMA 优先(其 5 天完整覆盖首页 24 小时窗口)。
+- 日天气取样:取城市本地白天 **08:00–20:00** 的逐小时 `weather_code`;代表码取出现次数最多者(同次数按降水 > 云 > 晴、雪 > 雨的保守顺序打破平票),用于图标与首页短文案;转折文案按连续同类别分段,保留 ≥2 小时的段,最多取首段、最长中间段、末段,生成「毛毛雨转晴」「小雨转中雪」等 15 天页文案。
+- 旧缓存兼容:`DailyForecast.conditionText` 缺失时 UI 回退到 `wmoDesc(weatherCode)`;缓存超时或下拉刷新后自然升级。
 
 ### 1.2 为什么不用 heytap 接口
 
@@ -153,7 +175,7 @@ class AppContainer(context: Context) {
 
 **决策:应用内 15 日预报详情页,替代浏览器跳转**。
 
-- 数据:主页面同一份 `WeatherReport.daily`(16 条 = 今天 + 未来 15 天,`forecast_days=16` 实测确认),详情页取 `daily[1..15]`(明天起 15 天),**零额外网络请求**;
+- 数据:主页面同一份 `WeatherReport.daily`(16 条 = 今天 + 未来 15 天,`forecast_days=16` 实测确认),详情页取 `daily[1..15]`(明天起 15 天),**零额外网络请求**;中国区前 5 天由 CMA 覆盖,第 6–15 天回退 best_match;
 - 入口按钮保留在原版位置(温度曲线与逐小时条之间,截图 005332),描边胶囊样式;
 - 文案仍为「15 天天气预报」;
 - **失败回退**:详情页打开时无该城市缓存(极端情况:主页有数据但被清理)→ `WeatherRepository.refreshWeather(cityId)` 现取;网络也失败 → 页内显示"加载失败,请检查网络"+ 重试按钮。不存在"跳浏览器失败"的场景,因为不再跳浏览器。
@@ -163,6 +185,8 @@ class AppContainer(context: Context) {
 ## 4. WMO weather_code 完整映射表(f)
 
 Open-Meteo 的 `weather_code` 是 WMO 标准码(0–99)。映射到现有 `scene/SceneType.kt:9-28` 的枚举(该枚举 15 个值全部复用,**不修改**)。表中「场景」列即 `SceneType` 名,背景色取自该枚举的 `dayBackground/nightBackground`(与 APK 侦察报告的 `weather_*` 调色板一致,如晴昼 `#FF4A97D2`)。
+
+> 2026-11 起,逐日条目的 `weatherCode` **不再直接取 `daily.weather_code`**(Open-Meteo 定义为当天最严重的小时天气),而是由白天 08:00–20:00 的逐小时数据推导代表天气码;完整规则见 §1.1.1。
 
 | code | 中文名(昼) | 中文名(夜) | SceneType | 备注 |
 |------|------------|------------|-----------|------|
@@ -357,7 +381,7 @@ FrameLayout(root)
 
 ## 7. 关于页
 
-白底(`#FFF7F7F7`)居中:云朵 logo(自绘 vector)+「天气 V1.0」(取 `strings.xml` 的 `app_name` 与 `BuildConfig` 不可用时硬编码版本常量,见 §2.4 AGP 9 默认关闭 buildConfig,直接在 `AppContainer` 放 `APP_VERSION = "1.0"`)+ 更新日志文本 + 底部「用户协议 / 隐私政策」链接 + **「数据来源:Open-Meteo(CC-BY 4.0)」署名行(合规必须)**。静态页面,无 ViewModel,无状态。
+白底(`#FFF7F7F7`)居中:云朵 logo(自绘 vector)+「氢天气 V1.1」(取 `strings.xml` 的 `app_name` 与 `BuildConfig` 不可用时硬编码版本常量,见 §2.4 AGP 9 默认关闭 buildConfig,直接在 `AppContainer` 放 `APP_VERSION = "1.1"`)+ 更新日志文本 + 底部「用户协议 / 隐私政策」;隐私政策点击弹出应用内摘要(完整政策见 `docs/PRIVACY.md`),用户协议仍为占位 + **「数据来源:Open-Meteo(CC-BY 4.0);中国区前 5 天 CMA GRAPES;日天气按白天 08:00–20:00 逐小时聚合」署名行(合规必须)**。静态页面,无 ViewModel,无状态。
 
 ---
 
@@ -520,16 +544,18 @@ implementation(libs.androidx.swiperefreshlayout)
 | 文件 | 职责与关键签名 |
 |---|---|
 | `WeatherApplication.kt` | `class WeatherApplication : Application`;`lateinit var container: AppContainer` |
-| `di/AppContainer.kt` | 手写 DI 容器:`val cityStore/openMeteoApi/airQualityApi/geocodingApi/weatherRepository/locationDataSource`、`const val APP_VERSION = "1.0"` |
+| `di/AppContainer.kt` | 手写 DI 容器:`val cityStore/openMeteoApi/airQualityApi/geocodingApi/weatherRepository/locationDataSource`、`const val APP_VERSION = "1.1"` |
 | `data/model/City.kt` | `data class City(id, name, latitude, longitude, isLocated, displayOrder, addedAtMillis)` |
-| `data/model/WeatherReport.kt` | `WeatherReport(cityId, fetchedAtMillis, timezone, current: CurrentWeather?, daily: List<DailyForecast>, hourly: List<HourForecast>)`;`CurrentWeather(temperatureC, apparentTemperatureC, humidityPercent, pressureHpa, windKmh, windDirectionDeg, visibilityKm: Double?, weatherCode, isNight, pm25: Double?)`;`DailyForecast(date: LocalDate, weatherCode, tempMaxC, tempMinC, precipProbabilityMaxPercent: Int?, uvIndexMax: Double?, sunrise: LocalTime, sunset: LocalTime)`;`HourForecast(time: LocalDateTime, temperatureC, weatherCode)`;`CitySearchResult(name, admin1, country, lat, lon, population: Long?)` |
+| `data/model/WeatherReport.kt` | `WeatherReport(cityId, fetchedAtMillis, timezone, current: CurrentWeather?, daily: List<DailyForecast>, hourly: List<HourForecast>)`;`CurrentWeather(...)`;`DailyForecast(date: LocalDate, weatherCode, tempMaxC, tempMinC, precipProbabilityMaxPercent: Int?, uvIndexMax: Double?, sunrise: LocalTime, sunset: LocalTime, conditionText: String? = null)`;`HourForecast(time: LocalDateTime, temperatureC, weatherCode)`;`CitySearchResult(...)` |
 | `data/remote/dto/ForecastResponse.kt` | 与 Open-Meteo 实测结构一一对应的 DTO:`ForecastResponse(latitude, longitude, timezone, current: CurrentBlock, hourly: HourlyBlock, daily: DailyBlock)`;字段名 snake_case 原样 |
 | `data/remote/dto/AirQualityResponse.kt` | `AirQualityResponse(current: AirCurrentBlock)`;`AirCurrentBlock(time, pm2_5: Double?, us_aqi: Double?)` |
 | `data/remote/dto/GeocodingResponse.kt` | `GeocodingResponse(results: List<GeocodingPlace>?)`;`GeocodingPlace(id, name, latitude, longitude, admin1?, country?, population?, timezone?)` |
-| `data/remote/OpenMeteoApi.kt` | `interface OpenMeteoApi { @GET("v1/forecast") suspend fun forecast(@Query("latitude") lat: Double, @Query("longitude") lon: Double, @Query("current") current: String, @Query("hourly") hourly: String, @Query("daily") daily: String, @Query("timezone") tz: String = "auto", @Query("forecast_days") days: Int = 16, @Query("wind_speed_unit") unit: String = "kmh"): ForecastResponse; @GET("v1/air-quality") suspend fun airQuality(...): AirQualityResponse; @GET("v1/search") suspend fun searchCity(@Query("name") name: String, @Query("count") count: Int = 10, @Query("language") lang: String = "zh", @Query("format") f: String = "json"): GeocodingResponse }`;current/hourly/daily 参数串定义为常量(值即 §1.1 实测命令中的串) |
+| `data/remote/OpenMeteoApi.kt` | `interface OpenMeteoApi { @GET("v1/forecast") suspend fun forecast(@Query("latitude") lat: Double, @Query("longitude") lon: Double, @Query("current") current: String, @Query("hourly") hourly: String, @Query("daily") daily: String, @Query("timezone") tz: String = "auto", @Query("forecast_days") days: Int = 16, @Query("wind_speed_unit") unit: String = "kmh", @Query("models") models: String? = null): ForecastResponse; ... }`;current/hourly/daily 参数串定义为常量;中国区以 `models=cma_grapes_global` 请求前 5 天 |
 | `data/remote/WeatherApiClient.kt` | `object WeatherApiClient { fun openMeteo(baseUrl: String, debug: Boolean): OpenMeteoApi }`;共享 OkHttpClient(connect 10s / read 15s),`logging-interceptor` 仅 `ApplicationInfo.FLAG_DEBUGGABLE` 时 BASIC 级 |
 | `data/WeatherCodes.kt` | 纯函数映射(§4/§5 全部表):`fun wmoDesc(code: Int): String`、`fun wmoScene(code: Int): SceneType`、`fun aqiLevelText(pm25: Double): String`、`fun uvLevelText(uv: Double?): String`、`fun windDirText(deg: Double?): String`;**可单测**(不依赖 Android) |
-| `data/WeatherMapper.kt` | `fun ForecastResponse.toDomain(cityId: String, fetchedAt: Long, pm25: Double?): WeatherReport`、`fun GeocodingResponse.sortedResults(): List<CitySearchResult>`(population 优先) |
+| `data/WeatherMapper.kt` | `fun ForecastResponse.toDomain(cityId: String, fetchedAt: Long, pm25: Double?): WeatherReport`、`fun GeocodingResponse.sortedResults(): List<CitySearchResult>`(population 优先);逐日天气由逐小时数据推导 |
+| `data/ChinaRegion.kt` | `fun isInChina(latitude: Double, longitude: Double): Boolean`(粗略包围盒,用于选择 CMA 模型) |
+| `data/DailyCondition.kt` | `internal fun deriveDayCondition(hours, date, fallbackCode): DayCondition`;按白天 08:00–20:00 逐小时数据生成代表天气码与转折文案;纯 Kotlin,可单测 |
 | `data/CityStore.kt` | DataStore 封装:`val cities: Flow<List<City>>`、`suspend fun saveCities(list: List<City>)`、`suspend fun cachedWeather(cityId: String): WeatherReport?`、`suspend fun saveWeather(cityId: String, report: WeatherReport)`;键位常量见 §2.2 |
 | `data/WeatherRepository.kt` | `val reports: StateFlow<Map<String, WeatherReport>>`、`val cities: StateFlow<List<City>>`(由 CityStore.flow 转换)、`suspend fun refreshWeather(cityId: String): Result<WeatherReport>`、`suspend fun addCity(city: City)`、`suspend fun removeCity(cityId: String)`、`suspend fun reorderCities(orderedIds: List<String>)`、`suspend fun upsertLocatedCity(name: String?, lat: Double, lon: Double): City`、`suspend fun searchCity(query: String): List<CitySearchResult>` |
 | `data/LocationDataSource.kt` | `fun hasPermission(): Boolean`、`suspend fun currentLocation(timeoutMs: Long = 10_000): LocationFix?`;`sealed class LocationFix { data class Fixed(lat, lon); object Denied; object Unavailable }`;getLastKnown + requestLocationUpdates 一次性策略(§2.4) |
@@ -545,7 +571,7 @@ implementation(libs.androidx.swiperefreshlayout)
 | `ui/search/SearchResultAdapter.kt` | 结果列表 adapter |
 | `ui/fifteenday/FifteenDayActivity.kt` | 15 日详情页(§3),接收 `EXTRA_CITY_ID` |
 | `ui/fifteenday/FifteenDayViewModel.kt` / `FifteenDayUiState.kt` / `FifteenDayAdapter.kt` | 从 Repository 缓存取 daily[1..15],缺失时补拉 |
-| `ui/about/AboutActivity.kt` | 静态关于页(§7),无 ViewModel |
+| `ui/about/AboutActivity.kt` | 静态关于页(§7),无 ViewModel;隐私政策点击弹出应用内摘要 |
 | `view/WeatherTrendView.kt` | §6.3;`fun setDays(days: List<DailyForecast>, night: Boolean)` |
 | `view/WeatherSingleInfoView.kt` | 详情卡:label(次要色 13sp)+ value(白 22sp,unit 小号);`fun bind(card: DetailCardUi)` |
 | `view/WeatherCardBackdropView.kt` | 城市卡小动画背景:内部持有 `WeatherScene`,24fps Choreographer 节流,粒子密度 0.35;`fun setScene(type: SceneType, night: Boolean)`、`fun pause()/resume()` |
@@ -575,13 +601,14 @@ implementation(libs.androidx.swiperefreshlayout)
 
 ## 11. 风险与未验证项(诚实清单)
 
-1. **Gradle 构建未运行**:本文档所有版本号来自 Maven Central / Google Maven metadata 实查,但本次仅允许改 docs/,未执行 `gradlew build` 验证依赖解析——实现后第一个动作应是 sync 构建。
+1. **Gradle 构建已验证**:2026-11-05 已通过 `.\gradlew.bat :app:testDebugUnitTest`(5 个单测)与 `:app:assembleDebug`;此前文档阶段未运行构建的风险已关闭。
 2. **kotlinx-serialization 在 AGP 9 内置 Kotlin 的兼容性**:官方文档与社区报告表明有缺口,但**本会话未实际编译验证**;正因如此才选了免插件方案,该风险被规避而非被证明。
 3. **Geocoder 逆地理**:框架 Geocoder 在无 GMS 设备上可能 `isPresent()==false` 或返回 null,已写回退名「我的位置」;具体设备表现未实测(无真机自动化手段)。
 4. **Open-Meteo 长期可用性**:公益免费服务,无限流承诺;缓解 = 接口层单类收敛(§1.4)+ 缓存兜底。
 5. **heytap 接口**:本会话**未**重放其请求(不采信 = 不依赖;数据源侦察报告的实测结论仅作附录存档)。
 6. **截图取样色**:城市管理工具栏/页面底色为截图目测近似值,实现时可微调;APK uiNotes 实测色(文字白、tag 灰等)为准值。
 7. **ViewPager2 与逐小时条横向手势**:内外层横向滚动并存,标准嵌套滚动行为下边界切页可能有轻微抢手感;v1 不做特殊处理,记录为已知小瑕疵。
+8. **CMA 覆盖与模型差异**:CMA GRAPES 仅提供约 5 天,第 6–15 天仍回退 best_match,可能与国内官方 App 存在差异;缓解 = 中国区前 5 天优先 CMA + 应用内明确标注数据来源与取样方式。
 
 ---
 
@@ -592,6 +619,7 @@ implementation(libs.androidx.swiperefreshlayout)
 | 命令 | 结果要点 |
 |---|---|
 | `curl api.open-meteo.com/v1/forecast?...`(参数见 §1.1) | 200;timezone=Asia/Shanghai;current 10 字段;hourly 384 点;daily 16 天;current.code=55/is_day=0 |
+| `curl ...&models=cma_grapes_global&forecast_days=5` | 200;CMA 11/8 大连 code=61(小雨)、7.1/0.3°C;同坐标 best_match code=75(大雪)、6.8/0.4°C;逐小时 CMA 白天转晴(14:00–20:00 code=0) |
 | `curl air-quality-api.open-meteo.com/v1/air-quality?current=pm2_5,us_aqi` | 200;pm2_5=28.5,us_aqi=114 |
 | `curl geocoding-api.open-meteo.com/v1/search?name=大连` | 5 个同名村镇,population 均 null |
 | `curl geocoding-api.open-meteo.com/v1/search?name=大连市` | 辽宁·大连市 38.91222/121.60222 pop=7450785 |

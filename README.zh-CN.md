@@ -4,7 +4,7 @@
 
 > 这段动画来自我使用过的 OnePlus 7 Pro（GM1901），系统为 Android 10 / Hydrogen OS 10.0.10.GM21。这个版本内置的天气应用动画非常出色，色彩层次、光影和随手机倾斜的视差都做得很极致。为了还原这个效果，我用 Android 原生 View + Canvas 做了一次非官方的复刻与模拟，向这个出色的系统应用致敬。
 
-本项目在传统 XML + 自定义 View 的 Android 工程里，复刻氢 OS10 风格天气应用的完整首页体验：天气数据来自 Open-Meteo 免费接口，支持多城市管理、城市搜索、15 天天气预报与两列详情卡；15 种天气场景动画全部由纯 `Canvas` 程序化绘制，随实况天气码自动切换，并保留随手机倾斜的视差。
+本项目在传统 XML + 自定义 View 的 Android 工程里，复刻氢 OS10 风格天气应用的完整首页体验：天气数据来自 Open-Meteo 免费接口（中国境内前 5 天优先使用 CMA GRAPES 模型），支持多城市管理、城市搜索、15 天天气预报与两列详情卡；15 种天气场景动画全部由纯 `Canvas` 程序化绘制，随实况天气码自动切换，并保留随手机倾斜的视差。
 
 场景动画部分**不依赖第三方动画库、不包含原应用的代码、图片、字体、图标或其他素材**；数据部分联网请求 Open-Meteo（免费、无需 key），定位使用系统 LocationManager。详细的数据源选型、WMO 天气码映射表与页面规格见 [docs/DESIGN.md](docs/DESIGN.md)。
 
@@ -67,7 +67,7 @@
 
 ### 关于页
 
-- 静态页：云朵 logo + 「氢天气 V1.0」+ 更新日志 + **「数据来源：Open-Meteo（CC-BY 4.0）」署名**（合规必须）+ 用户协议 / 隐私政策占位。
+- 静态页：云朵 logo + 「氢天气 V1.1」+ 更新日志 + **「数据来源：Open-Meteo（CC-BY 4.0）；中国境内前 5 天 CMA GRAPES；日天气按白天 08:00–20:00 逐小时聚合」署名**（合规必须）+ 用户协议占位 + 隐私政策入口（应用内摘要，完整政策见 [docs/PRIVACY.md](docs/PRIVACY.md)）。
 
 ### 定位
 
@@ -91,10 +91,13 @@
 | `https://air-quality-api.open-meteo.com/v1/air-quality` | PM2.5 实况（空气质量等级卡） |
 | `https://geocoding-api.open-meteo.com/v1/search` | 城市搜索（搜索添加页） |
 
-- **署名要求**：Open-Meteo 采用 **CC-BY 4.0** 许可，使用其数据必须注明来源——本项目已在「关于页」展示「数据来源：Open-Meteo（CC-BY 4.0）」。额度方面 Open-Meteo 为公益免费服务（API 文档公布的非商用限流内即可满足本项目这类低频请求），本项目仅在进入页面 / 下拉刷新 / 打开城市管理时按需请求，无后台轮询。
+- **模型选择（2026-11）**：中国境内坐标（粗略包围盒：北纬 18°–54°、东经 73°–135°）前 5 天请求 **CMA GRAPES** 全球模型（`models=cma_grapes_global`、`forecast_days=5`）；第 6–15 天与非中国坐标使用 Open-Meteo `best_match`。两个 forecast 请求并行执行，CMA 失败时静默回退，不影响整体刷新。实况、时区与 `observedAt` 优先 CMA；逐日按日期合并（CMA 覆盖的日期优先），逐时按时间合并。
+- **日天气取样（2026-11）**：Open-Meteo 的 `daily.weather_code` 表示“当天最严重的小时天气”，一场两小时大雪会把全天标成「大雪」。现在改为按城市本地 **08:00–20:00** 的逐小时天气聚合：出现次数最多的天气码作为图标与首页短文案（同票按降水 > 云 > 晴、雪 > 雨的保守顺序取舍）；存在显著连续分段时生成转折文案，如「毛毛雨转晴」「小雨转中雪」，在 15 天页展示。夜间降水不参与白天描述。
+- **署名要求**：Open-Meteo 采用 **CC-BY 4.0** 许可，使用其数据必须注明来源——本项目已在「关于页」展示「数据来源：Open-Meteo（CC-BY 4.0）」及 CMA / 取样方式说明。额度方面 Open-Meteo 为公益免费服务（API 文档公布的非商用限流内即可满足本项目这类低频请求），本项目仅在进入页面 / 下拉刷新 / 打开城市管理时按需请求，无后台轮询。
 - **连通性**：设计会话对三接口的完整 curl 实测（含字段样本）记录在 [docs/DESIGN.md](docs/DESIGN.md) §1.1 / §12.1；本次文档更新时对三接口复测，均返回 HTTP 200。
 - **失败语义**：forecast 请求失败按整体失败处理（有缓存显示旧数据 + 「X 分钟前更新」，无缓存显示错误 + 重试）；air-quality 失败不拖垮整体，PM2.5 沿用旧值（缺失显示「—」）。所有网络异常在数据层统一包装为 `WeatherDataException`。
 - **heytap 网页的用途**：原版一加天气的『15 天天气预报』按钮会外跳其服务端签发的 mobileLink 网页（OPPO/heytap 体系）。本项目**不使用** heytap 接口与网页（决策依据见 [docs/DESIGN.md](docs/DESIGN.md) D2/§1.2，接口存档见其附录 A）：按钮改为打开**应用内 15 天详情页**（`FifteenDayActivity`），数据取同一份 forecast 响应的 `daily[1..15]`（明天起 15 天），零额外网络请求；无缓存时现场重新拉取，网络也失败则页内显示「加载失败，请检查网络」+ 重试按钮——不存在「跳浏览器失败」的场景。
+- **相关文档**：[CHANGELOG.md](CHANGELOG.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/free-weather-apis.md](docs/free-weather-apis.md) · [docs/DESIGN.md](docs/DESIGN.md)
 
 ---
 

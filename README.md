@@ -4,7 +4,7 @@
 
 > This animation comes from the OnePlus 7 Pro (GM1901) I used, running Android 10 / Hydrogen OS 10.0.10.GM21. The weather app built into that version had a stunning animation: the color layering, light and shadow, and the parallax that follows the phone's tilt were all pushed to the limit. To recreate that effect, I built an unofficial recreation and simulation using native Android View + Canvas, as a tribute to this excellent system app.
 
-In a traditional XML + custom View Android project, this unofficial recreation rebuilds the full home-screen experience of a Hydrogen OS 10 style weather app: weather data comes from the free Open-Meteo APIs, with multi-city management, city search, a 15-day forecast page and two-column detail cards. All 15 weather scene animations are drawn purely with programmatic `Canvas`, switch automatically with the live weather code, and keep the tilt parallax.
+In a traditional XML + custom View Android project, this unofficial recreation rebuilds the full home-screen experience of a Hydrogen OS 10 style weather app: weather data comes from the free Open-Meteo APIs (with the CMA GRAPES model preferred for the first five days in China), plus multi-city management, city search, a 15-day forecast page and two-column detail cards. All 15 weather scene animations are drawn purely with programmatic `Canvas`, switch automatically with the live weather code, and keep the tilt parallax.
 
 The scene animation part **depends on no third-party animation libraries and contains no code, images, fonts, icons or other assets from the original app**. The data part talks to Open-Meteo over the network (free, no API key) and uses the framework LocationManager for positioning. For the full data-source decision record, WMO weather-code mapping tables and page specs, see [docs/DESIGN.md](docs/DESIGN.md).
 
@@ -67,7 +67,7 @@ Each clip is about 1–3.5 MB. Clicking a link opens the raw video file; the bro
 
 ### About page
 
-- Static page: cloud logo + "Hydro Weather V1.0" + changelog + **"Data source: Open-Meteo (CC-BY 4.0)" attribution line** (required by the license) + placeholder user-agreement / privacy-policy entries.
+- Static page: cloud logo + "Hydro Weather V1.1" + changelog + **attribution line: Open-Meteo (CC-BY 4.0), CMA GRAPES for the first five days in China, daily conditions aggregated from 08:00–20:00 hourly data** (required by the license) + placeholder user-agreement entry + privacy-policy entry (opens an in-app summary; the full policy is [docs/PRIVACY.md](docs/PRIVACY.md)).
 
 ### Location
 
@@ -91,10 +91,13 @@ All weather and city-search data comes from three free [Open-Meteo](https://open
 | `https://air-quality-api.open-meteo.com/v1/air-quality` | Live PM2.5 (air-quality level card) |
 | `https://geocoding-api.open-meteo.com/v1/search` | City search (search page) |
 
-- **Attribution**: Open-Meteo is licensed under **CC-BY 4.0**, which requires crediting the source — this project shows "Data source: Open-Meteo (CC-BY 4.0)" on its About page. Regarding quota, Open-Meteo is a free public service; the project's on-demand, low-frequency requests (page entry / pull-to-refresh / city management) stay well within the published non-commercial limits, and there is no background polling.
+- **Model selection (2026-11)**: for coordinates inside China (rough bounding box 18–54°N, 73–135°E), the first five days are requested from the **CMA GRAPES** global model (`models=cma_grapes_global`, `forecast_days=5`); days 6–15 and locations outside China use Open-Meteo `best_match`. Both forecast requests run in parallel; a CMA failure silently falls back to `best_match` and does not fail the refresh. Current conditions, time zone and `observedAt` prefer CMA; daily entries are merged by date (CMA wins for the days it covers) and hourly entries by time.
+- **Daily condition sampling (2026-11)**: Open-Meteo's `daily.weather_code` means "the most severe hourly condition of the day", so a two-hour heavy-snow period would label the whole day "heavy snow". The app now derives the daily condition from hourly codes between **08:00 and 20:00 local time**: the most frequent code becomes the icon and short label on the home screen (ties break conservatively toward precipitation over cloud over clear, and snow over rain); significant segments produce transition text such as "Drizzle turning clear" or "Rain turning to moderate snow" on the 15-day page. Night-time precipitation does not affect the daytime description.
+- **Attribution**: Open-Meteo is licensed under **CC-BY 4.0**, which requires crediting the source — this project shows "Data source: Open-Meteo (CC-BY 4.0)" plus the CMA / sampling notes on its About page. Regarding quota, Open-Meteo is a free public service; the project's on-demand, low-frequency requests (page entry / pull-to-refresh / city management) stay well within the published non-commercial limits, and there is no background polling.
 - **Connectivity**: the design session's full curl test of the three endpoints (with field samples) is recorded in [docs/DESIGN.md](docs/DESIGN.md) §1.1 / §12.1; the three endpoints were re-tested while updating this README and all returned HTTP 200.
 - **Failure semantics**: a failed forecast request fails the whole refresh (cached data stays on screen with "updated X min ago"; with no cache an error state with retry is shown); a failed air-quality request does not fail the refresh — the previous PM2.5 value is kept (or "—" when missing). All network errors are wrapped into a single `WeatherDataException` type in the data layer.
 - **Purpose of the heytap web page**: in the original OnePlus weather app, the "15-day forecast" button opens a mobileLink web page signed by its server (the OPPO/heytap ecosystem). This project does **not** use the heytap APIs or web page (rationale in [docs/DESIGN.md](docs/DESIGN.md) D2/§1.2, endpoints archived in its Appendix A): the button opens an **in-app 15-day detail page** (`FifteenDayActivity`) instead, fed by `daily[1..15]` (tomorrow through +15 days) of the same forecast response, with zero extra network requests; when no cache exists it fetches fresh data, and if the network also fails the page shows "Load failed, check network" with a retry button — there is no "browser jump failed" scenario.
+- **Related documents**: [CHANGELOG.md](CHANGELOG.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/free-weather-apis.md](docs/free-weather-apis.md) · [docs/DESIGN.md](docs/DESIGN.md)
 
 ---
 
