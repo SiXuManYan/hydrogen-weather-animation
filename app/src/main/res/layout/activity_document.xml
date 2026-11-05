@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/about_page_bg">
+
+    <LinearLayout android:id="@+id/toolbar"
+        style="@style/Weather.Toolbar"
+        android:background="@color/city_manage_toolbar_bg">
+        <ImageView android:id="@+id/button_back"
+            style="@style/Weather.IconButton"
+            android:contentDescription="@string/back"
+            android:src="@drawable/ic_back" app:tint="@color/white" />
+        <TextView android:id="@+id/text_title" style="@style/Weather.ToolbarTitle" />
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll_content"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/page_gutter">
+            <ProgressBar android:id="@+id/progress_loading"
+                android:layout_width="32dp" android:layout_height="32dp"
+                android:layout_gravity="center_horizontal"
+                android:contentDescription="@string/document_loading" />
+            <TextView android:id="@+id/text_error"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/document_load_failed"
+                android:textColor="@color/about_text_secondary"
+                android:textSize="16sp" android:visibility="gone" />
+            <Button android:id="@+id/button_retry"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="@string/retry" android:visibility="gone" />
+            <TextView android:id="@+id/text_body"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="@color/about_text_primary"
+                android:textColorLink="@color/about_link"
+                android:lineSpacingMultiplier="1.35"
+                android:textSize="16sp"
+                android:textIsSelectable="true" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

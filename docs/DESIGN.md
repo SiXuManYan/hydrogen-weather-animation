@@ -1,6 +1,6 @@
 # 氢天气：设计与实现
 
-本文说明当前 v1.1 的实现与约束。运行和操作见 [中文 README](../README.zh-CN.md)，待修复问题见 [审查记录](REVIEW.md)。依赖版本以 [版本目录](../gradle/libs.versions.toml) 和 [模块构建配置](../app/build.gradle.kts) 为准。
+本文说明当前 v1.2 的实现与约束。运行和操作见 [中文 README](../README.zh-CN.md)，待修复问题见 [审查记录](REVIEW.md)。依赖版本以 [版本目录](../gradle/libs.versions.toml) 和 [模块构建配置](../app/build.gradle.kts) 为准。
 
 ## 0. 核心决策
 
@@ -77,7 +77,7 @@ CMA 的实况、时区、观测时间优先；逐日按日期、逐时按时间�
 
 日期时间使用 ISO 字符串适配器，避免 Gson 反射序列化 `java.time` 内部字段。启动时异步加载天气缓存到内存 `reports`，不会覆盖已更新条目；页面先等待预热完成，再判断是否需要刷新。
 
-城市去重、定位城市置顶、排序归一化由 `WeatherRepository` 负责。列表的“读—改—写”目前并非同一个 DataStore 事务；并发修改风险见审查记录。
+城市去重、定位城市置顶、排序归一化由 `WeatherRepository` 负责。`CityStorage` 定义持久化边界，`CityStore.updateCities` 在同一 `DataStore.edit` 中读改写，并清理被移除城市的天气缓存。仓库以同一个 Mutex 协调所有城市修改、缓存预热和天气提交，避免定位、添加、排序与删除互相覆盖。网络请求在锁外执行。
 
 ### 2.3 依赖注入
 
@@ -151,10 +151,10 @@ Mapper 在实况缺气温或天气码时舍弃整个实况块；部分其他缺�
 | --- | --- | --- |
 | 多城市主页 | `MainActivity` + `CityPagesAdapter` | 页序、头部、背景、调试、姿态 |
 | 单城市内容 | `WeatherFragment` + `WeatherViewModel` | 加载 / 内容 / 错误、日报、逐时、详情卡 |
-| 城市管理 | `CityManageActivity` + `CityManageViewModel` | 城市卡、批量刷新 |
+| 城市管理 | `CityManageActivity` + `CityManageViewModel` | 城市卡、批量刷新、多选、排序与删除提交 |
 | 城市搜索 | `CitySearchActivity` + `CitySearchViewModel` | 输入、结果、热门城市、添加事件 |
 | 15 天预报 | `FifteenDayActivity` + `FifteenDayViewModel` | 日期列表、加载与重试 |
-| 关于 | `AboutActivity` | 静态内容，无 ViewModel |
+| 关于与离线文档 | `AboutActivity` + `DocumentActivity` | 版本、入口、本地读取与失败重试 |
 
 ### 6.1.1 UI 排版规范
 
@@ -187,17 +187,21 @@ View 安全区统一由 `ui/WindowInsets.kt` 处理，以 XML 原始 padding 为
 
 输入经 300 ms 防抖后请求；新查询取消旧搜索，过期结果不覆盖当前输入。结果按人口非空且从大到小排序，再比较名称长度和名称。短中文名可能只命中同名村镇，因此提示输入全名。
 
-12 个热门城市使用内置坐标，不依赖搜索网络。添加时按 id 或经纬度差各小于 `1e-4°` 去重。搜索生成的稳定 id 与已有同坐标城市 id 可能不同，重复添加后的返回选择仍需改进。
+12 个热门城市使用内置坐标，不依赖搜索网络。添加时按 id 或经纬度差各小于 `1e-4°` 去重。仓库返回实际保留的 City，重复地点的搜索结果使用已有标识回传首页，避免切换不存在的城市。
 
 ### 6.5 城市卡
 
-城市管理 ViewModel 创建时，等待非空城市列表后批量刷新一次，并发上限为 4。重排和删除通过仓库持久化。
+城市管理 ViewModel 创建时，等待非空城市列表后批量刷新一次，并发上限为 4。`CitySelection` 按城市标识记录选择，通过 `SavedStateHandle` 恢复模式与标识；列表回流时过滤失效项和定位城市，天气刷新不重置选择。
+
+长按卡片或点击编辑进入多选；蓝色 2dp 描边与顶栏数量来自同一状态。关闭或系统返回退出选择，取消最后一项仍保留模式，空选择禁用删除。确认对话框捕获标识快照；提交期间锁定交互，失败保留选择并提示重试。
+
+卡片右侧手柄长按触发拖拽，单击提供上下移动菜单，便于无障碍操作。卡片长按不再启动拖拽。多选期间禁用拖拽 / 左滑，普通模式左滑同样先确认再删除。拖拽期间暂缓天气列表回流，松手后提交最终顺序；真正的定位城市不可拖删，手动首项不受限制。
 
 每张卡独立持有天气场景，更新帧率上限 24 fps，实际频率取决于屏幕刷新率。传入场景的显示密度乘 `0.35`，缩小粒子尺寸和速度；**粒子数量没有减少**。View 脱离窗口或窗口不可见时暂停。
 
 ### 6.6 图标与资源
 
-页面图标为手写 vector XML。启动图标的多密度 WebP 与自适应图标供系统选择，不能仅凭同名认定重复。日夜主题目前完全相同，统一使用 `values/themes.xml`。
+页面图标使用 vector XML。原创“晴空轻云”标识用于关于页与 adaptive icon，并有独立单色前景供主题图标使用。最低 API 29 已支持 adaptive icon，旧版默认机器人 WebP 与旧关于页云图已移除。矢量稿、PNG、颜色与路径生成方式见[品牌资产说明](brand/README.md)。日夜主题统一使用 `values/themes.xml`。
 
 ### 6.7 功能边界
 
@@ -205,9 +209,13 @@ View 安全区统一由 `ui/WindowInsets.kt` 处理，以 XML 原始 padding 为
 
 ## 7. 关于页
 
-展示云朵图标、版本、更新日志、数据来源和隐私摘要；用户协议为占位。当前版本同时写在 Gradle、`AppContainer.APP_VERSION` 和更新日志文字中，发布时需同步，后续可统一版本来源。
+展示原创 Logo、由 Gradle 生成的 `BuildConfig.VERSION_NAME`、数据署名，以及协议、隐私、版本历史、帮助和组件说明入口。没有账号登录或阅读前的权限要求。
 
-权限和数据传输见 [隐私政策](PRIVACY.md)。
+`DocumentActivity` 只接受 `LocalDocument` 枚举白名单中的文档，在 IO 线程读取包内 Markdown，再通过 Markwon 渲染。正文可选择、滚动，安全区与字体使用页面规范；读取失败可重试。仅用户点击的 http(s) 外链交由系统浏览器，没有 WebView。
+
+构建任务 `syncAppDocuments` 把 `docs/legal/`、根目录 `CHANGELOG.md`、`docs/USER_GUIDE.md` 和 `docs/THIRD_PARTY_NOTICES.md` 同步到生成的 assets。研发资料、Logo 导出和场景 MP4 不打包。正文只维护仓库版本，旧 `docs/PRIVACY.md` 为索引；当前应用展示中文，仓库另提供英文法律文本。
+
+权限和数据传输见[隐私政策](legal/PRIVACY_POLICY.md)，文档维护方式见[文档索引](README.md)。
 
 ## 8. 分层与状态
 
@@ -243,7 +251,7 @@ flowchart LR
 
 `best_match` 失败则保留旧报告并提示；没有缓存时显示错误和重试。CMA / 空气质量为可降级请求。协程取消应向上传播；网络错误经 `WeatherDataException` 包装。缓存写入失败不影响内存展示。DTO 转换与小时聚合在 Default dispatcher 执行，缓存序列化 / 写入在 IO dispatcher 执行。
 
-当前没有仓库级别的同城市请求合并；城市页、管理页、15 天页可能同时请求相同城市。城市删除会清理磁盘天气缓存，但内存 `reports` 未同步移除，进行中的请求还可能重新写入。
+当前没有仓库级别的同城市请求合并；城市页、管理页、15 天页可能同时请求相同城市。删除城市会在一次事务内移除条目及磁盘天气，随后过滤内存 `reports`。天气请求完成后在同一城市互斥区重新读取存储，核对城市仍存在且坐标、添加时间未变化，再提交内存和磁盘；迟到请求不能恢复已删除城市。请求本身不因删除主动取消，网络工作量优化仍可后续评估。
 
 ## 10. 开发与调参入口
 
@@ -283,4 +291,4 @@ sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 
 2026-11-06 的文档、资源和代码审查见 [REVIEW.md](REVIEW.md)，其中区分了已经清理的项目、可复现逻辑问题和待设备验证的优化建议。
 
-本次通过 Debug 构建、Lint 和 16 个 JVM 测试（9 个白天天气聚合、6 个预报时间线、1 个模板测试）。使用 API 30 小屏模拟器检查了首页温度区位置、搜索键盘 / 热门城市、城市管理删除手势和 15 天列表；没有验证实体设备传感器、定位精度、大屏或真实帧耗时。Lint 仍有方向锁定、重复背景绘制、依赖版本等提示，不能据此认为所有行为正确。
+本轮 v1.2 的构建、28 个 JVM 测试和 Lint 结果集中记录在[审查记录](REVIEW.md#验证记录)。本轮未运行模拟器或设备，新增多选手势、TalkBack、图标遮罩与字体放大仍需设备验收；没有据此宣称定位、性能或大屏适配已完成。

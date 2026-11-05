@@ -35,8 +35,10 @@ private val Context.weatherDataStore by preferencesDataStore(name = "weather_dat
  *
  * 读写纪律(§2.2):所有 DataStore 读写都封装在本类内,ViewModel 与 View 不得直接触碰 DataStore。
  * 城市数据的**业务规则**(定位城市置顶、去重、排序归一化)在 WeatherRepository,本类只管字节面。
+ *
+ * @param context 用于获取进程唯一的应用级 DataStore。
  */
-class CityStore(context: Context) {
+class CityStore(context: Context) : CityStorage {
 
     private val appContext = context.applicationContext
 
@@ -67,39 +69,32 @@ class CityStore(context: Context) {
         .create()
 
     /** 城市列表流;读失败按 §2.2 回退空列表。 */
-    val cities: Flow<List<City>> = appContext.weatherDataStore.data
+    override val cities: Flow<List<City>> = appContext.weatherDataStore.data
         .catch { cause ->
             if (cause is java.io.IOException) emit(emptyPreferences()) else throw cause
         }
         .map { prefs -> parseCities(prefs[CITY_LIST_KEY]) }
 
-    /** 写入整份城市列表(调用方负责业务归一化,见 WeatherRepository)。 */
-    suspend fun saveCities(list: List<City>) {
+    /** 城市读改写与已删除城市的缓存清理共用同一次事务，避免批量操作丢失修改。 */
+    override suspend fun updateCities(transform: (List<City>) -> List<City>): List<City> {
+        var updated: List<City> = emptyList()
         appContext.weatherDataStore.edit { prefs ->
-            prefs[CITY_LIST_KEY] = gson.toJson(list)
+            val current = parseCities(prefs[CITY_LIST_KEY])
+            updated = transform(current)
+            if (updated != current) prefs[CITY_LIST_KEY] = gson.toJson(updated)
+            val retainedIds = updated.mapTo(HashSet()) { it.id }
+            current.filter { it.id !in retainedIds }.forEach { city ->
+                prefs.remove(weatherCacheKey(city.id))
+            }
         }
-    }
-
-    /** 读某城市最近一次天气缓存;无缓存/读失败/解析失败 → null。 */
-    suspend fun cachedWeather(cityId: String): WeatherReport? {
-        val prefs = readPrefs() ?: return null
-        val json = prefs[weatherCacheKey(cityId)] ?: return null
-        return runCatching { gson.fromJson(json, CachedWeather::class.java)?.report }
-            .getOrNull()
+        return updated
     }
 
     /** 写入天气缓存;fetchedAt 外壳时间戳取自报告自身(§2.2 CachedWeather(report, fetchedAtMillis))。 */
-    suspend fun saveWeather(cityId: String, report: WeatherReport) {
+    override suspend fun saveWeather(cityId: String, report: WeatherReport) {
         val json = gson.toJson(CachedWeather(report = report, fetchedAtMillis = report.fetchedAtMillis))
         appContext.weatherDataStore.edit { prefs ->
             prefs[weatherCacheKey(cityId)] = json
-        }
-    }
-
-    /** 删除城市时同步清掉其天气缓存。 */
-    suspend fun removeWeatherCache(cityId: String) {
-        appContext.weatherDataStore.edit { prefs ->
-            prefs.remove(weatherCacheKey(cityId))
         }
     }
 
@@ -107,7 +102,7 @@ class CityStore(context: Context) {
      * 读取全部天气缓存(cityId → report),供 WeatherRepository 启动时把内存层
      * `reports` 预热,保证进程重启后 15 天页/城市管理页离线仍有数据。
      */
-    suspend fun loadAllCachedWeather(): Map<String, WeatherReport> {
+    override suspend fun loadAllCachedWeather(): Map<String, WeatherReport> {
         val prefs = readPrefs() ?: return emptyMap()
         val result = LinkedHashMap<String, WeatherReport>()
         for ((key, value) in prefs.asMap()) {

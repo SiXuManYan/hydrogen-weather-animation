@@ -33,7 +33,33 @@
             android:indeterminateTint="@color/text_secondary_on_dark"
             android:visibility="gone"
             tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/button_edit"
+            style="@style/Weather.IconButton"
+            android:contentDescription="@string/city_edit"
+            android:src="@drawable/ic_edit"
+            app:tint="@color/white" />
+
+        <ImageView
+            android:id="@+id/button_delete"
+            style="@style/Weather.IconButton"
+            android:contentDescription="@string/city_delete"
+            android:src="@drawable/ic_delete"
+            android:visibility="gone"
+            app:tint="@color/white" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/text_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/page_gutter"
+        android:paddingTop="16dp"
+        android:paddingEnd="@dimen/page_gutter"
+        android:text="@string/city_manage_hint"
+        android:textColor="@color/about_text_secondary"
+        android:textSize="13sp" />
 
     <FrameLayout
         android:id="@+id/content"

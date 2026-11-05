@@ -122,8 +122,14 @@ class CitySearchViewModel(application: Application) : AndroidViewModel(applicati
             val id = UUID.nameUUIDFromBytes(
                 "city:$name:$latitude,$longitude".toByteArray()
             ).toString()
-            runCatching { repository.addCity(City(id, name, latitude, longitude)) }
-                .onSuccess { _events.send(CitySearchEvent.CityAdded(name, id)) }
+            runCatching {
+                repository.addCity(
+                    City(id = id, name = name, latitude = latitude, longitude = longitude)
+                )
+            }
+                .onSuccess { city ->
+                    _events.send(CitySearchEvent.CityAdded(name = city.name, cityId = city.id))
+                }
                 .onFailure {
                     if (it is kotlinx.coroutines.CancellationException) throw it
                     _events.send(CitySearchEvent.AddFailed)

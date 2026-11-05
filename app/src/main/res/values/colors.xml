@@ -18,6 +18,7 @@
     <!-- 城市管理/关于/搜索页(DESIGN.md §10.2 截图近似取样:工具栏 #FF1E1F22、页面 #FFF2F3F5、关于页 #FFF7F7F7) -->
     <color name="city_manage_toolbar_bg">#FF1E1F22</color>
     <color name="city_manage_page_bg">#FFF2F3F5</color>
+    <color name="city_selection">#FF239BFA</color>
     <color name="about_page_bg">#FFF7F7F7</color>
     <color name="about_text_primary">#FF263238</color>
     <color name="about_text_secondary">#FF65717D</color>

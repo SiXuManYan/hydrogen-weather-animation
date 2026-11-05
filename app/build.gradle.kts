@@ -12,8 +12,8 @@ android {
         applicationId = "com.sugar.weather"
         minSdk = 29
         targetSdk = 37
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -33,8 +33,25 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
+
+    // 只打包面向用户的文档，避免将设计资料与场景录屏放入安装包。
+    sourceSets["main"].assets.directories.add(
+        layout.buildDirectory.dir("generated/appDocuments").get().asFile.path
+    )
 }
+
+// 仓库 Markdown 是唯一正文来源；每次构建自动同步，删除源文件时也清理旧资产。
+val syncAppDocuments by tasks.registering(Sync::class) {
+    from(rootProject.file("docs/legal")) { into("legal") }
+    from(rootProject.file("CHANGELOG.md")) { into("history") }
+    from(rootProject.file("docs/USER_GUIDE.md")) { into("help") }
+    from(rootProject.file("docs/THIRD_PARTY_NOTICES.md")) { into("help") }
+    into(layout.buildDirectory.dir("generated/appDocuments"))
+}
+
+tasks.named("preBuild").configure { dependsOn(syncAppDocuments) }
 
 dependencies {
     implementation(libs.androidx.activity.ktx)
@@ -55,6 +72,7 @@ dependencies {
     implementation(libs.androidx.viewpager2)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.markwon.core)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

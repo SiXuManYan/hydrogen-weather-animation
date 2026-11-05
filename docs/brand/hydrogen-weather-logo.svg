@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 108 108" role="img" aria-labelledby="title desc">
+  <title id="title">氢天气 · 晴空轻云</title>
+  <desc id="desc">晴空蓝的圆角方形中，一朵轻云托住暖金色太阳，底部一笔微风。</desc>
+  <defs>
+    <linearGradient id="sky" x1="14" y1="4" x2="94" y2="104" gradientUnits="userSpaceOnUse"><stop stop-color="#3D9DF2"/><stop offset="1" stop-color="#1452A6"/></linearGradient>
+    <linearGradient id="sun" x1="58" y1="29" x2="72" y2="56" gradientUnits="userSpaceOnUse"><stop stop-color="#FFE8AB"/><stop offset="1" stop-color="#FFB84D"/></linearGradient>
+    <linearGradient id="cloud" x1="45" y1="35" x2="59" y2="73" gradientUnits="userSpaceOnUse"><stop stop-color="white"/><stop offset="1" stop-color="#DEEEFF"/></linearGradient>
+  </defs>
+  <rect x="4" y="4" width="100" height="100" rx="22" fill="url(#sky)"/>
+  <path d="M65,21V25M82,27L79,30M88,43H84" fill="none" stroke="#FFE5A5" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M79,43A14,14 0,1 1,51,43A14,14 0,1 1,79,43Z" fill="url(#sun)"/>
+  <path d="M36,72C27,72 23,66 23,60C23,53 28,48 35,48C37,39 43,34 51,34C62,34 69,42 69,51C77,50 84,55 84,62C84,68 79,72 72,72Z" fill="#1B426D" opacity=".1" transform="translate(0 2)"/>
+  <path d="M36,72C27,72 23,66 23,60C23,53 28,48 35,48C37,39 43,34 51,34C62,34 69,42 69,51C77,50 84,55 84,62C84,68 79,72 72,72Z" fill="url(#cloud)"/>
+  <path d="M39,79H60C65,79 68,77 70,74" fill="none" stroke="#A8DCFF" stroke-width="3" stroke-linecap="round"/>
+</svg>

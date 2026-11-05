@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -29,9 +31,15 @@ import kotlinx.coroutines.withContext
  *   协程取消(CancellationException)原样重抛,不吞。
  *
  * 刷新失败语义(§9):forecast 失败 → 整体失败;air-quality 失败 → 保留旧 pm25,卡片显示「—」。
+ *
+ * @param cityStore 城市事务与天气持久化边界。
+ * @param forecastApi 预报网络接口。
+ * @param airQualityApi 空气质量接口。
+ * @param geocodingApi 城市搜索接口。
+ * @param externalScope 承载共享流和启动预热的进程级作用域。
  */
 class WeatherRepository(
-    private val cityStore: CityStore,
+    private val cityStore: CityStorage,
     private val forecastApi: OpenMeteoApi,
     private val airQualityApi: OpenMeteoApi,
     private val geocodingApi: OpenMeteoApi,
@@ -39,6 +47,9 @@ class WeatherRepository(
 ) {
 
     private val _reports = MutableStateFlow<Map<String, WeatherReport>>(emptyMap())
+
+    /** 城市修改、缓存预热和刷新提交共用此锁；网络请求始终在锁外执行。 */
+    private val cityMutationMutex = Mutex()
 
     /** cityId → 最近一次成功抓取的天气报告(内存层;启动时从 DataStore 缓存预热)。 */
     val reports: StateFlow<Map<String, WeatherReport>> = _reports.asStateFlow()
@@ -49,8 +60,11 @@ class WeatherRepository(
 
     /** 缓存预热完成后再判断是否缺数据，避免冷启动时先发一轮多余请求。 */
     private val cacheReady = externalScope.launch {
-        val cached = cityStore.loadAllCachedWeather()
-        _reports.update { current -> current + cached.filterKeys { it !in current } }
+        cityMutationMutex.withLock {
+            val retainedIds = cityStore.cities.first().mapTo(HashSet()) { it.id }
+            val cached = cityStore.loadAllCachedWeather().filterKeys { it in retainedIds }
+            _reports.update { current -> cached + current }
+        }
     }
 
     /** 等待磁盘预热，取得当前城市缓存；此过程不访问网络。 */
@@ -111,14 +125,23 @@ class WeatherRepository(
                     ?.let { mergeReports(fallback = fallbackReport, cma = it) }
                     ?: fallbackReport
             }
-            _reports.update { it + (cityId to report) }
-            try {
-                withContext(Dispatchers.IO) { cityStore.saveWeather(cityId, report) }
-            } catch (storeError: Exception) {
-                // 缓存写失败不影响本次展示;内存层已更新,下次刷新重试落盘
-                if (storeError is CancellationException) throw storeError
+            cityMutationMutex.withLock {
+                // 不使用可能滞后的 StateFlow；检查、内存更新及落盘必须与删除串行。
+                val latest = cityStore.cities.first().firstOrNull { it.id == cityId }
+                if (latest == null || latest.latitude != city.latitude ||
+                    latest.longitude != city.longitude || latest.addedAtMillis != city.addedAtMillis
+                ) {
+                    return@withLock Result.failure(WeatherDataException.CityNotFound(cityId))
+                }
+                _reports.update { it + (cityId to report) }
+                try {
+                    withContext(Dispatchers.IO) { cityStore.saveWeather(cityId, report) }
+                } catch (storeError: Exception) {
+                    // 缓存写失败不影响本次展示；取消仍需传播给页面生命周期。
+                    if (storeError is CancellationException) throw storeError
+                }
+                Result.success(report)
             }
-            Result.success(report)
         }
     } catch (cancellation: CancellationException) {
         throw cancellation
@@ -149,31 +172,34 @@ class WeatherRepository(
         }
     }
 
-    /** 追加城市(搜索页/热门城市);同 id 或同坐标(±1e-4°)视为重复,忽略。 */
-    suspend fun addCity(city: City) {
-        mutateCities { list ->
-            if (list.any { it.id == city.id || isSamePlace(it, city) }) {
-                list
-            } else {
-                list + city.copy(addedAtMillis = System.currentTimeMillis())
-            }
+    /** 追加城市；重复时返回实际保留的城市，供搜索页正确切回已有卡片。 */
+    suspend fun addCity(city: City): City {
+        val updated = mutateCities { list ->
+            if (list.any { it.id == city.id || isSamePlace(it, city) }) list
+            else list + city.copy(addedAtMillis = System.currentTimeMillis())
         }
+        return updated.first { it.id == city.id || isSamePlace(it, city) }
     }
 
-    /** 删除城市;定位城市不可删除(§2.4 第 4 条),静默忽略。成功删除时清其天气缓存。 */
+    /** 单项删除复用批量入口；定位城市始终受到仓库保护。 */
     suspend fun removeCity(cityId: String) {
-        val removed = mutateCities { list ->
-            val target = list.firstOrNull { it.id == cityId }
-            if (target == null || target.isLocated) list else list.filterNot { it.id == cityId }
+        removeCities(setOf(cityId))
+    }
+
+    /** 一次提交多选删除，城市条目、磁盘缓存及内存天气同步移除。 */
+    suspend fun removeCities(cityIds: Set<String>) {
+        mutateCities { list ->
+            list.filter { it.isLocated || it.id !in cityIds }
         }
-        if (removed) cityStore.removeWeatherCache(cityId)
     }
 
     /** 拖拽排序(城市管理页):按 orderedIds 重排;缺失 id 的城市追加在末尾,定位城市仍钉在 0 位。 */
     suspend fun reorderCities(orderedIds: List<String>) {
         mutateCities { list ->
             val byId = list.associateBy { it.id }
-            orderedIds.mapNotNull { byId[it] } + list.filter { it.id !in orderedIds.toSet() }
+            val uniqueIds = orderedIds.distinct()
+            val ordered = uniqueIds.toSet()
+            uniqueIds.mapNotNull { byId[it] } + list.filter { it.id !in ordered }
         }
     }
 
@@ -186,34 +212,34 @@ class WeatherRepository(
     suspend fun upsertLocatedCity(name: String?, latitude: Double, longitude: Double): City {
         // name == null(Geocoder 失败)时:已有城市沿用旧名,新建城市用回退名「我的位置」
         val resolvedName = name?.takeIf { it.isNotBlank() }
-        val current = cityStore.cities.first()
-        val existingLocated = current.firstOrNull { it.isLocated }
-        val samePlace = current.firstOrNull {
-            !it.isLocated && isSamePlace(it.latitude, it.longitude, latitude, longitude)
+        val updated = mutateCities { current ->
+            val existingLocated = current.firstOrNull { it.isLocated }
+            val samePlace = current.firstOrNull {
+                !it.isLocated && isSamePlace(it.latitude, it.longitude, latitude, longitude)
+            }
+            val target = when {
+                existingLocated != null -> existingLocated.copy(
+                    name = resolvedName ?: existingLocated.name,
+                    latitude = latitude,
+                    longitude = longitude
+                )
+                samePlace != null -> samePlace.copy(
+                    isLocated = true,
+                    name = resolvedName ?: samePlace.name,
+                    latitude = latitude,
+                    longitude = longitude
+                )
+                else -> City(
+                    id = UUID.randomUUID().toString(),
+                    name = resolvedName ?: LOCATED_CITY_FALLBACK_NAME,
+                    latitude = latitude,
+                    longitude = longitude,
+                    isLocated = true
+                )
+            }
+            listOf(target) + current.filterNot { it.id == target.id }
         }
-        val target = when {
-            existingLocated != null -> existingLocated.copy(
-                name = resolvedName ?: existingLocated.name,
-                latitude = latitude,
-                longitude = longitude
-            )
-            samePlace != null -> samePlace.copy(
-                isLocated = true,
-                name = resolvedName ?: samePlace.name,
-                latitude = latitude,
-                longitude = longitude
-            )
-            else -> City(
-                id = UUID.randomUUID().toString(),
-                name = resolvedName ?: LOCATED_CITY_FALLBACK_NAME,
-                latitude = latitude,
-                longitude = longitude,
-                isLocated = true
-            )
-        }
-        val updated = normalize(listOf(target) + current.filterNot { it.id == target.id })
-        if (updated != current) cityStore.saveCities(updated)
-        return target
+        return updated.first { it.isLocated }
     }
 
     // ———————————————————————— 内部实现 ————————————————————————
@@ -242,15 +268,22 @@ class WeatherRepository(
     }
 
     /**
-     * 城市列表读-改-写:以 DataStore 的最新值为基准(避免 cities StateFlow 尚未就绪时的竞态),
-     * 写前经 [normalize] 归一化。返回列表是否发生实际变化。
+     * 城市列表的事务入口：先归一化并持久化，再移除不再属于列表的内存报告。
+     * 定位、添加、排序及删除都走这里，防止相互覆盖或被迟到的天气重新写回。
      */
-    private suspend fun mutateCities(transform: (List<City>) -> List<City>): Boolean {
-        val current = cityStore.cities.first()
-        val updated = normalize(transform(current))
-        if (updated == current) return false
-        cityStore.saveCities(updated)
-        return true
+    private suspend fun mutateCities(transform: (List<City>) -> List<City>): List<City> = try {
+        cityMutationMutex.withLock {
+            withContext(Dispatchers.IO) {
+                val updated = cityStore.updateCities { current -> normalize(transform(current)) }
+                val retainedIds = updated.mapTo(HashSet()) { it.id }
+                _reports.update { reports -> reports.filterKeys { it in retainedIds } }
+                updated
+            }
+        }
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: Exception) {
+        throw WeatherDataException.Store(error)
     }
 
     /** 归一化:定位城市钉在 0 位(最多一个),其余保持相对顺序;displayOrder = 列表下标。 */
@@ -262,10 +295,9 @@ class WeatherRepository(
             .mapIndexed { index, city -> city.copy(displayOrder = index) }
     }
 
-    /** 优先内存,回退 DataStore;都无 → null(触发 CityNotFound)。 */
+    /** 直接读取存储快照，避免刚删除的城市仍暂留在共享 StateFlow 中。 */
     private suspend fun resolveCity(cityId: String): City? =
-        cities.value.firstOrNull { it.id == cityId }
-            ?: cityStore.cities.first().firstOrNull { it.id == cityId }
+        cityStore.cities.first().firstOrNull { it.id == cityId }
 
     private fun isSamePlace(a: City, b: City): Boolean =
         isSamePlace(a.latitude, a.longitude, b.latitude, b.longitude)

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 原创「晴空轻云」标识，由 tools/generate_brand_assets.py 生成。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:pathData="M26,4H82Q104,4 104,26V82Q104,104 82,104H26Q4,104 4,82V26Q4,4 26,4Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:startX="14" android:startY="4" android:endX="94" android:endY="104" android:type="linear">
+                <item android:offset="0" android:color="#3D9DF2" />
+                <item android:offset="1" android:color="#1452A6" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M65,21V25M82,27L79,30M88,43H84" android:fillColor="#00000000"
+        android:strokeColor="#FFE5A5" android:strokeWidth="2.8" android:strokeLineCap="round" />
+    <path android:pathData="M79,43A14,14 0,1 1,51,43A14,14 0,1 1,79,43Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:startX="58" android:startY="29" android:endX="72" android:endY="56" android:type="linear">
+                <item android:offset="0" android:color="#FFE8AB" />
+                <item android:offset="1" android:color="#FFB84D" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <group android:translateY="2">
+        <path android:pathData="M36,72C27,72 23,66 23,60C23,53 28,48 35,48C37,39 43,34 51,34C62,34 69,42 69,51C77,50 84,55 84,62C84,68 79,72 72,72Z" android:fillColor="#191B426D" />
+    </group>
+    <path android:pathData="M36,72C27,72 23,66 23,60C23,53 28,48 35,48C37,39 43,34 51,34C62,34 69,42 69,51C77,50 84,55 84,62C84,68 79,72 72,72Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:startX="45" android:startY="35" android:endX="59" android:endY="73" android:type="linear">
+                <item android:offset="0" android:color="#FFFFFF" />
+                <item android:offset="1" android:color="#DEEEFF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M39,79H60C65,79 68,77 70,74" android:fillColor="#00000000"
+        android:strokeColor="#A8DCFF" android:strokeWidth="3" android:strokeLineCap="round" />
+</vector>

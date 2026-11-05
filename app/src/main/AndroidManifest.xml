@@ -64,6 +64,12 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.Weather" />
+
+        <!-- 包内 Markdown 阅读页，无网络或定位前置条件。 -->
+        <activity
+            android:name=".ui.about.DocumentActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Weather" />
     </application>
 
 </manifest>

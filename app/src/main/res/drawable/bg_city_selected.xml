@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 不覆盖卡片天气，只用蓝色轮廓表达选中。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@android:color/transparent" />
+    <corners android:radius="@dimen/city_card_radius" />
+    <stroke android:width="2dp" android:color="@color/city_selection" />
+</shape>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 城市卡(DESIGN.md §6.5,截图 005350):小动画背景铺满圆角卡,上层城市名(带图钉)+「14°小雨」式温度行 -->
+<!-- 选择描边置于动画上方；排序手柄独立于卡片长按多选。 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -21,7 +21,7 @@
         android:orientation="vertical"
         android:paddingStart="20dp"
         android:paddingTop="18dp"
-        android:paddingEnd="20dp">
+        android:paddingEnd="64dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -44,6 +44,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:singleLine="true"
+                android:ellipsize="end"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 tools:text="沙河口区" />
@@ -59,4 +60,21 @@
             android:textSize="17sp"
             tools:text="14°小雨" />
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/button_reorder"
+        style="@style/Weather.IconButton"
+        android:layout_gravity="top|end"
+        android:layout_margin="8dp"
+        android:contentDescription="@string/city_reorder"
+        android:src="@drawable/ic_drag_handle"
+        app:tint="@color/white" />
+
+    <View
+        android:id="@+id/selection_outline"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_city_selected"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
 </FrameLayout>

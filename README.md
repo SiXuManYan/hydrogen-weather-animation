@@ -2,6 +2,8 @@
 
 [中文](README.zh-CN.md)
 
+<img src="docs/brand/hydrogen-weather-logo.svg" width="112" alt="Hydrogen Weather: Clear Sky, Light Cloud logo" />
+
 An Android weather app inspired by the Hydrogen OS 10 weather app on the OnePlus 7 Pro. It uses native XML, Views and Canvas for the interface, 15 weather animations and tilt parallax. Weather data comes from [Open-Meteo](https://open-meteo.com/), with no API key required.
 
 This project is for non-commercial learning and demonstration. It is not affiliated with, authorized by or endorsed by OnePlus, Hydrogen OS or the original weather app. The animations are drawn programmatically and contain no original app code, images, fonts or icons. This project grants no commercial-use permission; referenced names and trademarks belong to their owners.
@@ -10,13 +12,13 @@ This project is for non-commercial learning and demonstration. It is not affilia
 
 - **Weather home**: swipe between cities to view current conditions, a 6-day trend including today, hourly forecasts and 8 weather details. Supports pull-to-refresh and cached data offline.
 - **15-day forecast**: open an in-app page showing up to 15 days starting tomorrow. Reuses fresh cached weather and refreshes expired data, with an offline fallback.
-- **City management**: open the city icon in the header to add, reorder or delete cities. Each card has an animated background. The located city is intended to stay first.
+- **City management**: long-press a card or tap Edit to select cities with blue outlines and confirm batch deletion. Use the independent handle to drag or move cities through a menu. The located city stays first and cannot be removed. Each card has an animated background.
 - **City search**: search with the full city name, or add one of 12 built-in popular cities.
 - **Location**: permission is requested when the app has no cities; manual search remains available if denied. Uses the system `LocationManager` without a GMS dependency.
 - **Animation debug**: open `⋮` → Animation debug to select a scene, day/night and simulated tilt. To return to weather control, choose Restore weather background and then Apply.
-- **About**: version, data attribution and a privacy summary. The user-agreement entry is currently a placeholder.
+- **About**: an original weather logo, current version and offline agreement, privacy policy, changelog, help and component notices. The app currently displays these documents in Simplified Chinese.
 
-No default city is preloaded. Known refresh and city-gesture issues are listed in the [review record](docs/REVIEW.md) (Chinese).
+Current version: **1.2**. No default city is preloaded. See [help](docs/USER_GUIDE.md) for controls and the [review record](docs/REVIEW.md) for remaining location and debug-gesture limitations (Chinese).
 
 ## Run
 
@@ -52,7 +54,7 @@ Validation:
 sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 ```
 
-These checks passed on 2026-11-06. All 16 JVM tests passed, including 9 daytime-condition aggregation and 6 forecast-timeline tests. A small API 30 emulator was also used to inspect the home, search, city-management and 15-day layouts; this does not cover physical-device sensors or performance testing.
+See the [review record](docs/REVIEW.md#验证记录) for v1.2 verification. New selection and repository tests cover located-city protection, late responses after deletion, concurrent changes and failure recovery. No emulator was launched for this revision. Gestures, TalkBack, icon masks and large-font layouts still need device acceptance checks.
 
 ## Data and limitations
 
@@ -120,10 +122,14 @@ If physical tilt has no effect, disable simulated tilt in Animation debug and ch
 
 | Document | Purpose |
 | --- | --- |
+| [Documentation index](docs/README.md) | Find user, legal and maintenance documents (Chinese) |
+| [User guide](docs/USER_GUIDE.md) | Add, select, remove and reorder cities; troubleshooting (Chinese) |
+| [User agreement](docs/legal/en/USER_AGREEMENT.md) | Service and usage conditions |
+| [Brand assets](docs/brand/README.md) | Logo SVG, PNG, colors and generation (Chinese) |
 | [Design and implementation](docs/DESIGN.md) | Data rules, architecture, caching, pages and animation constraints (Chinese) |
 | [Review record](docs/REVIEW.md) | Cleanup, outstanding issues, optimization priorities and validation scope (Chinese) |
 | [Changelog](CHANGELOG.md) | Version history (Chinese) |
-| [Privacy policy](docs/PRIVACY.md) | Permissions, third-party requests, local storage and deletion (Chinese / English) |
+| [Privacy policy](docs/legal/en/PRIVACY_POLICY.md) | Permissions, third-party requests, local storage and deletion |
 | [Weather API selection](docs/free-weather-apis.md) | Alternatives and historical research (Chinese) |
 
 For bugs or rights-holder feedback, please use [repository Issues](https://github.com/SiXuManYan/hydrogen-weather-animation/issues).

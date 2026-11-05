@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">天气</string>
+    <string name="app_name">氢天气</string>
     <string name="scene_picker_title">动画场景</string>
     <string name="scene_picker_scene">天气</string>
     <string name="scene_picker_night">夜间模式</string>
@@ -45,6 +45,23 @@
     <!-- 城市管理页(§6.5,截图 005350) -->
     <string name="back">返回</string>
     <string name="city_manage_empty">暂无城市，点击右下角添加</string>
+    <string name="city_manage_hint">长按城市可多选删除，长按右侧手柄可拖动排序</string>
+    <string name="city_selection_hint">点击卡片选择城市，定位城市保留</string>
+    <string name="city_long_press_hint">长按选择此城市</string>
+    <string name="city_edit">选择要删除的城市</string>
+    <string name="city_selection_close">退出多选</string>
+    <string name="city_selected_count">已选择 %1$d 项</string>
+    <string name="city_selected">已选择</string>
+    <string name="city_not_selected">未选择</string>
+    <string name="city_located_locked">定位城市，不可删除或排序</string>
+    <string name="city_delete">删除</string>
+    <string name="city_delete_title">删除 %1$d 个城市？</string>
+    <string name="city_delete_message">将移除所选城市及其本机天气缓存，需要时可重新添加。</string>
+    <string name="city_operation_failed">保存失败，请重试</string>
+    <string name="city_reorder">调整顺序</string>
+    <string name="city_reorder_description">调整%1$s的顺序，长按可拖动</string>
+    <string name="city_move_up">向上移动</string>
+    <string name="city_move_down">向下移动</string>
     <!-- 搜索添加页(§6.4) -->
     <string name="search_hint">输入城市全名，如 大连市</string>
     <string name="search_no_result">没有找到相关城市</string>
@@ -53,11 +70,15 @@
     <!-- 关于页(§7,截图 005425) -->
     <string name="about_title">关于</string>
     <string name="about_version_format">氢天气 V%1$s</string>
-    <string name="about_changelog_title">更新日志：</string>
-    <string name="about_changelog_body">V1.1（2026-11 数据准确性更新）：\n1. 中国境内前 5 天优先使用 CMA GRAPES 模型，其余日期使用 Open-Meteo best_match\n2. 日天气改为白天 08:00–20:00 逐小时聚合，减少短时大雪误报为全天大雪\n3. 修复城市搜索页启动崩溃与 Fragment ViewModel 编译问题\n4. 关于页新增数据来源、取样方式与隐私说明\n\nV1.0：\n1. 致敬氢 OS 一加天气 V2.6.1.1 的开源复刻\n2. 数据来源：Open-Meteo（CC-BY 4.0）\n3. 支持多城市管理、城市搜索与 15 天天气预报\n4. 优化搜索城市后的结果\n5. 常规问题修复</string>
-    <string name="about_data_source">数据来源：Open-Meteo（CC-BY 4.0）\n中国境内前 5 天：CMA GRAPES 模型\n日天气：白天 08:00–20:00 逐小时聚合</string>
+    <string name="about_changelog_title">版本更新日志</string>
+    <string name="about_data_source">天气数据：Open-Meteo · CC BY 4.0\n中国附近坐标前 5 天优先 CMA GRAPES，含今天\n日天气：城市当地白天 08:00–20:00 逐小时聚合\n预报仅供参考，请以当地气象部门的预警为准。</string>
     <string name="about_user_agreement">用户协议</string>
     <string name="about_privacy_policy">隐私政策</string>
-    <string name="about_privacy_summary">本应用没有账号、广告、统计分析或自建服务器。授权定位后，坐标用于查询天气，并由系统地理编码服务解析城市名称；天气坐标和城市搜索词会发送至 Open-Meteo。城市列表与最近一次天气缓存在本机，可在系统设置中清除；系统备份副本由设备的备份设置管理。\n\n完整政策见项目 docs/PRIVACY.md。</string>
-    <string name="about_copyright">©2026, Sugar Weather. All Rights Reserved.</string>
+    <string name="about_tagline">看天气，也看见天气的流动</string>
+    <string name="about_user_guide">使用帮助</string>
+    <string name="about_third_party">数据来源与开源组件</string>
+    <string name="about_independence">独立的非商业学习与演示项目，与 OnePlus、Hydrogen OS 及原天气应用无隶属或授权关系。</string>
+    <string name="document_loading">正在读取本地文档</string>
+    <string name="document_load_failed">本地文档暂时无法读取，请重试。</string>
+    <string name="document_no_browser">未找到可打开此链接的浏览器</string>
 </resources>

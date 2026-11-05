@@ -2,6 +2,8 @@
 
 [English](README.md)
 
+<img src="docs/brand/hydrogen-weather-logo.svg" width="112" alt="氢天气 Logo：晴空轻云" />
+
 以一加 7 Pro 的 Hydrogen OS 10 天气应用为视觉参考，用原生 XML + View + Canvas 实现天气界面、15 种天气动画和随手机倾斜变化的视差效果。天气数据来自 [Open-Meteo](https://open-meteo.com/)，无需 API Key。
 
 本项目用于非商业学习与演示，与 OnePlus、Hydrogen OS 及原天气应用无隶属、授权或合作关系。动画以程序化方式绘制，不包含原应用的代码、图片、字体或图标。本项目不授予商业使用许可，相关名称与商标归各自权利人所有。
@@ -10,13 +12,13 @@
 
 - **天气首页**：左右滑动切换城市，查看实况、含今天的 6 天趋势、逐小时预报和 8 项天气详情；支持下拉刷新和离线缓存。
 - **15 天预报**：点击首页按钮，在应用内查看明天起的最多 15 天预报。复用 30 分钟内缓存，过期刷新；失败时保留仍有效的离线预报。
-- **城市管理**：点击头部城市图标进入；支持添加、排序和删除城市，每张城市卡有独立的天气动画。定位城市按设计固定在首位。
+- **城市管理**：长按卡片或点击编辑进入多选，蓝框标记所选城市，确认后批量删除。右侧手柄支持拖拽和上下移动菜单；定位城市固定置顶、不可删除。每张卡有独立天气动画。
 - **城市搜索**：输入城市全名（如“大连市”）搜索，或从 12 个内置热门城市中直接添加。
 - **定位**：首次没有城市时申请定位权限，拒绝后仍可手动添加。定位使用系统 `LocationManager`，不依赖 GMS。
 - **动画调试**：`⋮` →“动画调试”，可选择场景、昼夜和姿态模拟；点击“恢复天气背景”后再点“应用”，恢复由天气数据控制背景。
-- **关于**：查看版本、数据来源和隐私政策摘要；“用户协议”目前为占位入口。
+- **关于**：原创“晴空轻云”Logo、当前版本，以及可离线阅读的用户协议、隐私政策、版本日志、使用帮助和开源组件说明。
 
-首次启动不预置城市。缓存刷新、城市手势等已知问题及优化建议见 [审查记录](docs/REVIEW.md)。
+当前版本 **1.2**。首次启动不预置城市。完整操作见[使用帮助](docs/USER_GUIDE.md)，定位、调试手势等已知限制见[审查记录](docs/REVIEW.md)。
 
 ## 运行
 
@@ -52,7 +54,7 @@ Windows 使用 `gradlew.bat :app:assembleDebug`。仓库中的 `gradlew` 没有�
 sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 ```
 
-2026-11-06 已通过上述检查，16 个 JVM 测试全部通过（其中 9 个覆盖白天天气聚合、6 个覆盖预报时间线）。同时使用 API 30 小屏模拟器检查了首页、搜索、城市管理和 15 天页面的布局；这不代表已经完成实体设备传感器或性能验证。
+本轮 v1.2 验证记录见[项目审查记录](docs/REVIEW.md#验证记录)。新增多选状态与仓库删除回归，覆盖定位城市保护、删除后的迟到请求、并发修改和失败重试。本轮按要求未启动模拟器；设备手势、TalkBack、图标遮罩及大字体仍需后续设备验收。
 
 ## 数据与限制
 
@@ -120,10 +122,14 @@ adb shell am start -n com.sugar.weather/.MainActivity \
 
 | 文档 | 用途 |
 | --- | --- |
+| [文档索引](docs/README.md) | 按任务查找用户、法律、设计与维护文档 |
+| [使用帮助](docs/USER_GUIDE.md) | 添加、批量删除、排序城市，刷新与常见问题 |
+| [用户协议](docs/legal/USER_AGREEMENT.md) | 服务与使用边界；附[英文](docs/legal/en/USER_AGREEMENT.md) |
+| [品牌资产](docs/brand/README.md) | Logo 的 SVG、PNG、色彩与生成方式 |
 | [设计与实现](docs/DESIGN.md) | 数据规则、架构、缓存、页面与动画约束 |
 | [审查记录](docs/REVIEW.md) | 本次清理、待修复问题、优化顺序与验证范围 |
 | [更新日志](CHANGELOG.md) | 版本变更 |
-| [隐私政策](docs/PRIVACY.md) | 权限、第三方请求、本地存储与删除 |
+| [隐私政策](docs/legal/PRIVACY_POLICY.md) | 权限、第三方请求、本地存储与删除；附[英文](docs/legal/en/PRIVACY_POLICY.md) |
 | [天气 API 选型](docs/free-weather-apis.md) | 备选服务和历史调研 |
 
 问题与权利人反馈请通过 [仓库 Issues](https://github.com/SiXuManYan/hydrogen-weather-animation/issues) 联系。
