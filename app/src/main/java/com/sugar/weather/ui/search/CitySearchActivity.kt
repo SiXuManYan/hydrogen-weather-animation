@@ -32,7 +32,9 @@ class CitySearchActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityCitySearchBinding
     private val viewModel: CitySearchViewModel by viewModels { CitySearchViewModel.factory() }
-    private val adapter = SearchResultAdapter(onItemClick = viewModel::addResult)
+    // 注意:必须在 onCreate 之后才解析 viewModel(by lazy),否则会在构造函数阶段触发
+    // ComponentActivity.getViewModelStore(),导致 "not yet attached to the Application" 崩溃。
+    private val adapter by lazy { SearchResultAdapter(onItemClick = viewModel::addResult) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

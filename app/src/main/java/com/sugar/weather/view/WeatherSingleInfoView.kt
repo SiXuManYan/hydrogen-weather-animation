@@ -20,7 +20,7 @@ class WeatherSingleInfoView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
     private val binding = ViewWeatherSingleInfoBinding.inflate(
-        LayoutInflater.from(context), this, true
+        LayoutInflater.from(context), this
     )
 
     fun bind(card: DetailCardUi?) {
