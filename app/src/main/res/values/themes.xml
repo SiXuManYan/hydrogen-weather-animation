@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <style name="Theme.Weather" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/weather_accent</item>
         <item name="colorPrimaryVariant">@color/weather_accent_dark</item>
@@ -14,7 +14,7 @@
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:enforceNavigationBarContrast" tools:targetApi="q">false</item>
-        <item name="android:enforceStatusBarContrast" tools:targetApi="q">false</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:enforceStatusBarContrast">false</item>
     </style>
 </resources>

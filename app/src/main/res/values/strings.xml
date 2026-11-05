@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">天气</string>
-    <string name="scene_button">场景</string>
     <string name="scene_picker_title">动画场景</string>
     <string name="scene_picker_scene">天气</string>
     <string name="scene_picker_night">夜间模式</string>
@@ -12,9 +11,6 @@
     <string name="no_sensor_hint">当前设备没有方向传感器，已自动启用触摸模拟。</string>
     <string name="apply">应用</string>
     <string name="cancel">取消</string>
-    <string name="day">日间</string>
-    <string name="night">夜间</string>
-    <string name="scene_format">%1$s · %2$s</string>
     <string name="debug_format">pitch %1$.1f°   roll %2$.1f°   %3$s</string>
     <string name="simulated">模拟</string>
     <string name="sensor">传感器</string>
@@ -58,6 +54,6 @@
     <string name="about_data_source">数据来源：Open-Meteo（CC-BY 4.0）\n中国境内前 5 天：CMA GRAPES 模型\n日天气：白天 08:00–20:00 逐小时聚合</string>
     <string name="about_user_agreement">用户协议</string>
     <string name="about_privacy_policy">隐私政策</string>
-    <string name="about_privacy_summary">本应用不收集账号、广告或分析数据。定位权限仅在首次打开且需要定位城市时申请，用于获取城市坐标并向 Open-Meteo 请求天气；坐标与搜索词会发送至 Open-Meteo，不会上传到本项目自有服务器。城市列表与最近一次天气缓存在本机 DataStore 中，卸载应用或清除数据即可删除。\n\n完整政策见项目 docs/PRIVACY.md。</string>
+    <string name="about_privacy_summary">本应用没有账号、广告、统计分析或自建服务器。授权定位后，坐标用于查询天气，并由系统地理编码服务解析城市名称；天气坐标和城市搜索词会发送至 Open-Meteo。城市列表与最近一次天气缓存在本机，可在系统设置中清除；系统备份副本由设备的备份设置管理。\n\n完整政策见项目 docs/PRIVACY.md。</string>
     <string name="about_copyright">©2026, Sugar Weather. All Rights Reserved.</string>
 </resources>
