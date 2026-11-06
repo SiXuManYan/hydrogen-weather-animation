@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="framework_decrease">减少</string>
+    <string name="framework_increase">增加</string>
+    <string name="framework_loading">加载中</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="framework_decrease">Decrease</string>
+    <string name="framework_increase">Increase</string>
+    <string name="framework_loading">Loading</string>
+</resources>

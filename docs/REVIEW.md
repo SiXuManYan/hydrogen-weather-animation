@@ -146,3 +146,12 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" \
 - 参照 CollageWorkshop 接入四段 280ms 横向动画，通过详情页窗口主题覆盖城市管理、搜索、15 天预报、关于与文档的进入和返回；选城结果改用 ViewPager2 平滑切页。
 - 本地 `:app:assembleDebug :app:lintDebug` 通过，Lint 仍为 0 错误、37 条警告；全部主资源 XML 解析和 `git diff --check` 通过。
 - 遵循用户要求，没有调用测试机或模拟器；实际动画观感及系统返回手势衔接尚未设备验收。
+
+2026-11-06 的基础框架网络迁移：
+
+- 复制 AndroidFrameworkTemplate 的 `core_framework` 源码 Library 和 MIT 许可证，App 使用 `project(":core_framework")`；不依赖参考工程的本机路径。
+- 模块适配宿主 AGP 9 内置 Kotlin / compileSdk 37 / Java 17。修复复制源码中延迟仓库属性 getter 与 `getRepository()` 的 JVM 签名冲突，并补齐 `MutableDataAdapter` 对空条目的 DiffUtil 分支；适配清单见模块 README。没有改动参考工程。
+- `WeatherApplication` 初始化框架日志与版本；`WeatherApiClient` 通过库的工厂创建共享 HTTP 客户端和三个 Open-Meteo 服务。保留原超时、DTO、降级和缓存规则；移除 App 自建 Retrofit / OkHttp 以及旧日志依赖，调试日志使用不含查询 / 正文的摘要。
+- 本地执行 `:app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest :core_framework:testDebugUnitTest :app:lintDebug :core_framework:lintDebug` 全部通过。App 49 个测试、Library 13 个测试，共 62 个通过，0 失败 / 错误 / 跳过；两个模块 Lint 均为 0 错误，分别 41 / 26 条警告。
+- 新增 7 个 HTTP 用例覆盖三个独立服务地址、默认参数、JSON 解析、匿名 Header、超时、调试日志选择、HTTP / 解析失败、可空搜索结果及协程取消；请求仅发送至本机 MockWebServer。复制库的列表测试改用本机 Robolectric，补充了空条目回归。
+- 主资源 XML、Markdown 本地文件链接、上游源码差异与许可证核对通过；构建目录均被 Git 忽略。遵循用户要求，没有连接、查询或运行测试机 / 模拟器，也没有请求真实天气服务。

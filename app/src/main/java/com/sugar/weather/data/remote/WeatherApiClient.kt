@@ -1,57 +1,34 @@
 package com.sugar.weather.data.remote
 
-import android.content.pm.ApplicationInfo
+import com.template.framework.api.NetworkModule
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
 
 /**
- * Retrofit 装配(DESIGN.md §10.2)。
+ * 使用基础框架的 HTTP 工厂装配天气服务，三个域名共用一个连接池。
  *
- * 三个 baseUrl 的实例共享同一个 OkHttpClient(连接 10s / 读 15s);
- * 日志拦截器仅 debug 构建启用,release 零开销。
+ * Open-Meteo 不需要认证或版本 Header；保留连接 10 秒、读取 15 秒的超时，
+ * Debug 仅输出框架摘要日志，Release 不安装日志拦截器。
+ *
+ * @param debug 是否启用框架 HTTP 摘要日志。
  */
-object WeatherApiClient {
+class WeatherApiClient(debug: Boolean) {
 
-    private const val CONNECT_TIMEOUT_SECONDS = 10L
-    private const val READ_TIMEOUT_SECONDS = 15L
+    /** 容器级共享客户端，供各域名复用；不启用框架的全局单地址 Retrofit。 */
+    internal val httpClient: OkHttpClient = NetworkModule.createOkHttpClient(
+        connectTimeoutSeconds = CONNECT_TIMEOUT_SECONDS,
+        readTimeoutSeconds = READ_TIMEOUT_SECONDS,
+        writeTimeoutSeconds = WRITE_TIMEOUT_SECONDS,
+        debug = debug
+    )
 
-    @Volatile
-    private var sharedClient: OkHttpClient? = null
+    /** 创建指定域名的天气接口，JSON 转换和 URL 规范化统一交给 Library。 */
+    fun openMeteo(baseUrl: String): OpenMeteoApi =
+        NetworkModule.createApiService<OpenMeteoApi>(baseUrl = baseUrl, client = httpClient)
 
-    /** 创建挂到 [baseUrl](必须以 `/` 结尾)的 Open-Meteo 接口实例。 */
-    fun openMeteo(baseUrl: String, debug: Boolean): OpenMeteoApi {
-        val builder = Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .client(httpClient(debug))
-            .addConverterFactory(GsonConverterFactory.create())
-        return builder.build().create(OpenMeteoApi::class.java)
+    private companion object {
+        /** 与迁移前保持一致的连接、读取和写入时限。 */
+        const val CONNECT_TIMEOUT_SECONDS = 10L
+        const val READ_TIMEOUT_SECONDS = 15L
+        const val WRITE_TIMEOUT_SECONDS = 10L
     }
-
-    private fun httpClient(debug: Boolean): OkHttpClient {
-        // 共享客户端:同进程三实例复用连接池;debug 标志在一次运行内不变,直接缓存。
-        sharedClient?.let { return it }
-        synchronized(this) {
-            sharedClient?.let { return it }
-            val client = OkHttpClient.Builder()
-                .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .apply {
-                    if (debug) {
-                        addInterceptor(
-                            HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC)
-                        )
-                    }
-                }
-                .build()
-            sharedClient = client
-            return client
-        }
-    }
-
-    /** 由 Context 判断是否 debug 构建,AppContainer 传入。 */
-    fun isDebugBuild(context: android.content.Context): Boolean =
-        (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 }

@@ -43,7 +43,7 @@ The agreement, policy, help, changelog and component notices are available offli
 
 Browsers and websites may use existing logins, cookies, IP addresses and access records under their own policies. Copying the Douyin account writes it to the clipboard only after an explicit tap; the app does not read the clipboard.
 
-Debug packages may log request coordinates, search text, status codes and duration locally. Release packages disable these network logs; neither automatically sends logs to the author. Remove sensitive details before sharing feedback.
+Debug HTTP logs record only the method, host, status code, duration or error category locally. They omit coordinates, search text, paths, headers and bodies. Release packages disable these logs; neither automatically sends logs to the author. Remove any other sensitive details before sharing feedback.
 
 ## 6. Choices and contact
 

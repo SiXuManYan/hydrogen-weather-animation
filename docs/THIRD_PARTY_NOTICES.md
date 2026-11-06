@@ -21,10 +21,36 @@
 - [Retrofit](https://github.com/square/retrofit)：天气与搜索网络接口；Apache License 2.0。
 - [Gson](https://github.com/google/gson)：网络响应及本机缓存的 JSON 解析；Apache License 2.0。
 - [OkHttp](https://github.com/square/okhttp) 与 [Okio](https://github.com/square/okio)：HTTP 客户端、网络调试与 IO；Apache License 2.0。
+- AndroidFrameworkTemplate 的 `core_framework`：基础初始化与 HTTP 工厂，Copyright (c) 2026 Shiwei Wang；MIT License，许可全文见下文。上游源码复制在仓库 `core_framework/`，App 通过本地 Library 依赖使用。
+- [Timber](https://github.com/JakeWharton/timber)：基础框架的本机摘要日志；Apache License 2.0。
 - [Markwon](https://github.com/noties/Markwon)：包内 Markdown 阅读；Apache License 2.0。
 - [CommonMark Java](https://github.com/commonmark/commonmark-java)：Markwon 使用的 Markdown 解析器；BSD 2-Clause。
 
 上述组件不代表本应用接入了相应公司的广告、统计或账号服务。服务数据处理见隐私政策。
+
+## core_framework 许可
+
+MIT License
+
+Copyright (c) 2026 Shiwei Wang
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## Logo、动画与字体
 

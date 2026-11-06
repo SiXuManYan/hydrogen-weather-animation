@@ -10,7 +10,7 @@ import retrofit2.http.Query
  * Open-Meteo 三接口(DESIGN.md §1.1,决策 D1)。
  *
  * 同一接口类挂三个 baseUrl(forecast / air-quality / geocoding),由
- * [WeatherApiClient.openMeteo] 按域名各建一个实例,见 di/AppContainer。
+ * [WeatherApiClient.openMeteo] 通过基础框架按域名各建一个实例,见 di/AppContainer。
  *
  * current/hourly/daily 的参数串为常量,值即 DESIGN.md §1.1 实测命令中的串。
  */

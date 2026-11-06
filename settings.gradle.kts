@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Weather"
 include(":app")
- 
+include(":core_framework")

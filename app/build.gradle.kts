@@ -54,6 +54,7 @@ val syncAppDocuments by tasks.registering(Sync::class) {
 tasks.named("preBuild").configure { dependsOn(syncAppDocuments) }
 
 dependencies {
+    implementation(project(":core_framework"))
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.appcompat)
@@ -62,11 +63,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.material)
-    // 数据层(DESIGN.md §10.1):Retrofit + Gson 反射解析,零编译器插件,兼容 AGP 9 内置 Kotlin
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.converter.gson)
-    implementation(libs.gson)
-    implementation(libs.okhttp.logging.interceptor)
+    // 网络工厂与 Retrofit / OkHttp / Gson 由 core_framework 统一提供。
     implementation(libs.androidx.datastore.preferences)
     // 城市多页/列表/刷新/详情卡布局(UI 层将使用,统一在此声明)
     implementation(libs.androidx.viewpager2)
@@ -75,6 +72,7 @@ dependencies {
     implementation(libs.markwon.core)
     implementation(libs.androidx.browser)
     testImplementation(libs.junit)
+    testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }

@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | D1：数据源 | Open-Meteo Forecast / Air Quality / Geocoding | 无需 API Key，支持当前页面所需数据 |
 | D2 / D3：厂商接口 | 不接入 heytap 与 weather.1plus.io | 非公开接口，鉴权和城市标识不可控 |
-| D4：网络与 JSON | Retrofit + Gson，三个域名共享 OkHttpClient | 运行时解析，构建配置简单 |
+| D4：网络与 JSON | `core_framework` 的 Retrofit + Gson 工厂，三个域名共享 OkHttpClient | 复用基础框架，运行时解析 |
 | D5 / D6：存储与注入 | DataStore Preferences + 手写 AppContainer | 当前数据量与依赖图较小 |
 | D7 / D8：定位与首启 | 系统 LocationManager；不预置默认城市 | 不依赖 GMS，拒绝定位后可手动选城 |
 | D9 / D10：预报与主页 | 应用内 15 天页；ViewPager2 多城市页，共用一个背景 | 复用天气缓存，避免每个城市页绘制全屏动画 |
@@ -64,7 +64,11 @@ CMA 的实况、时区、观测时间优先；逐日按日期、逐时按时间�
 
 ### 2.1 网络、JSON 与 Kotlin
 
-使用 Retrofit 3.0.0、Gson 2.13.1 和 OkHttp 4.12.0。三个 Retrofit 实例共用连接池；连接超时 10 秒、读取超时 15 秒，HTTP BASIC 日志仅在 debug 构建启用。
+网络基础设施来自本仓库的 [`core_framework`](../core_framework/README.md) Android Library，复制自 AndroidFrameworkTemplate，App 通过 `implementation(project(":core_framework"))` 接入，无本机外部路径依赖。模块沿用宿主的 AGP 9 内置 Kotlin、compileSdk 37 和 Java 17；当前使用 Retrofit 3.0.0、Gson 2.13.1 和 OkHttp 4.12.0，不降级宿主工具链。
+
+`WeatherApplication` 先调用 `Framework.init` 注入 Debug / 版本信息与日志，再创建 `AppContainer`。`WeatherApiClient` 使用库的 `NetworkModule.createOkHttpClient` 和 `createApiService` 工厂为三个域名创建接口，共用一个客户端及连接池；连接 / 读取 / 写入超时保留为 10 / 15 / 10 秒。没有启用全局单地址 Retrofit、认证、client ID、版本 Header、框架存储或 WebSocket。Open-Meteo 原生 DTO、`WeatherDataException`、仓库降级规则与原 DataStore 缓存格式继续由 App 管理。
+
+Debug HTTP 日志使用框架的 Timber 摘要拦截器，只记录方法、主机、状态码、耗时或错误类别，不打印路径、查询、Header 或正文。Release 不安装日志拦截器。App 不再单独构造 Retrofit / OkHttp 或依赖旧的 OkHttp logging-interceptor。
 
 项目使用 AGP 内置 Kotlin，未引入序列化或注解处理插件，这是当前项目的简化选择。不能据此认定 AGP 9 不支持所有 Kotlin 编译器插件或 KSP；官方内置 Kotlin 迁移指南明确建议将不兼容的 `kotlin-kapt` 迁移到 KSP，具体插件需按其版本验证。见 [官方迁移说明](https://developer.android.com/build/migrate-to-built-in-kotlin)。
 
@@ -83,7 +87,7 @@ CMA 的实况、时区、观测时间优先；逐日按日期、逐时按时间�
 
 ### 2.3 依赖注入
 
-`WeatherApplication` 持有 `AppContainer`，提供 `CityStore`、三个网络接口、`WeatherRepository` 和 `LocationDataSource`。仓库的缓存预热和共享流使用进程级 IO 协程作用域；各页面通过 ViewModel 使用仓库。
+`WeatherApplication` 完成基础框架初始化后持有 `AppContainer`，提供 `CityStore`、共享客户端的三个网络接口、`WeatherRepository` 和 `LocationDataSource`。仓库的缓存预热和共享流使用进程级 IO 协程作用域；各页面通过 ViewModel 使用仓库。
 
 ### 2.4 定位
 
@@ -271,7 +275,7 @@ flowchart LR
 
 ### 10.1 构建与验证
 
-依赖版本由 `gradle/libs.versions.toml` 管理；Android 配置在 `app/build.gradle.kts`。当前 release 关闭优化，启用 R8 前需检查 Gson 网络 DTO 与本地缓存模型的反射保留规则，并验证旧缓存兼容性。
+依赖版本由 `gradle/libs.versions.toml` 管理；Android 配置在 `app/build.gradle.kts` 与 `core_framework/build.gradle.kts`。本地验证需同时运行两个模块的 JVM 测试与 Lint；`WeatherApiClientTest` 使用 MockWebServer 检查端点、参数、JSON、匿名 Header、错误映射和取消，不连接外部服务或 Android 设备。当前 release 关闭优化，启用 R8 前需检查 Gson 网络 DTO 与本地缓存模型的反射保留规则，并验证旧缓存兼容性。
 
 ```bash
 sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
@@ -311,4 +315,6 @@ sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 
 后续 16dp 留白、文档导航、作者入口、Custom Tabs 和晴天平放可见性改动仅做源码与资源静态核查，未运行 Gradle 构建、测试或设备验证；上述较早的 v1.2 验证结果不覆盖这些改动。
 
-v1.3 最初的全天摘要、两页同步、完整换行和上滑压暗只做静态核查；本轮刷新与 M3 迁移后，当前工作区已通过 Debug 构建、42 个 JVM 测试（含 23 个全天气聚合用例）与 Lint（0 错误、37 条警告）。停止测试机操作前完成的 6 个设备测试只覆盖隔离内容手势和明暗主题创建，不能代表真实联网刷新或完整视觉验收；执行细节见审查记录。按用户当前要求不再调用测试机，窄屏 / 大字体、TalkBack、实际页面视觉和性能仍待维护者确认。
+v1.3 最初的全天摘要、两页同步、完整换行和上滑压暗只做静态核查；刷新与 M3 迁移后曾通过 Debug 构建、42 个 JVM 测试与 Lint（0 错误、37 条警告）。此后加入页面过渡和基础框架网络迁移，当前工作区已通过 Debug / AndroidTest APK 编译、62 个本地测试（App 49 / Library 13）与两个模块的 Lint（均为 0 错误，警告分别为 41 / 26）。网络迁移的 7 个新增用例只请求本机 MockWebServer，库的列表用例在 JVM 中使用 Robolectric；没有在本轮调用测试机或模拟器。
+
+停止测试机操作前完成的 6 个历史设备测试只覆盖隔离内容手势和明暗主题创建，不能代表真实联网刷新、页面过渡观感或完整视觉验收；执行细节见审查记录。按用户当前要求不再调用测试机，窄屏 / 大字体、TalkBack、实际页面视觉和性能仍待维护者确认。

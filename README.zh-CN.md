@@ -32,7 +32,7 @@
 | 布局 | 以竖屏手机为主要设计目标，大屏适配尚未完善 |
 | 权限 | 网络；可选的精确 / 大致位置 |
 
-用支持当前 AGP 的 Android Studio 打开项目根目录，完成 Gradle Sync 后运行 `app`。
+用支持当前 AGP 的 Android Studio 打开项目根目录，完成 Gradle Sync 后运行 `app`。App 依赖仓库内的 [`core_framework` Library](core_framework/README.md)，该模块复制自 AndroidFrameworkTemplate 并适配宿主工具链，通过 HTTP 工厂为三个 Open-Meteo 服务共享客户端，不依赖本机的外部工程路径。
 
 macOS / Linux 命令行：
 
@@ -52,10 +52,12 @@ Windows 使用 `gradlew.bat :app:assembleDebug`。仓库中的 `gradlew` 没有�
 验证命令：
 
 ```bash
-sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
+sh ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest \
+  :app:testDebugUnitTest :core_framework:testDebugUnitTest \
+  :app:lintDebug :core_framework:lintDebug
 ```
 
-当前工作区已通过 Debug 构建、42 个 JVM 测试及 Lint（0 错误、37 条警告），包含 23 个全天气聚合用例。刷新手势与 M3 主题另有 6 个隔离内容的设备回归测试，具体执行范围和连接中断记录见[项目审查记录](docs/REVIEW.md#验证记录)。按当前约定不再调用测试机；真实联网刷新、窄屏换行、系统大字体与完整页面视觉仍需维护者确认。
+当前工作区已通过 Debug / AndroidTest APK 构建、62 个本地测试（App 49 个、Library 13 个）及两个模块的 Lint（均为 0 错误，分别 41 / 26 条警告）。包括 23 个全天气聚合用例和 7 个通过本机 MockWebServer 执行的 HTTP 迁移用例；Library 的列表测试通过本机 JVM 中的 Robolectric 执行。此前刷新手势与 M3 主题另有 6 个隔离内容的设备回归测试，执行范围和连接中断记录见[项目审查记录](docs/REVIEW.md#验证记录)。本轮未调用测试机或模拟器；真实天气联网刷新、导航观感、窄屏换行和系统大字体仍需维护者确认。
 
 ## 数据与限制
 

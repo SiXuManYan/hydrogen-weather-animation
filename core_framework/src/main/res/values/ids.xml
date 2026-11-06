@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- BaseDialog / BaseDialogFragment 使用的视图 ID -->
+    <!-- 业务布局需要包含这两个 ID 才能正确处理「点击外部关闭/隐藏键盘」逻辑 -->
+    <item type="id" name="rootLayout" />
+    <item type="id" name="cardView" />
+</resources>

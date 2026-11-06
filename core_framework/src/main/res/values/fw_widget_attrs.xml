@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="FlowLayout">
+        <attr name="fw_horizontalSpacing" format="dimension" />
+        <attr name="fw_verticalSpacing" format="dimension" />
+        <attr name="fw_maxRows" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="RatingStarView">
+        <attr name="fw_starCount" format="integer" />
+        <attr name="fw_rating" format="float" />
+        <attr name="fw_stepSize" format="float" />
+        <attr name="fw_activeColor" format="color" />
+        <attr name="fw_inactiveColor" format="color" />
+        <attr name="fw_strokeColor" format="color" />
+        <attr name="fw_strokeWidth" format="dimension" />
+        <attr name="fw_starSpacing" format="dimension" />
+        <attr name="fw_starCornerRadius" format="dimension" />
+        <attr name="fw_ratingEnabled" format="boolean" />
+    </declare-styleable>
+
+</resources>

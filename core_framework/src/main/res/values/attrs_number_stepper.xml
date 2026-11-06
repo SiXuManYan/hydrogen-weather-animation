@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="FwNumberStepperView">
+        <attr name="fw_stepper_value" format="integer" />
+        <attr name="fw_stepper_min_value" format="integer" />
+        <attr name="fw_stepper_max_value" format="integer" />
+        <attr name="fw_stepper_step" format="integer" />
+        <attr name="fw_stepper_hide_value_at_min" format="boolean" />
+        <attr name="fw_stepper_show_decrement_at_min" format="boolean" />
+    </declare-styleable>
+</resources>

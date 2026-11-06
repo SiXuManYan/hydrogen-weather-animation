@@ -32,7 +32,7 @@ Current version: **1.3** (`versionCode = 4`). No default city is preloaded. See 
 | Layout | Designed primarily for portrait phones; large-screen support is incomplete |
 | Permissions | Internet; optional precise / approximate location |
 
-Open the project root in an Android Studio version that supports the configured AGP, finish Gradle Sync and run `app`.
+Open the project root in an Android Studio version that supports the configured AGP, finish Gradle Sync and run `app`. The App depends on the bundled [`core_framework` Library](core_framework/README.md), copied from AndroidFrameworkTemplate and adapted to the host toolchain. Its HTTP factories create the three Open-Meteo services with one shared client; no external checkout is required.
 
 Command line on macOS / Linux:
 
@@ -52,10 +52,12 @@ The APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Local SDK pat
 Validation:
 
 ```bash
-sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
+sh ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest \
+  :app:testDebugUnitTest :core_framework:testDebugUnitTest \
+  :app:lintDebug :core_framework:lintDebug
 ```
 
-The current workspace passes the Debug build, all 42 JVM tests and Lint (0 errors, 37 warnings), including 23 daily-condition cases. Six device tests cover gesture dispatch using isolated content and M3 theme creation; see the [review record](docs/REVIEW.md#验证记录) for scope and the interrupted connection attempt. No further test-device operations are permitted under the current agreement. Real network refreshes, narrow-screen wrapping, large-font layouts and full-page appearance still require maintainer verification.
+The current workspace passes the Debug and AndroidTest APK builds, all 62 local tests (49 App and 13 Library), and Lint with zero errors (41 App and 26 Library warnings). This includes 23 daily-condition cases and seven HTTP migration cases using a local MockWebServer; Library adapter tests use Robolectric on the host JVM. Six earlier device tests covered isolated gesture dispatch and M3 theme creation; see the [review record](docs/REVIEW.md#验证记录) for scope and the interrupted connection attempt. This round used no test device or emulator. Live weather refreshes, navigation appearance, narrow-screen wrapping and large-font layouts still require maintainer verification.
 
 ## Data and limitations
 
