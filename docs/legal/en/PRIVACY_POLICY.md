@@ -10,13 +10,17 @@ Hydrogen Weather has no accounts, ads, analytics, crash reporting or project-ope
 - **City search:** entered city names are sent to the search service. Search history is not stored separately; added cities are saved locally.
 - **Orientation:** readings are used only for local tilt animation and are neither persisted nor uploaded.
 
+After a home screen weather widget is added, the app reads the first city's local weather cache about every 30 minutes and redraws it using the city's current calendar date. This step needs no network. A separate weather task waits for connectivity before using saved coordinates to check and update weather from the providers below, including while the app interface is closed; manual refresh uses that queue too. All widget instances share work. Removing the last widget stops both cached redraws and weather requests. Widgets do not acquire background device location; the system launcher displays their contents, and system power policies may delay tasks.
+
 ## 2. Location is optional
 
-The system asks for precise or approximate location permission. You can deny or revoke it and add cities manually.
+The system asks for precise or approximate location permission. Both support finding your city. You can deny or revoke permission and add cities manually.
 
-With permission, the app reads a recent system location or requests one update to find the city and query weather. Coordinates are also passed to the system place-name service. Location stops on success, timeout or cancellation; there is no background location permission or route history. System location and place-name services may connect to the network under the device provider's rules.
+With permission, the app reads a recent system location or requests one update while the weather home page is visible, to find the city and query weather. Coordinates are also passed to the system place-name service. With permission already granted, foreground resume silently checks location, waiting at least 30 minutes after success or 2 minutes after failure before another attempt. Moving at least 1km from the saved location updates the existing located city's name, coordinates and weather; intermediate positions are not kept as a list.
 
-Revoking permission does not remove a saved located city or stop weather queries for its saved coordinates. Clear app storage to remove it. Location success and update limitations are described in Help.
+Each location request stops on success, timeout, cancellation or when the home page leaves the foreground. The app neither requests background location permission nor acquires background location, and keeps no route history. System location and place-name services may connect to the network under the device provider's rules.
+
+Revoking permission does not remove a saved located city or stop weather queries for its saved coordinates. Clear app storage to remove it. Manual city selection remains available when system location is unavailable; see Help for controls.
 
 ## 3. Who receives requests
 

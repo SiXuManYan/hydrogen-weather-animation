@@ -10,10 +10,14 @@ import kotlin.random.Random
  *
  * 每滴雨是一条斜线段，按强度调整数量、速度、线宽与透明度；[hail] 为 true 时会在
  * 线段末端追加白色冰雹。雷阵雨会以随机间隔触发一次画面闪光。
+ * @property intensity 雨量等级，决定全屏基准粒子数量与运动参数。
+ * @property hail 是否追加冰雹颗粒。
+ * @param particleScale 相对全屏的粒子数量预算，卡片使用较小值。
  */
 class RainScene(
     private val intensity: Intensity,
-    private val hail: Boolean = false
+    private val hail: Boolean = false,
+    particleScale: Float = 1f
 ) : WeatherScene {
 
     enum class Intensity { LIGHT, MEDIUM, HEAVY, STORM, THUNDER }
@@ -56,7 +60,7 @@ class RainScene(
             Intensity.STORM -> floatArrayOf(330f, 1050f, 1800f, 34f, 78f, 1.2f, 2.7f, 130f, 220f)
             Intensity.THUNDER -> floatArrayOf(270f, 800f, 1450f, 26f, 58f, 0.9f, 2.2f, 100f, 195f)
         }
-        count = config[0].toInt()
+        count = particleCount(baseCount = config[0].toInt(), scale = particleScale)
         val speedMin = config[1]
         val speedMax = config[2]
         val lengthMin = config[3]

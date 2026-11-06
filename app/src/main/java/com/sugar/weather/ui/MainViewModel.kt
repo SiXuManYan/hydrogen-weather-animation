@@ -1,6 +1,7 @@
 package com.sugar.weather.ui
 
 import android.app.Application
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sugar.weather.R
@@ -12,6 +13,7 @@ import com.sugar.weather.data.model.WeatherReport
 import com.sugar.weather.scene.SceneType
 import com.sugar.weather.scene.Tilt
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +47,7 @@ data class HeaderUiState(
  * - [tilt]：传感器或触摸模拟产生的姿态，高频更新；
  * - 传感器通过 [TiltSensorRepository] 以 Flow 形式注入，View 层不直接依赖 SensorManager；
  * - [initialize] 只执行一次，Activity 重建时 ViewModel 状态会自然保留，进程重建则由 Activity 传入保存值。
+ * @param application 提供应用级天气仓库和传感器数据源。
  */
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -63,6 +66,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var simulatedPitch = Tilt.NEUTRAL_PITCH_DEG
     private var simulatedRoll = Tilt.NEUTRAL_ROLL_DEG
     private var initialized = false
+
+    /** 定位节流状态由 ViewModel 持有，旋转或短暂页面切换不会重复请求。 */
+    private var locationCheckActive = false
+
+    /** 单调时钟记录最近一次尝试，校时不会影响前台重定位间隔。 */
+    private var lastLocationAttemptMillis: Long? = null
+
+    /** 成功后较长节流，失败后允许稍早重试。 */
+    private var lastLocationCheckSucceeded = false
 
     /** 设备是否存在可用的方向/旋转矢量传感器。 */
     val hasTiltSensor: Boolean
@@ -202,19 +214,53 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _pages.update { it.copy(selectedIndex = clampIndex(index, it.cities)) }
     }
 
-    /** 从城市管理/搜索页返回后重建页序(§8.2);城市流本身已自动更新,这里仅按需夹紧当前位置。 */
-    fun onCityListChanged() {
-        val cities = weatherRepository.cities.value
-        _pages.value = CityPagesState(cities, clampIndex(_pages.value.selectedIndex, cities))
+    /** 搜索或管理返回时使用真实存储快照，避免共享流尚未回流而丢失新城市。 */
+    suspend fun syncCityListFromStorage(): CityPagesState {
+        val cities = weatherRepository.citySnapshot()
+        val state = CityPagesState(
+            cities = cities,
+            selectedIndex = clampIndex(_pages.value.selectedIndex, cities)
+        )
+        _pages.value = state
+        return state
     }
 
-    /**
-     * 定位成功后写入定位城市(§2.4 回退链):Activity 只提交结果,业务写入经 Repository;
-     * 存储失败静默(主页面绝不崩溃),下次冷启动定位会重试。
-     */
-    fun submitLocatedPlace(name: String?, latitude: Double, longitude: Double) {
-        viewModelScope.launch {
-            runCatching { weatherRepository.upsertLocatedCity(name, latitude, longitude) }
+    /** 等待真实存储快照，避免首启空占位导致不必要的权限申请。 */
+    suspend fun awaitCitiesForLocation(): List<City> = weatherRepository.citySnapshot()
+
+    /** 前台开始定位前去重并节流；已有权限的恢复流程不需要重新弹权限。 */
+    fun beginLocationCheck(): Boolean {
+        if (locationCheckActive) return false
+        val now = SystemClock.elapsedRealtime()
+        val interval = if (lastLocationCheckSucceeded) LOCATION_SUCCESS_INTERVAL_MS
+        else LOCATION_FAILURE_INTERVAL_MS
+        if (lastLocationAttemptMillis?.let { now - it < interval } == true) return false
+        locationCheckActive = true
+        lastLocationAttemptMillis = now
+        return true
+    }
+
+    /** 每条退出路径均释放定位状态，失败或取消后按较短间隔再试。 */
+    fun finishLocationCheck(succeeded: Boolean) {
+        locationCheckActive = false
+        lastLocationCheckSucceeded = succeeded
+    }
+
+    /** 保存或更新原定位城市，再补齐其坐标对应的天气；失败保留已有城市。 */
+    suspend fun submitLocatedPlace(name: String?, latitude: Double, longitude: Double): Boolean {
+        return try {
+            val city = weatherRepository.upsertLocatedCity(
+                name = name,
+                latitude = latitude,
+                longitude = longitude
+            )
+            // 坐标更新会让旧天气失效；不能等用户再次切页才获取新位置天气。
+            weatherRepository.cachedOrRefresh(cityId = city.id)
+            true
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            false
         }
     }
 
@@ -282,6 +328,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         /** 1 分钟内视为「刚刚更新」。 */
         const val JUST_NOW_MS = 60_000L
+
+        /** 一次成功定位后 30 分钟内不再次请求位置。 */
+        const val LOCATION_SUCCESS_INTERVAL_MS = 30 * 60_000L
+
+        /** 定位不可用时避免反复进入主页立即重试。 */
+        const val LOCATION_FAILURE_INTERVAL_MS = 2 * 60_000L
 
         /** 无数据时的昼夜粗估窗口:19:00 前为昼、06:00 起为昼。 */
         const val NIGHT_START_HOUR = 19

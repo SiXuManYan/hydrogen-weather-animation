@@ -10,20 +10,23 @@ import kotlin.random.Random
 
 /**
  * 沙尘暴场景：暖色竖向渐变 + 漂移的沙尘团 + 高速横向沙粒。
+ * @param particleScale 相对全屏的沙粒数量预算。
  */
-class SandstormScene : WeatherScene {
+class SandstormScene(particleScale: Float = 1f) : WeatherScene {
 
+    /** 只为预算内的沙粒分配数组和执行更新，远景沙幕仍保留完整层次。 */
+    private val count = particleCount(baseCount = COUNT, scale = particleScale)
     private val gradientPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val grainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val dustPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
 
-    private val x = FloatArray(COUNT)
-    private val y = FloatArray(COUNT)
-    private val radiusDp = FloatArray(COUNT)
-    private val speedDp = FloatArray(COUNT)
-    private val alphaBase = IntArray(COUNT)
-    private val colorIndex = IntArray(COUNT)
-    private val phase = FloatArray(COUNT)
+    private val x = FloatArray(count)
+    private val y = FloatArray(count)
+    private val radiusDp = FloatArray(count)
+    private val speedDp = FloatArray(count)
+    private val alphaBase = IntArray(count)
+    private val colorIndex = IntArray(count)
+    private val phase = FloatArray(count)
     private val random = Random(9107)
 
     private var width = 0
@@ -35,7 +38,7 @@ class SandstormScene : WeatherScene {
 
     init {
         // 沙粒的尺寸、速度、透明度、颜色和摆动相位随机化，模拟随风卷起的沙尘。
-        for (i in 0 until COUNT) {
+        for (i in 0 until count) {
             radiusDp[i] = 0.6f + random.nextFloat() * 2.4f
             speedDp[i] = 110f + random.nextFloat() * 330f
             alphaBase[i] = 35 + random.nextInt(125)
@@ -55,7 +58,7 @@ class SandstormScene : WeatherScene {
             floatArrayOf(0f, 0.55f, 1f),
             Shader.TileMode.CLAMP
         )
-        for (i in 0 until COUNT) {
+        for (i in 0 until count) {
             x[i] = random.nextFloat() * width
             y[i] = random.nextFloat() * height
         }
@@ -68,7 +71,7 @@ class SandstormScene : WeatherScene {
         time = elapsedSec
         rollFactor = tilt.rollDeg.coerceIn(-90f, 90f) / 90f
         pitchFactor = ((abs(tilt.pitchDeg) - 90f) / 90f).coerceIn(-1f, 1f)
-        for (i in 0 until COUNT) {
+        for (i in 0 until count) {
             // 沙粒主要做高速横向运动，纵向只叠加小幅正弦漂移。
             x[i] -= speedDp[i] * density * dt
             y[i] += sin(time * 0.8f + phase[i]) * 22f * density * dt
@@ -104,7 +107,7 @@ class SandstormScene : WeatherScene {
         }
 
         // 再画细小的沙粒，位于沙幕之前，形成明确的前后层次。
-        for (i in 0 until COUNT) {
+        for (i in 0 until count) {
             grainPaint.color = COLORS[colorIndex[i]]
             grainPaint.alpha = (alphaBase[i] * (if (night) 0.75f else 1f)).toInt()
             canvas.drawCircle(

@@ -7,6 +7,8 @@ import com.sugar.weather.data.LocationDataSource
 import com.sugar.weather.data.WeatherRepository
 import com.sugar.weather.data.remote.OpenMeteoApi
 import com.sugar.weather.data.remote.WeatherApiClient
+import com.sugar.weather.widget.AndroidWeatherWidgetHost
+import com.sugar.weather.widget.WeatherWidgetController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -50,6 +52,14 @@ class AppContainer(context: Context) {
 
     /** 定位数据源(权限申请在 UI 层)。 */
     val locationDataSource: LocationDataSource = LocationDataSource(appContext)
+
+    /** 桌面与应用共用天气缓存，后台仅刷新首城且不请求定位。 */
+    internal val weatherWidgetController: WeatherWidgetController = WeatherWidgetController(
+        host = AndroidWeatherWidgetHost(context = appContext),
+        cityStore = cityStore,
+        repository = weatherRepository,
+        scope = appScope
+    )
 
     companion object {
         /** 三个 Open-Meteo 域名(§1.1 实测;Retrofit 要求 baseUrl 以 `/` 结尾)。 */

@@ -50,6 +50,12 @@ class FifteenDayActivity : AppCompatActivity() {
         }
     }
 
+    /** 返回页面时复查报告，并按城市当前日期重新生成“明天”等标签。 */
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshIfStale()
+    }
+
     /** 显示加载、错误或有效预报；旧缓存没有未来日期时给出重试入口。 */
     private fun render(state: FifteenDayUiState) {
         binding.textTitle.text = state.cityName.ifEmpty { getString(R.string.fifteen_day_forecast) }

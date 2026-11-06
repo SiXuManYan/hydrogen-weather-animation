@@ -37,11 +37,11 @@ fun ForecastResponse.toDomain(cityId: String, fetchedAtMillis: Long, pm25: Doubl
         val code = block.weather_code ?: return@let null
         CurrentWeather(
             temperatureC = temperature,
-            apparentTemperatureC = block.apparent_temperature ?: temperature,
-            humidityPercent = block.relative_humidity_2m ?: 0.0,
-            pressureHpa = block.pressure_msl ?: 0.0,
-            windKmh = block.wind_speed_10m ?: 0.0,
-            windDirectionDeg = block.wind_direction_10m ?: 0.0,
+            apparentTemperatureC = block.apparent_temperature,
+            humidityPercent = block.relative_humidity_2m,
+            pressureHpa = block.pressure_msl,
+            windKmh = block.wind_speed_10m,
+            windDirectionDeg = block.wind_direction_10m,
             visibilityKm = currentVisibilityKm(hourly, observedAt),
             weatherCode = code,
             isNight = (block.is_day ?: 1) == 0,

@@ -49,11 +49,13 @@ fun uvLevelText(uv: Double?): String {
 
 /**
  * 风向角度 → 16 方位中文(§5.3):idx = round(deg / 22.5) mod 16,deg 归一化到 [0,360)。
- * [speedKmh] 非 null 且 < 0.5 时显示「静风」;[deg] 缺失显示「—」。
+ * [speedKmh] 有效且 < 0.5 时显示「静风」；除此之外 [deg] 缺失或无效显示「—」。
  */
 fun windDirText(deg: Double?, speedKmh: Double? = null): String {
-    if (deg == null) return UNKNOWN_TEXT
-    if (speedKmh != null && speedKmh < STILL_WIND_KMH) return STILL_WIND_TEXT
+    if (speedKmh != null && speedKmh.isFinite() && speedKmh >= 0.0 && speedKmh < STILL_WIND_KMH) {
+        return STILL_WIND_TEXT
+    }
+    if (deg == null || !deg.isFinite()) return UNKNOWN_TEXT
     val normalized = ((deg % 360.0) + 360.0) % 360.0
     val idx = (Math.round(normalized / 22.5).toInt() % 16 + 16) % 16
     return WIND_DIRECTIONS[idx]

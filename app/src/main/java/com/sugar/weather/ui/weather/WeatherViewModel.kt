@@ -87,7 +87,9 @@ class WeatherViewModel(application: Application, private val cityId: String) :
             repository.reports
                 .map { it[cityId] }
                 .distinctUntilChanged()
-                .collect { report -> if (report != null) applyReport(report) }
+                .collect { report ->
+                    if (report != null) applyReport(report) else clearInvalidatedReport()
+                }
         }
         refreshIfStale()
     }
@@ -128,6 +130,19 @@ class WeatherViewModel(application: Application, private val cityId: String) :
     }
 
     // ———————————————————————— 状态合成(§5 全部格式化) ————————————————————————
+
+    /** 定位坐标改变后仓库会移除旧报告，页面同步清空，避免把原城市天气留在新位置下。 */
+    private fun clearInvalidatedReport() {
+        renderedDate = null
+        _uiState.update { state ->
+            WeatherUiState(
+                cityId = state.cityId,
+                cityName = state.cityName,
+                isLocated = state.isLocated,
+                isRefreshing = state.isRefreshing
+            )
+        }
+    }
 
     /** 由报告合成页面状态，日报按城市当前日期过滤过期项。 */
     private fun applyReport(report: WeatherReport) {
@@ -222,18 +237,18 @@ class WeatherViewModel(application: Application, private val cityId: String) :
             DetailCardUi(label = PM25_LABEL, value = formatPm25(current.pm25), unit = ""),
             DetailCardUi(
                 label = windDirText(current.windDirectionDeg, current.windKmh),
-                value = formatOneDecimal(current.windKmh),
-                unit = UNIT_WIND_SPEED
+                value = current.windKmh?.let(::formatOneDecimal) ?: UNKNOWN_TEXT,
+                unit = if (current.windKmh == null) "" else UNIT_WIND_SPEED
             ),
             DetailCardUi(
                 label = appContext.getString(R.string.card_feels_like),
-                value = formatRoundInt(current.apparentTemperatureC),
-                unit = UNIT_TEMP
+                value = current.apparentTemperatureC?.let(::formatRoundInt) ?: UNKNOWN_TEXT,
+                unit = if (current.apparentTemperatureC == null) "" else UNIT_TEMP
             ),
             DetailCardUi(
                 label = appContext.getString(R.string.card_humidity),
-                value = formatOneDecimal(current.humidityPercent),
-                unit = UNIT_HUMIDITY
+                value = current.humidityPercent?.let(::formatOneDecimal) ?: UNKNOWN_TEXT,
+                unit = if (current.humidityPercent == null) "" else UNIT_HUMIDITY
             ),
             DetailCardUi(
                 label = appContext.getString(R.string.card_visibility),
@@ -247,8 +262,8 @@ class WeatherViewModel(application: Application, private val cityId: String) :
             ),
             DetailCardUi(
                 label = appContext.getString(R.string.card_pressure),
-                value = formatRoundInt(current.pressureHpa),
-                unit = UNIT_PRESSURE
+                value = current.pressureHpa?.let(::formatRoundInt) ?: UNKNOWN_TEXT,
+                unit = if (current.pressureHpa == null) "" else UNIT_PRESSURE
             )
         )
     }

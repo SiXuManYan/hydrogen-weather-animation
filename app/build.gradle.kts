@@ -20,8 +20,12 @@ android {
 
     buildTypes {
         release {
+            // AGP 9 同时启用 R8 与资源收缩；反射边界在 src/main/keepRules 中显式保留。
             optimization {
-                enable = false
+                enable = true
+                keepRules {
+                    includeDefault = true
+                }
             }
         }
     }
@@ -71,6 +75,8 @@ dependencies {
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.markwon.core)
     implementation(libs.androidx.browser)
+    // 微件刷新由系统持久调度，应用退出或设备重启后仍可继续。
+    implementation(libs.androidx.work.runtime)
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.androidx.espresso.core)

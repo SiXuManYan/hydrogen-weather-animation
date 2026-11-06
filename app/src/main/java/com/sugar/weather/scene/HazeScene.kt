@@ -8,17 +8,20 @@ import kotlin.random.Random
 
 /**
  * 霾场景：大量细小、半透明的黄褐色颗粒缓慢漂移并闪烁。
+ * @param particleScale 相对全屏的粒子数量预算。
  */
-class HazeScene : WeatherScene {
+class HazeScene(particleScale: Float = 1f) : WeatherScene {
 
+    /** 数组大小与遍历范围共用预算，减少卡片的内存与逐帧工作量。 */
+    private val count = particleCount(baseCount = COUNT, scale = particleScale)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val x = FloatArray(COUNT)
-    private val y = FloatArray(COUNT)
-    private val radiusDp = FloatArray(COUNT)
-    private val speedDp = FloatArray(COUNT)
-    private val phase = FloatArray(COUNT)
-    private val alphaBase = IntArray(COUNT)
-    private val colorIndex = IntArray(COUNT)
+    private val x = FloatArray(count)
+    private val y = FloatArray(count)
+    private val radiusDp = FloatArray(count)
+    private val speedDp = FloatArray(count)
+    private val phase = FloatArray(count)
+    private val alphaBase = IntArray(count)
+    private val colorIndex = IntArray(count)
     private val random = Random(7801)
 
     private var width = 0
@@ -30,7 +33,7 @@ class HazeScene : WeatherScene {
 
     init {
         // 颗粒的半径、漂移速度、闪烁相位和基础透明度都随机化，避免看起来像规则点阵。
-        for (i in 0 until COUNT) {
+        for (i in 0 until count) {
             radiusDp[i] = 0.7f + random.nextFloat() * 2.2f
             speedDp[i] = 5f + random.nextFloat() * 14f
             phase[i] = random.nextFloat() * 6.28318f
@@ -43,7 +46,7 @@ class HazeScene : WeatherScene {
         this.width = width
         this.height = height
         this.density = density
-        for (i in 0 until COUNT) {
+        for (i in 0 until count) {
             x[i] = random.nextFloat() * width
             y[i] = random.nextFloat() * height
         }
@@ -57,7 +60,7 @@ class HazeScene : WeatherScene {
         // 用俯仰/横滚的归一化值给整片霾层做轻微视差。
         rollFactor = tilt.rollDeg.coerceIn(-90f, 90f) / 90f
         pitchFactor = ((abs(tilt.pitchDeg) - 90f) / 90f).coerceIn(-1f, 1f)
-        for (i in 0 until COUNT) {
+        for (i in 0 until count) {
             // 颗粒缓慢横向漂移，并叠加一点上下浮动；出屏后从左侧重新进入。
             x[i] += speedDp[i] * density * dt
             y[i] += sin(time * 0.4f + phase[i]) * 4f * density * dt
@@ -72,7 +75,7 @@ class HazeScene : WeatherScene {
         if (width == 0 || height == 0) return
         val tiltX = rollFactor * 40f * density
         val tiltY = pitchFactor * 34f * density
-        for (i in 0 until COUNT) {
+        for (i in 0 until count) {
             paint.color = COLORS[colorIndex[i]]
             // 每颗粒用不同相位做明暗呼吸；夜间整体压暗，避免像发光点。
             val twinkle = 0.55f + 0.45f * sin(time * 1.1f + phase[i])

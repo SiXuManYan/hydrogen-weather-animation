@@ -18,8 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -45,9 +43,14 @@ class FifteenDayViewModel(application: Application, private val cityId: String) 
     init {
         // 首页或其他页面刷新后同步最新报告，避免详情一直停留在进入时的快照。
         viewModelScope.launch {
-            repository.reports.map { it[cityId] }.distinctUntilChanged().filterNotNull()
+            repository.reports.map { it[cityId] }.distinctUntilChanged()
                 .collect { report ->
-                    _uiState.update { it.copy(days = buildRows(report), error = false) }
+                    if (report != null) {
+                        _uiState.update { it.copy(days = buildRows(report), error = false) }
+                    } else {
+                        // 原定位城市坐标更新后不继续展示旧坐标的未来天气。
+                        _uiState.update { it.copy(days = emptyList()) }
+                    }
                 }
         }
         load()
@@ -56,30 +59,41 @@ class FifteenDayViewModel(application: Application, private val cityId: String) 
     /** 用户重试强制请求，避免不完整但仍新鲜的缓存让重试失效。 */
     fun retry() = load(forceRefresh = true)
 
-    /** 进入时复用缓存，显式重试时更新网络；同一时刻只保留一个加载任务。 */
+    /** 进入或恢复页面时重新筛选有效日期，并由仓库检查 30 分钟缓存。 */
+    fun refreshIfStale() = load()
+
+    /** 先按当前日期展示缓存，过期才请求网络；同一时刻只保留一个加载任务。 */
     private fun load(forceRefresh: Boolean = false) {
         if (loadJob?.isActive == true) return
         loadJob = viewModelScope.launch {
-            _uiState.update { it.copy(loading = true, error = false) }
-            val result = if (forceRefresh) repository.refreshWeather(cityId)
-            else repository.cachedOrRefresh(cityId)
-            val cityName = repository.cities.first()
-                .firstOrNull { it.id == cityId }?.name.orEmpty()
-            result.fold(
-                onSuccess = { report ->
-                    _uiState.update {
-                        it.copy(
-                            cityName = cityName,
-                            days = buildRows(report),
-                            loading = false,
-                            error = false
-                        )
-                    }
-                },
-                onFailure = {
-                    _uiState.update { it.copy(loading = false, error = true) }
+            try {
+                val cached = repository.cachedReport(cityId)
+                val cityName = repository.citySnapshot()
+                    .firstOrNull { it.id == cityId }?.name.orEmpty()
+                val cachedDays = cached?.let(::buildRows).orEmpty()
+                // 即使离线也先移除已经过去的日期，不等待网络返回才纠正“明天”。
+                _uiState.update {
+                    it.copy(
+                        cityName = cityName,
+                        days = cachedDays,
+                        loading = cachedDays.isEmpty(),
+                        error = false
+                    )
                 }
-            )
+                val result = if (forceRefresh) repository.refreshWeather(cityId)
+                else repository.cachedOrRefresh(cityId)
+                result.fold(
+                    onSuccess = { report ->
+                        _uiState.update { it.copy(days = buildRows(report), error = false) }
+                    },
+                    onFailure = {
+                        // 有仍有效的离线日期就继续展示；没有内容时保留重试入口。
+                        _uiState.update { it.copy(error = it.days.isEmpty()) }
+                    }
+                )
+            } finally {
+                _uiState.update { it.copy(loading = false) }
+            }
         }
     }
 

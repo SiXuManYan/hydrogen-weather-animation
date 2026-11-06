@@ -1,12 +1,17 @@
 package com.sugar.weather
 
 import android.Manifest
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Intent
 import android.location.Geocoder
+import android.location.Location
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -33,12 +38,15 @@ import com.sugar.weather.ui.configureEdgeToEdge
 import com.sugar.weather.ui.about.AboutActivity
 import com.sugar.weather.ui.city.CityManageActivity
 import com.sugar.weather.ui.search.CitySearchActivity
+import com.sugar.weather.widget.WeatherWidgetProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.max
 
 /**
  * 主页 View 层入口(DESIGN.md §6.2):
@@ -57,11 +65,32 @@ class MainActivity : AppCompatActivity() {
     /** 调试文本最多 5Hz 更新一次，避免 50Hz 传感器事件频繁刷新 TextView。 */
     private var lastDebugUpdate = 0L
 
-    /** 权限弹窗每 Activity 实例只请求一次,拒绝后停留在空状态。 */
+    /** 空城市首次请求权限，重建时保留已请求标记，拒绝后停留在空状态。 */
     private var permissionAsked = false
 
-    /** 一次性定位去重。 */
-    private var locateInFlight = false
+    /** 当前可见期间的定位任务，离开主页后取消系统监听。 */
+    private var locationJob: Job? = null
+
+    /** 等待城市磁盘快照的任务，避免多次进入时重复判断权限。 */
+    private var locationPreparationJob: Job? = null
+
+    /** 仅观察手势首指，不接管分页、下拉刷新或逐时横向滚动。 */
+    private var simulatedPointerId = MotionEvent.INVALID_POINTER_ID
+
+    /** 模拟拖动开始的横坐标，使用窗口坐标避免子 View 滚动影响。 */
+    private var simulatedStartX = 0f
+
+    /** 模拟拖动开始的纵坐标。 */
+    private var simulatedStartY = 0f
+
+    /** 模拟拖动开始时的姿态，移动量始终相对同一基准计算。 */
+    private var simulatedStartTilt = Tilt()
+
+    /** 小于系统触摸容差的位移视为普通点击。 */
+    private val simulatedTouchSlop by lazy { ViewConfiguration.get(this).scaledTouchSlop }
+
+    /** 微件目标先暂存，等磁盘城市加载完毕再切页。 */
+    private var pendingWidgetCityId: String? = null
 
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
@@ -81,13 +110,12 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // 主题背景保留给启动阶段，运行时由全幅天气 Canvas 提供背景。
+        window.setBackgroundDrawable(null)
+        permissionAsked = savedInstanceState?.getBoolean(KEY_PERMISSION_ASKED, false) == true
 
         // 只给覆盖层加系统栏内边距，背景 View 仍然铺满全屏。
         binding.uiOverlay.applySafeInsets(top = true, bottom = true)
-
-        binding.weatherBackdrop.onSimulatedTiltChange = { pitch, roll ->
-            viewModel.updateSimulatedTilt(pitch, roll)
-        }
 
         pagesAdapter = CityPagesAdapter(supportFragmentManager, lifecycle)
         binding.viewPager.adapter = pagesAdapter
@@ -99,7 +127,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         binding.imageCityManage.setOnClickListener {
-            // 城市管理页(§6.1):返回 setResult(cityId) → onCityListChanged() 重建页序并切到该城市
+            // 城市管理页返回后等待存储快照，再重建页序并切到所选城市。
             cityResultLauncher.launch(CityManageActivity.intent(this))
         }
         binding.imageMore.setOnClickListener { anchor -> showOverflowMenu(anchor) }
@@ -109,6 +137,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         initializeViewModel(savedInstanceState)
+        if (intent.hasExtra(WeatherWidgetProvider.EXTRA_CITY_ID)) viewModel.exitPreview()
+        pendingWidgetCityId = intent.getStringExtra(WeatherWidgetProvider.EXTRA_CITY_ID)
         observeState()
     }
 
@@ -173,7 +203,10 @@ class MainActivity : AppCompatActivity() {
         val previousCityId = pagesAdapter.cityIdAt(binding.viewPager.currentItem)
         pagesAdapter.submit(state.cities)
         if (!hasCities) return
-        val targetIndex = previousCityId
+        val widgetIndex = pendingWidgetCityId?.let { id -> state.cities.indexOfFirst { it.id == id } }
+            ?.takeIf { it >= 0 }
+        if (widgetIndex != null) pendingWidgetCityId = null
+        val targetIndex = widgetIndex ?: previousCityId
             ?.let { id -> state.cities.indexOfFirst { it.id == id } }
             ?.takeIf { it >= 0 }
             ?: state.selectedIndex
@@ -197,8 +230,7 @@ class MainActivity : AppCompatActivity() {
 
     /** 把 ViewModel 的低频调试状态映射到背景 View 与调试文本。 */
     private fun renderDebug(state: SceneUiState) {
-        // 触摸模拟开关跟随 ViewModel 状态(View 内部对相同值短路,不会打断进行中的动画)。
-        binding.weatherBackdrop.simulateTilt = state.simulateTilt
+        if (!state.simulateTilt) simulatedPointerId = MotionEvent.INVALID_POINTER_ID
         binding.textDebug.visibility = if (state.showDebug) View.VISIBLE else View.GONE
         if (state.previewing) {
             binding.weatherBackdrop.setScene(state.sceneType, state.isNight)
@@ -233,20 +265,78 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * 城市管理/搜索页返回(多页协作契约):
-     * onCityListChanged() 重建页序(城市流本身已自动回流),结果带 cityId 时平滑切到该城市;
+     * 等待最新存储快照重建页序，结果带 cityId 时平滑切到该城市；
      * 城市可能已被删除( indexOfFirst = -1)→ 只保持当前位置。
      */
     private fun onCityPickerResult(result: ActivityResult) {
-        viewModel.onCityListChanged()
-        val cityId = result.data?.getStringExtra(CityManageActivity.EXTRA_SELECTED_CITY_ID)
-            ?: result.data?.getStringExtra(CitySearchActivity.EXTRA_ADDED_CITY_ID)
-            ?: return
-        val state = viewModel.pages.value
-        // 结果回调可能早于状态收集，先更新适配器，避免新城市索引被旧页数截断。
-        renderPages(state)
-        val index = state.cities.indexOfFirst { it.id == cityId }
-        if (index >= 0 && binding.viewPager.currentItem != index) {
-            binding.viewPager.setCurrentItem(index, true)
+        lifecycleScope.launch {
+            val state = try {
+                viewModel.syncCityListFromStorage()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // 读取失败时保留当前页，避免结果回调导致主页崩溃。
+                return@launch
+            }
+            // 结果可能先于共享城市流到达；用同一快照先补齐适配器，再按标识切页。
+            renderPages(state)
+            if (result.resultCode != RESULT_OK) return@launch
+            val cityId = result.data?.getStringExtra(CityManageActivity.EXTRA_SELECTED_CITY_ID)
+                ?: result.data?.getStringExtra(CitySearchActivity.EXTRA_ADDED_CITY_ID)
+                ?: return@launch
+            val index = state.cities.indexOfFirst { it.id == cityId }
+            if (index >= 0 && binding.viewPager.currentItem != index) {
+                binding.viewPager.setCurrentItem(index, true)
+            }
+        }
+    }
+
+    /** 在窗口入口旁路观察模拟拖动，原始事件继续完整分发给现有控件。 */
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (::binding.isInitialized) observeSimulatedTilt(event)
+        return super.dispatchTouchEvent(event)
+    }
+
+    /** 只更新姿态，不消费事件或要求父容器停止拦截，保留原有滚动手势。 */
+    private fun observeSimulatedTilt(event: MotionEvent) {
+        if (!viewModel.sceneState.value.simulateTilt) {
+            simulatedPointerId = MotionEvent.INVALID_POINTER_ID
+            return
+        }
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                simulatedPointerId = event.getPointerId(0)
+                simulatedStartX = event.x
+                simulatedStartY = event.y
+                simulatedStartTilt = viewModel.tilt.value
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                val pointerIndex = event.findPointerIndex(simulatedPointerId)
+                if (pointerIndex < 0) return
+                val dx = event.getX(pointerIndex) - simulatedStartX
+                val dy = event.getY(pointerIndex) - simulatedStartY
+                val width = binding.weatherBackdrop.width
+                val height = binding.weatherBackdrop.height
+                if (width <= 0 || height <= 0 ||
+                    max(abs(dx), abs(dy)) < simulatedTouchSlop
+                ) return
+                viewModel.updateSimulatedTilt(
+                    pitchDeg = simulatedStartTilt.pitchDeg - dy / height * TOUCH_FULL_SCALE_DEG,
+                    rollDeg = simulatedStartTilt.rollDeg + dx / width * TOUCH_FULL_SCALE_DEG
+                )
+            }
+
+            MotionEvent.ACTION_POINTER_UP -> {
+                // 首指抬起后不跳到另一根手指，避免姿态突然跳变。
+                if (event.getPointerId(event.actionIndex) == simulatedPointerId) {
+                    simulatedPointerId = MotionEvent.INVALID_POINTER_ID
+                }
+            }
+
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                simulatedPointerId = MotionEvent.INVALID_POINTER_ID
+            }
         }
     }
 
@@ -255,17 +345,25 @@ class MainActivity : AppCompatActivity() {
     /**
      * 进入页面时按需定位:
      * - 无任何城市(首启)→ 请求定位权限;拒绝则停留在空状态(D8:不预置假城市);
-     * - 有城市但尚无定位城市且已授权 → 静默定位插入(§2.4 回退链第 2 条)。
+     * - 已授权时静默定位，已有定位城市按成功 / 失败节流规则检查移动；
+     * - 有手动城市但尚未授权时不再次弹权限，定位始终只发生在前台。
      */
     private fun maybeLocate() {
-        lifecycleScope.launch {
-            // 等城市列表磁盘预热完成(冷启动瞬间为空),最多 1.5s,避免首启误判。
-            val state = withTimeoutOrNull(CITY_LIST_WAIT_MS) {
-                viewModel.pages.first { it.cities.isNotEmpty() }
-            } ?: viewModel.pages.value
+        if (locationPreparationJob?.isActive == true) return
+        locationPreparationJob = lifecycleScope.launch {
+            // 读取真实磁盘快照，空列表不再与尚未完成预热的占位混淆。
+            val cities = try {
+                viewModel.awaitCitiesForLocation()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // 无法读取存储时不把未知状态当作首启，也不因此重复申请权限。
+                return@launch
+            }
             val container = (application as WeatherApplication).container
             when {
-                state.cities.isEmpty() -> {
+                container.locationDataSource.hasPermission() -> locate()
+                cities.isEmpty() -> {
                     if (permissionAsked) return@launch
                     permissionAsked = true
                     permissionLauncher.launch(
@@ -275,27 +373,47 @@ class MainActivity : AppCompatActivity() {
                         )
                     )
                 }
-
-                state.cities.none { it.isLocated } &&
-                    container.locationDataSource.hasPermission() -> locate()
             }
         }
     }
 
-    /** 一次性定位(Activity 按 ask 约定调 LocationDataSource);命名回退 Geocoder,失败交「我的位置」兜底。 */
+    /** 前台一次性定位；足够大的位移才更新原城市，失败保留原坐标与天气。 */
     private fun locate() {
-        if (locateInFlight) return
-        locateInFlight = true
-        lifecycleScope.launch {
-            val container = (application as WeatherApplication).container
-            val fix = runCatching { container.locationDataSource.currentLocation() }.getOrNull()
-            if (fix is LocationFix.Fixed) {
+        if (locationJob?.isActive == true || !viewModel.beginLocationCheck()) return
+        locationJob = lifecycleScope.launch {
+            var succeeded = false
+            try {
+                val container = (application as WeatherApplication).container
+                val fix = container.locationDataSource.currentLocation()
+                if (fix !is LocationFix.Fixed) return@launch
+                val locatedCity = viewModel.awaitCitiesForLocation().firstOrNull { it.isLocated }
+                if (locatedCity != null) {
+                    val distance = FloatArray(1)
+                    Location.distanceBetween(
+                        locatedCity.latitude, locatedCity.longitude,
+                        fix.latitude, fix.longitude, distance
+                    )
+                    // 大致定位的精度半径也计入阈值，避免正常漂移反复清除天气缓存。
+                    if (distance[0] < max(LOCATION_MOVE_THRESHOLD_M, fix.accuracyMeters)) {
+                        succeeded = true
+                        return@launch
+                    }
+                }
                 val name = withContext(Dispatchers.IO) {
                     resolvePlaceName(fix.latitude, fix.longitude)
                 }
-                viewModel.submitLocatedPlace(name, fix.latitude, fix.longitude)
+                succeeded = viewModel.submitLocatedPlace(
+                    name = name,
+                    latitude = fix.latitude,
+                    longitude = fix.longitude
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // 系统服务或存储暂不可用时保留当前城市，下次前台按失败间隔重试。
+            } finally {
+                viewModel.finishLocationCheck(succeeded = succeeded)
             }
-            locateInFlight = false
         }
     }
 
@@ -375,7 +493,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    /** 头部溢出菜单(§6.2):关于 / 动画调试。 */
+    /** 头部溢出菜单：关于、系统微件添加入口和动画调试。 */
     private fun showOverflowMenu(anchor: View) {
         val popup = PopupMenu(this, anchor)
         popup.menuInflater.inflate(R.menu.menu_main_overflow, popup.menu)
@@ -392,10 +510,33 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
+                R.id.action_add_widget -> {
+                    val manager = AppWidgetManager.getInstance(this)
+                    if (manager.isRequestPinAppWidgetSupported) {
+                        manager.requestPinAppWidget(ComponentName(this, WeatherWidgetProvider::class.java), null, null)
+                    } else {
+                        MaterialAlertDialogBuilder(this)
+                            .setTitle(R.string.widget_pin)
+                            .setMessage(R.string.widget_pin_hint)
+                            .setPositiveButton(android.R.string.ok, null)
+                            .show()
+                    }
+                    true
+                }
+
                 else -> false
             }
         }
         popup.show()
+    }
+
+    /** 已打开的应用收到微件点击后复用主页，并切到微件对应的城市。 */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingWidgetCityId = intent.getStringExtra(WeatherWidgetProvider.EXTRA_CITY_ID)
+        if (intent.hasExtra(WeatherWidgetProvider.EXTRA_CITY_ID)) viewModel.exitPreview()
+        renderPages(viewModel.pages.value)
     }
 
     override fun onStart() {
@@ -405,7 +546,10 @@ class MainActivity : AppCompatActivity() {
         maybeLocate()
     }
 
+    /** 离开主页可见阶段即取消定位，并停止传感器监听。 */
     override fun onStop() {
+        locationPreparationJob?.cancel()
+        locationJob?.cancel()
         viewModel.stopSensors()
         super.onStop()
     }
@@ -415,11 +559,14 @@ class MainActivity : AppCompatActivity() {
         binding.weatherBackdrop.start()
     }
 
+    /** 暂停渲染时清除模拟手势，不把旧手指状态带到下一次恢复。 */
     override fun onPause() {
+        simulatedPointerId = MotionEvent.INVALID_POINTER_ID
         binding.weatherBackdrop.stop()
         super.onPause()
     }
 
+    /** 保存预览、姿态和权限请求标记，系统重建后继续使用同一状态。 */
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         // 保存最新 UI 状态和姿态，进程被回收后由 initializeViewModel 恢复。
@@ -432,6 +579,7 @@ class MainActivity : AppCompatActivity() {
         outState.putFloat(KEY_ROLL, tilt.rollDeg)
         outState.putBoolean(KEY_DEBUG, state.showDebug)
         outState.putBoolean(KEY_PREVIEW, state.previewing)
+        outState.putBoolean(KEY_PERMISSION_ASKED, permissionAsked)
     }
 
     companion object {
@@ -474,10 +622,16 @@ class MainActivity : AppCompatActivity() {
         /** 进程重建时保存的调试预览标记(背景是否跟随调试场景)。 */
         private const val KEY_PREVIEW = "state_preview"
 
+        /** 权限请求状态跨页面重建保留，拒绝后不会因旋转再次弹窗。 */
+        private const val KEY_PERMISSION_ASKED = "state_permission_asked"
+
         /** 调试数值刷新间隔，避免每帧格式化字符串。 */
         private const val DEBUG_INTERVAL_MS = 200L
 
-        /** 等待城市列表磁盘预热的上限,超时按真实(可能为空)列表继续。 */
-        private const val CITY_LIST_WAIT_MS = 1_500L
+        /** 整个窗口宽 / 高的拖动量分别对应 180° 横滚 / 俯仰。 */
+        private const val TOUCH_FULL_SCALE_DEG = 180f
+
+        /** 城市天气忽略公里内的细小移动；大致定位还需超出其精度半径。 */
+        private const val LOCATION_MOVE_THRESHOLD_M = 1_000f
     }
 }

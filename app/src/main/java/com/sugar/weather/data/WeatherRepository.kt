@@ -7,7 +7,9 @@ import com.sugar.weather.data.remote.OpenMeteoApi
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +38,7 @@ import kotlinx.coroutines.withContext
  * @param forecastApi 预报网络接口。
  * @param airQualityApi 空气质量接口。
  * @param geocodingApi 城市搜索接口。
- * @param externalScope 承载共享流和启动预热的进程级作用域。
+ * @param externalScope 承载共享流、启动预热与共享网络请求的进程级作用域。
  */
 class WeatherRepository(
     private val cityStore: CityStorage,
@@ -51,6 +53,18 @@ class WeatherRepository(
     /** 城市修改、缓存预热和刷新提交共用此锁；网络请求始终在锁外执行。 */
     private val cityMutationMutex = Mutex()
 
+    /** 共享请求由进程作用域持有，单个页面离开不会取消微件或其他页面正在等待的刷新。 */
+    private val refreshScope = externalScope
+
+    /** 只保护进行中的请求索引，不与网络或城市事务共用锁。 */
+    private val refreshRequestMutex = Mutex()
+
+    /** 同一城市身份共享一次请求；定位坐标改变后会使用独立的新请求。 */
+    private val refreshRequests = mutableMapOf<WeatherRequestKey, Deferred<Result<WeatherReport>>>()
+
+    /** 城市删除或坐标变更时递增，防止 A→B→A 移动后再次接收第一次 A 的迟到请求。 */
+    private val weatherRevisions = mutableMapOf<String, Long>()
+
     /** cityId → 最近一次成功抓取的天气报告(内存层;启动时从 DataStore 缓存预热)。 */
     val reports: StateFlow<Map<String, WeatherReport>> = _reports.asStateFlow()
 
@@ -60,15 +74,29 @@ class WeatherRepository(
 
     /** 缓存预热完成后再判断是否缺数据，避免冷启动时先发一轮多余请求。 */
     private val cacheReady = externalScope.launch {
-        cityMutationMutex.withLock {
-            val retainedIds = cityStore.cities.first().mapTo(HashSet()) { it.id }
-            val cached = withContext(Dispatchers.Default) {
-                cityStore.loadAllCachedWeather().filterKeys { it in retainedIds }
-                    .mapValues { (_, report) -> report.restoreDailyConditions() }
+        try {
+            cityMutationMutex.withLock {
+                val retainedIds = cityStore.cities.first().mapTo(HashSet()) { it.id }
+                val cached = withContext(Dispatchers.Default) {
+                    cityStore.loadAllCachedWeather().mapNotNull { (cityId, report) ->
+                        if (cityId !in retainedIds) return@mapNotNull null
+                        // 存储实现与旧版本缓存都可能带来坏条目；恢复摘要也必须逐条隔离。
+                        runCatching {
+                            report.normalizedFor(cityId = cityId)?.restoreDailyConditions()
+                        }.getOrNull()?.let { cityId to it }
+                    }.toMap()
+                }
+                _reports.update { current -> cached + current }
             }
-            _reports.update { current -> cached + current }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            // 缓存预热失败仍允许仓库正常启动，由后续联网刷新恢复。
         }
     }
+
+    /** 读取磁盘提供的真实城市快照，供首次定位区分空列表与共享流的初始占位。 */
+    suspend fun citySnapshot(): List<City> = cityStore.cities.first()
 
     /** 等待磁盘预热，取得当前城市缓存；此过程不访问网络。 */
     suspend fun cachedReport(cityId: String): WeatherReport? {
@@ -77,18 +105,50 @@ class WeatherRepository(
     }
 
     /**
-     * 刷新一个城市的天气:forecast + air-quality 并行。
+     * 刷新一个城市的天气；同城、同坐标的并发调用共享 forecast + air-quality 请求。
      * 成功 → 更新内存并落盘缓存,返回 [Result.success];
-     * 失败 → [Result.failure],异常为 [WeatherDataException] 子类型。
+     * 失败或关键数据块缺测 → 保留原缓存并返回 [Result.failure]。
      */
     suspend fun refreshWeather(cityId: String): Result<WeatherReport> = try {
-        val city = resolveCity(cityId)
-            ?: return Result.failure(WeatherDataException.CityNotFound(cityId))
+        cacheReady.join()
+        val snapshot = cityMutationMutex.withLock {
+            resolveCity(cityId)?.let { it to (weatherRevisions[cityId] ?: 0L) }
+        } ?: return Result.failure(WeatherDataException.CityNotFound(cityId))
+        val (city, revision) = snapshot
+        val key = WeatherRequestKey(
+            cityId = city.id,
+            latitude = city.latitude,
+            longitude = city.longitude,
+            addedAtMillis = city.addedAtMillis,
+            revision = revision
+        )
+        val request = refreshRequestMutex.withLock {
+            refreshRequests[key]?.takeUnless { it.isCompleted } ?: refreshScope.async {
+                try {
+                    fetchAndCommitWeather(city = city, revision = revision)
+                } finally {
+                    // 取消也需清理索引，后续刷新不能永远加入一个已经取消的请求。
+                    withContext(NonCancellable) {
+                        refreshRequestMutex.withLock { refreshRequests.remove(key) }
+                    }
+                }
+            }.also { refreshRequests[key] = it }
+        }
+        request.await()
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (error: Exception) {
+        Result.failure(WeatherDataException.wrap(error))
+    }
+
+    /** 对固定城市快照抓取并提交；坐标变化、删除和旧观测都不能覆盖当前报告。 */
+    private suspend fun fetchAndCommitWeather(city: City, revision: Long): Result<WeatherReport> = try {
+        val cityId = city.id
         val previous = _reports.value[cityId]
         coroutineScope {
             val airDeferred = async {
                 try {
-                    airQualityApi.airQuality(city.latitude, city.longitude)
+                    airQualityApi.airQuality(latitude = city.latitude, longitude = city.longitude)
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (error: Exception) {
@@ -115,35 +175,51 @@ class WeatherRepository(
             } else {
                 null
             }
-            val fallbackForecast = forecastApi.forecast(city.latitude, city.longitude)
+            val fallbackForecast = forecastApi.forecast(latitude = city.latitude, longitude = city.longitude)
             val air = airDeferred.await()
             val cmaForecast = cmaDeferred?.await()
             val pm25 = air?.current?.pm2_5 ?: previous?.current?.pm25
             val fetchedAt = System.currentTimeMillis()
             // 小时聚合、模型合并移出主线程，刷新时不阻塞滚动和动画。
             val report = withContext(Dispatchers.Default) {
-                val fallbackReport = fallbackForecast.toDomain(cityId, fetchedAt, pm25)
+                val fallbackReport = fallbackForecast.toDomain(
+                    cityId = cityId,
+                    fetchedAtMillis = fetchedAt,
+                    pm25 = pm25
+                )
                 cmaForecast
-                    ?.toDomain(cityId, fetchedAt, pm25)
+                    ?.toDomain(cityId = cityId, fetchedAtMillis = fetchedAt, pm25 = pm25)
+                    ?.normalizedFor(cityId = cityId)
                     ?.let { mergeReports(fallback = fallbackReport, cma = it) }
                     ?: fallbackReport
             }
             cityMutationMutex.withLock {
                 // 不使用可能滞后的 StateFlow；检查、内存更新及落盘必须与删除串行。
                 val latest = cityStore.cities.first().firstOrNull { it.id == cityId }
-                if (latest == null || latest.latitude != city.latitude ||
-                    latest.longitude != city.longitude || latest.addedAtMillis != city.addedAtMillis
+                if (latest == null || !latest.hasSameWeatherIdentity(other = city) ||
+                    (weatherRevisions[cityId] ?: 0L) != revision
                 ) {
                     return@withLock Result.failure(WeatherDataException.CityNotFound(cityId))
                 }
-                _reports.update { it + (cityId to report) }
+                val validReport = report.normalizedFor(cityId = cityId)
+                    ?.takeIf { it.isUsableForecast() }
+                    ?: return@withLock Result.failure(WeatherDataException.Parse())
+                val current = _reports.value[cityId]
+                val currentObservedAt = current?.observedAt
+                if (current != null && currentObservedAt != null &&
+                    validReport.observedAt?.isBefore(currentObservedAt) == true
+                ) {
+                    // 服务端偶尔返回旧快照时保留较新观测，也保留其原抓取时间。
+                    return@withLock Result.success(current)
+                }
+                _reports.update { it + (cityId to validReport) }
                 try {
-                    withContext(Dispatchers.IO) { cityStore.saveWeather(cityId, report) }
+                    withContext(Dispatchers.IO) { cityStore.saveWeather(cityId = cityId, report = validReport) }
                 } catch (storeError: Exception) {
                     // 缓存写失败不影响本次展示；取消仍需传播给页面生命周期。
                     if (storeError is CancellationException) throw storeError
                 }
-                Result.success(report)
+                Result.success(validReport)
             }
         }
     } catch (cancellation: CancellationException) {
@@ -157,9 +233,11 @@ class WeatherRepository(
      */
     suspend fun cachedOrRefresh(cityId: String): Result<WeatherReport> {
         val cached = cachedReport(cityId)
-        if (cached != null && !cached.isStale()) return Result.success(cached)
+        if (cached != null && cached.isUsableForecast() && !cached.isStale()) return Result.success(cached)
         val result = refreshWeather(cityId)
-        return if (result.isFailure && cached != null) Result.success(cached) else result
+        // 请求期间坐标可能已改变；只能回退当前仍属于该城市身份的报告。
+        val retained = _reports.value[cityId]
+        return if (result.isFailure && retained != null) Result.success(retained) else result
     }
 
     /** 城市搜索(§6.4):population 非空且大的排前,同人口按 name 长度升序。 */
@@ -271,15 +349,28 @@ class WeatherRepository(
     }
 
     /**
-     * 城市列表的事务入口：先归一化并持久化，再移除不再属于列表的内存报告。
+     * 城市列表的事务入口：先归一化并持久化，再移除已删除或坐标变化城市的内存报告。
      * 定位、添加、排序及删除都走这里，防止相互覆盖或被迟到的天气重新写回。
      */
     private suspend fun mutateCities(transform: (List<City>) -> List<City>): List<City> = try {
         cityMutationMutex.withLock {
             withContext(Dispatchers.IO) {
-                val updated = cityStore.updateCities { current -> normalize(transform(current)) }
+                var invalidatedIds: Set<String> = emptySet()
+                val updated = cityStore.updateCities { current ->
+                    val next = normalize(transform(current))
+                    val nextById = next.associateBy { it.id }
+                    invalidatedIds = current.filter { city ->
+                        nextById[city.id]?.let { city.hasSameWeatherIdentity(other = it) } != true
+                    }.mapTo(HashSet()) { it.id }
+                    next
+                }
                 val retainedIds = updated.mapTo(HashSet()) { it.id }
-                _reports.update { reports -> reports.filterKeys { it in retainedIds } }
+                invalidatedIds.forEach { cityId ->
+                    weatherRevisions[cityId] = (weatherRevisions[cityId] ?: 0L) + 1L
+                }
+                _reports.update { reports ->
+                    reports.filterKeys { it in retainedIds && it !in invalidatedIds }
+                }
                 updated
             }
         }
@@ -302,12 +393,30 @@ class WeatherRepository(
     private suspend fun resolveCity(cityId: String): City? =
         cityStore.cities.first().firstOrNull { it.id == cityId }
 
+    /** 城市条目的坐标判重；与天气缓存身份的精确坐标比较用途不同。 */
     private fun isSamePlace(a: City, b: City): Boolean =
         isSamePlace(a.latitude, a.longitude, b.latitude, b.longitude)
 
+    /** 搜索去重允许约 11m 的经纬度误差，避免同一地点以不同 id 重复添加。 */
     private fun isSamePlace(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Boolean =
         kotlin.math.abs(lat1 - lat2) < COORDINATE_EPSILON &&
             kotlin.math.abs(lon1 - lon2) < COORDINATE_EPSILON
+
+    /**
+     * 一次共享请求对应的城市身份，避免移动后的定位城市等待旧坐标请求。
+     * @property cityId 城市持久化标识。
+     * @property latitude 请求纬度。
+     * @property longitude 请求经度。
+     * @property addedAtMillis 城市记录创建时间，区分删除后重新添加的记录。
+     * @property revision 本进程内天气身份的修改代次，防止旧坐标结果复活。
+     */
+    private data class WeatherRequestKey(
+        val cityId: String,
+        val latitude: Double,
+        val longitude: Double,
+        val addedAtMillis: Long,
+        val revision: Long
+    )
 
     companion object {
         /** Geocoder 反地理失败的定位城市回退名(§2.4 第 3 条)。 */

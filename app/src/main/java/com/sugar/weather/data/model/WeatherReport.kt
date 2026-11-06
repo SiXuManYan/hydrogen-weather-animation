@@ -30,14 +30,14 @@ data class WeatherReport(
 )
 
 /**
- * 实况天气。除 [visibilityKm]、[pm25] 外的字段为 API 必返字段,映射时对缺失值给保守默认。
+ * 实况天气。气温和天气码是有效实况的前提，其他数值缺测时保留 null，避免把未知显示成零。
  *
  * @property temperatureC 气温(°C)
- * @property apparentTemperatureC 体感温度(°C)
- * @property humidityPercent 相对湿度(%)
- * @property pressureHpa 海平面气压(hPa)
- * @property windKmh 风速(km/h,请求参数 wind_speed_unit=kmh)
- * @property windDirectionDeg 风向角度(0=北,顺时针)
+ * @property apparentTemperatureC 体感温度(°C)，缺失为 null
+ * @property humidityPercent 相对湿度(%)，缺失为 null
+ * @property pressureHpa 海平面气压(hPa)，缺失为 null
+ * @property windKmh 风速(km/h,请求参数 wind_speed_unit=kmh)，缺失为 null
+ * @property windDirectionDeg 风向角度(0=北,顺时针)，缺失为 null
  * @property visibilityKm 能见度(km,取当前小时的 hourly.visibility 米值换算);缺失为 null
  * @property weatherCode WMO weather_code(映射见 WeatherCodes)
  * @property isNight 夜间(current.is_day == 0)
@@ -45,11 +45,11 @@ data class WeatherReport(
  */
 data class CurrentWeather(
     val temperatureC: Double,
-    val apparentTemperatureC: Double,
-    val humidityPercent: Double,
-    val pressureHpa: Double,
-    val windKmh: Double,
-    val windDirectionDeg: Double,
+    val apparentTemperatureC: Double?,
+    val humidityPercent: Double?,
+    val pressureHpa: Double?,
+    val windKmh: Double?,
+    val windDirectionDeg: Double?,
     val visibilityKm: Double?,
     val weatherCode: Int,
     val isNight: Boolean,

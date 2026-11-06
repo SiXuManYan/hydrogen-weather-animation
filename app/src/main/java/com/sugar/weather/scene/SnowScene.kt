@@ -12,13 +12,19 @@ import kotlin.random.Random
 /**
  * 雪场景。小颗粒画圆点，大颗粒画旋转六边形；少量颗粒使用原 App 的薄荷绿色作为点缀。
  * 雨夹雪由 [CompositeScene] 叠加一层小雨实现。
+ * @property heavy 是否使用大雪的数量和运动参数。
+ * @param particleScale 相对全屏的粒子数量预算。
  */
-class SnowScene(private val heavy: Boolean) : WeatherScene {
+class SnowScene(private val heavy: Boolean, particleScale: Float = 1f) : WeatherScene {
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val hexPath = Path()
 
-    private val count = if (heavy) HEAVY_FLAKE_COUNT else LIGHT_FLAKE_COUNT
+    /** 小卡片只分配和遍历预算内的雪花，全屏保留原数量。 */
+    private val count = particleCount(
+        baseCount = if (heavy) HEAVY_FLAKE_COUNT else LIGHT_FLAKE_COUNT,
+        scale = particleScale
+    )
     private val baseX = FloatArray(count)
     private val y = FloatArray(count)
     private val radiusDp = FloatArray(count)

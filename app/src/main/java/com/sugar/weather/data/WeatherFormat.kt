@@ -30,14 +30,17 @@ fun formatTemperatureC(value: Double): String = formatRoundInt(value) + UNIT_TEM
 fun formatHighLowC(tempMaxC: Double, tempMinC: Double): String =
     formatRoundInt(tempMaxC) + "/" + formatRoundInt(tempMinC) + UNIT_HIGH_LOW
 
-/** 湿度:「84.0 %」(数值与单位间一个空格,§5.4)。 */
-fun formatHumidity(percent: Double): String = formatOneDecimal(percent) + " " + UNIT_HUMIDITY
+/** 湿度:「84.0 %」(数值与单位间一个空格,§5.4)；缺测显示「—」。 */
+fun formatHumidity(percent: Double?): String =
+    percent?.let { formatOneDecimal(it) + " " + UNIT_HUMIDITY } ?: UNKNOWN_TEXT
 
-/** 风速:「39.0 km/h」。 */
-fun formatWindSpeedKmh(kmh: Double): String = formatOneDecimal(kmh) + " " + UNIT_WIND_SPEED
+/** 风速:「39.0 km/h」；缺测显示「—」。 */
+fun formatWindSpeedKmh(kmh: Double?): String =
+    kmh?.let { formatOneDecimal(it) + " " + UNIT_WIND_SPEED } ?: UNKNOWN_TEXT
 
-/** 气压:「1007 hPa」。 */
-fun formatPressureHpa(hpa: Double): String = formatRoundInt(hpa) + " " + UNIT_PRESSURE
+/** 气压:「1007 hPa」；缺测显示「—」。 */
+fun formatPressureHpa(hpa: Double?): String =
+    hpa?.let { formatRoundInt(it) + " " + UNIT_PRESSURE } ?: UNKNOWN_TEXT
 
 /** 能见度:「8.0 km」;入参为 km(Mapper 已把米的原始值 /1000),缺失显示「—」。 */
 fun formatVisibilityKm(km: Double?): String =

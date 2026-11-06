@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ 可直接声明 5×1；旧系统继续按默认目录的最小尺寸计算。 -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_description"
+    android:initialLayout="@layout/widget_weather"
+    android:minWidth="280dp"
+    android:minHeight="72dp"
+    android:minResizeWidth="250dp"
+    android:minResizeHeight="72dp"
+    android:previewImage="@drawable/bg_widget_sunny"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="5"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

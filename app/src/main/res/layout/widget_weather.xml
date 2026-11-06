@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 72dp 紧凑布局为日期、图标、温度保留 16+24+16dp；加高后由权重扩展图标区。 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget_sunny"
+    android:paddingStart="10dp"
+    android:paddingEnd="6dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:paddingStart="0dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="6dp">
+
+            <TextView
+                android:id="@+id/widget_city"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/app_name"
+                android:textColor="@color/white"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/widget_temperature"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_above="@id/widget_high_low"
+                android:layout_below="@id/widget_city"
+                android:autoSizeMaxTextSize="46sp"
+                android:autoSizeMinTextSize="24sp"
+                android:autoSizeStepGranularity="1sp"
+                android:autoSizeTextType="uniform"
+                android:fontFamily="sans-serif-light"
+                android:gravity="center_vertical"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/widget_unknown"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:id="@+id/widget_high_low"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/widget_unknown"
+                android:textColor="@color/white"
+                android:textSize="11sp" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/widget_updated"
+                android:layout_width="match_parent"
+                android:layout_height="16dp"
+                android:layout_alignParentTop="true"
+                android:layout_marginEnd="36dp"
+                android:autoSizeMaxTextSize="10sp"
+                android:autoSizeMinTextSize="8sp"
+                android:autoSizeStepGranularity="1sp"
+                android:autoSizeTextType="uniform"
+                android:gravity="center_vertical|end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/widget_name"
+                android:textColor="@color/white" />
+
+            <LinearLayout
+                android:id="@+id/widget_forecast"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@id/widget_updated"
+                android:baselineAligned="false"
+                android:gravity="bottom"
+                android:orientation="horizontal"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/widget_message"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@id/widget_updated"
+                android:gravity="center"
+                android:text="@string/widget_add_city_hint"
+                android:textColor="@color/white"
+                android:textSize="12sp" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <!-- 图形限制在顶部 16dp 内，触摸区仍为 48dp，避免覆盖下方日期文字。 -->
+    <ImageButton
+        android:id="@+id/widget_refresh"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:background="@android:color/transparent"
+        android:contentDescription="@string/widget_refresh"
+        android:paddingStart="16dp"
+        android:paddingTop="0dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="32dp"
+        android:src="@drawable/ic_widget_refresh" />
+</FrameLayout>

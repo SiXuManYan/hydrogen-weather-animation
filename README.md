@@ -11,15 +11,16 @@ This project is for non-commercial learning and demonstration. It is not affilia
 ## Features and controls
 
 - **Weather home**: swipe between cities to view current conditions, a 6-day trend including today, hourly forecasts and 8 weather details. Daily summaries retain changes such as rain turning to snow and wrap without truncation. Scrolling up gently dims the animated background while keeping text and controls bright. Supports pull-to-refresh and cached data offline.
-- **15-day forecast**: open an in-app page showing up to 15 days starting tomorrow. Shares daily summaries with the home page, adds early-morning, daytime and nighttime details, and follows weather updates. Reuses fresh cached weather and refreshes expired data, with an offline fallback.
-- **City management**: long-press a card or tap Edit to select cities with blue outlines and confirm batch deletion. Use the independent handle to drag or move cities through a menu. The located city stays first and cannot be removed. Each card has an animated background.
+- **15-day forecast**: open an in-app page showing up to 15 days starting tomorrow in the city's local calendar. Shares daily summaries with the home page and adds early-morning, daytime and nighttime details. Entry and foreground resume both check the 30-minute cache and update the displayed dates; failed requests retain usable offline forecasts.
+- **Home screen weather widget**: a horizontal 5×1 widget shows the first city's current temperature, today's high/low and a three-day forecast. About every 30 minutes, a local task redraws the cache even offline, while a separate weather request waits for connectivity. The 72dp layout reserves 24dp for forecast icons and keeps a 48dp refresh touch target. Supports manual refresh and opening the displayed city; add it through the app's overflow menu or the launcher's widget picker.
+- **City management**: tap a card to return directly to that city's home page; choosing a search result through management does the same. Long-press a card or tap Edit to select cities with blue outlines and confirm batch deletion. Use the independent handle to drag or move cities through a menu. The located city stays first and cannot be removed. Animated cards share a 24fps clock and reduce particles according to their display area.
 - **City search**: search with the full city name, or add one of 12 built-in popular cities.
-- **Location**: permission is requested when the app has no cities; manual search remains available if denied. Uses the system `LocationManager` without a GMS dependency.
+- **Location**: precise and approximate permission both work; permission is requested when the app has no cities, and manual search remains available if denied. With permission already granted, returning to the foreground silently checks location, with a 30-minute interval after success or a 2-minute interval after failure. Moving at least 1km updates the existing located city and its weather. Uses the system `LocationManager` without GMS or background location.
 - **Animation debug**: open `⋮` → Animation debug to select a scene, day/night and simulated tilt. To return to weather control, choose Restore weather background and then Apply.
 - **About**: an original logo, current version, author 薯格's GitHub and Douyin details, and offline documents with chapter navigation. Website links show a confirmation before opening a browser tab. Documents are currently displayed in Simplified Chinese.
 - **Theme**: Material 3 dialogs and controls throughout, with system light/dark mode on standard surfaces. Weather animations retain their scene colors.
 
-Current version: **1.3** (`versionCode = 4`). No default city is preloaded. See the [changelog](CHANGELOG.md) for this version, [help](docs/USER_GUIDE.md) for controls and the [review record](docs/REVIEW.md) for remaining location and debug-gesture limitations (Chinese).
+Current version: **1.3** (`versionCode = 4`). No default city is preloaded. See the [changelog](CHANGELOG.md) for this version, [help](docs/USER_GUIDE.md) for controls and the [review record](docs/REVIEW.md) for implementation and verification scope (Chinese).
 
 ## Run
 
@@ -47,7 +48,7 @@ adb shell am start -n com.sugar.weather/.MainActivity
 
 On Windows, use `gradlew.bat :app:assembleDebug`. The repository's `gradlew` has no executable bit, so macOS / Linux examples invoke it through `sh`.
 
-The APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Local SDK paths in `local.properties` and machine-specific JDK bindings in `gradle/gradle-daemon-jvm.properties` are not committed.
+The APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Release builds enable R8 code optimization and shrinking. Local SDK paths in `local.properties` and machine-specific JDK bindings in `gradle/gradle-daemon-jvm.properties` are not committed.
 
 Validation:
 
@@ -57,7 +58,7 @@ sh ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest \
   :app:lintDebug :core_framework:lintDebug
 ```
 
-The current workspace passes the Debug and AndroidTest APK builds, all 62 local tests (49 App and 13 Library), and Lint with zero errors (41 App and 26 Library warnings). This includes 23 daily-condition cases and seven HTTP migration cases using a local MockWebServer; Library adapter tests use Robolectric on the host JVM. Six earlier device tests covered isolated gesture dispatch and M3 theme creation; see the [review record](docs/REVIEW.md#验证记录) for scope and the interrupted connection attempt. This round used no test device or emulator. Live weather refreshes, navigation appearance, narrow-screen wrapping and large-font layouts still require maintainer verification.
+Before the current review fixes, Debug and AndroidTest APK builds, 78 local tests (65 App and 13 Library), and Lint passed with zero errors (41 App and 26 Library warnings). That snapshot includes widget, daily-condition, HTTP and host-JVM adapter coverage. The current fixes have not been rebuilt, tested or linted, as requested; no device or emulator verification was performed for them. Real launcher rendering, clicks, long-running background scheduling and large-font layouts still need device acceptance testing. See the [review record](docs/REVIEW.md#验证记录) for historical verification scope.
 
 ## Data and limitations
 
@@ -69,13 +70,15 @@ The current workspace passes the Debug and AndroidTest APK builds, all 62 local 
 | PM2.5 | Open-Meteo Air Quality API; the air-quality label is an approximate PM2.5 concentration band, not a complete Chinese AQI |
 | City search | Open-Meteo Geocoding API; located-city naming uses the system Geocoder |
 
-The CMA selection box includes parts of neighboring countries. Preferring that model does not guarantee a more accurate forecast or reproduce a local meteorological bureau's published forecast. Daily high and low temperatures retain the selected model's values. Brief precipitation, thunder, hail and freezing rain remain in the summaries; sequential rain and snow are not inferred to be sleet. A failed `best_match` request fails the refresh; a CMA failure falls back to `best_match`; an air-quality failure retains the previous PM2.5 value, or displays “—” when none is available.
+The CMA selection box includes parts of neighboring countries. Preferring that model does not guarantee a more accurate forecast or reproduce a local meteorological bureau's published forecast. Daily high and low temperatures retain the selected model's values. Brief precipitation, thunder, hail and freezing rain remain in the summaries; sequential rain and snow are not inferred to be sleet. A failed `best_match` request fails the refresh; a CMA failure falls back to `best_match`; an air-quality failure retains the previous PM2.5 value, or displays “—” when none is available. Missing measurements remain “—” rather than fabricated zeroes. Responses without usable weather do not replace a previous valid report; damaged cache entries are skipped individually so other cities can still load. Concurrent refreshes for the same city share the request already in progress.
 
-City pages check the 30-minute cache on first entry and whenever they resume, after disk-cache initialization. Older caches rebuild daily summaries from existing hourly data without an extra request. At the top of the content, pull down below the header to force a refresh; the indicator appears below the header. Horizontal drags inside the hourly list scroll its items before switching cities. City management refreshes once when its ViewModel is created, with no background polling. Pages use 16dp horizontal gutters and 48dp touch targets, with 14sp document text; the home temperature starts around 36% of the usable window height. See the [design notes](docs/DESIGN.md#6-页面与动画).
+City pages and the 15-day page check the 30-minute cache on entry and foreground resume, after disk-cache initialization. Forecast dates use the city's local calendar, so returning after midnight removes elapsed dates. Older caches rebuild daily summaries from existing hourly data without an extra request. At the top of the content, pull down below the header to force a refresh; the indicator appears below the header. Horizontal drags inside the hourly list scroll its items before switching cities. City management refreshes once when its ViewModel is created.
+
+While a home screen widget exists, WorkManager redraws its saved report about every 30 minutes without a network constraint. When the system executes that task offline, today's high/low and future slots advance to the city's current date using the cache. A separate task waits for connectivity before checking for stale weather or honoring a manual refresh, without issuing offline network retries. All instances share work, which stops after the last widget is removed. Doze, battery saving and vendor restrictions can delay both kinds of work; connectivity also governs weather requests. Background requests use saved coordinates without acquiring location. Foreground location updates also refresh the widget when the first city's coordinates change. Pages use 16dp horizontal gutters and 48dp touch targets, with 14sp document text; the home temperature starts around 36% of the usable window height. See the [design notes](docs/DESIGN.md#6-页面与动画).
 
 Weather data is attributed under **CC BY 4.0** on the About page. Open-Meteo's free service is intended for non-commercial use, has request limits and provides no availability guarantee. See the [official terms](https://open-meteo.com/en/terms).
 
-Weather alerts, weather videos, widgets, sharing, feedback and settings are not implemented. Daily icons use daytime styling; hourly icons follow each day's sunrise and sunset. `HAZE`, `SANDSTORM`, `SLEET` and `STORM` are currently available only through debug selection. Units are fixed to °C, km/h, hPa and km.
+Weather alerts, weather videos, sharing, feedback and settings are not implemented. Widgets follow the first city (the located city takes priority), without a separate city selection per widget, and use static vector backgrounds matching the weather and day/night state. Daily icons use daytime styling; hourly icons follow each day's sunrise and sunset. `HAZE`, `SANDSTORM`, `SLEET` and `STORM` are currently available only through debug selection. Units are fixed to °C, km/h, hPa and km.
 
 ## Scene recordings
 
@@ -119,7 +122,7 @@ adb shell am start -n com.sugar.weather/.MainActivity \
   --ef pitch 90 --ef roll 0 --ez debug true
 ```
 
-If physical tilt has no effect, disable simulated tilt in Animation debug and check the displayed values. Devices without an orientation sensor enable simulation automatically; touch-event delivery has a known issue described in the [review record](docs/REVIEW.md). Sunny-scene tuning is in `scene/SunnySceneConfig.kt`; other tuning points are in [design §10](docs/DESIGN.md#10-开发与调参入口).
+If physical tilt has no effect, disable simulated tilt in Animation debug and check the displayed values. Devices without an orientation sensor enable simulation automatically. When simulation is enabled, dragging the weather content adjusts tilt while scrolling and horizontal city/hourly navigation remain available. Sunny-scene tuning is in `scene/SunnySceneConfig.kt`; other tuning points are in [design §10](docs/DESIGN.md#10-开发与调参入口).
 
 In the sunny daytime scene, the flat-to-upright pitch range produces a smaller visual shift so halos and clouds remain visible while the phone lies flat. Debug values retain the actual device angles.
 

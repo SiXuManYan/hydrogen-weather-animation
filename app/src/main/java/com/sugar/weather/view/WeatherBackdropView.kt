@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Canvas
 import android.util.AttributeSet
 import android.view.Choreographer
-import android.view.MotionEvent
 import android.view.View
 import com.sugar.weather.scene.SceneType
 import com.sugar.weather.scene.Tilt
@@ -13,9 +12,12 @@ import com.sugar.weather.scene.WeatherScene
 /**
  * 纯渲染 View。
  *
- * - 只负责 Canvas 绘制、Choreographer 帧循环，以及把触摸拖动换算成模拟姿态；
+ * - 只负责 Canvas 绘制与 Choreographer 帧循环；触摸由主页统一观察；
  * - 不再直接持有传感器，传感器和 UI 状态由 MainViewModel / TiltSensorRepository 管理；
  * - 姿态通过 [setTilt] 由 Activity 收集 StateFlow 后传入，场景切换通过 [setScene] 完成。
+ * @param context 提供绘制密度和 View 环境。
+ * @param attrs XML 布局传入的 View 属性。
+ * @param defStyleAttr 默认样式属性。
  */
 class WeatherBackdropView @JvmOverloads constructor(
     context: Context,
@@ -35,23 +37,6 @@ class WeatherBackdropView @JvmOverloads constructor(
     private var lastFrameNanos = 0L
     private var running = false
     private var attached = false
-
-    private var dragging = false
-    private var dragStartX = 0f
-    private var dragStartY = 0f
-    private var dragStartPitch = 0f
-    private var dragStartRoll = 0f
-
-    /** 是否消费触摸事件来模拟倾斜；由 MainActivity 根据 ViewModel 状态设置。 */
-    var simulateTilt: Boolean = false
-        set(value) {
-            if (field == value) return
-            field = value
-            isClickable = value
-        }
-
-    /** 触摸模拟产生的新姿态回调给 ViewModel，由 ViewModel 统一更新 StateFlow。 */
-    var onSimulatedTiltChange: ((pitchDeg: Float, rollDeg: Float) -> Unit)? = null
 
     private val frameCallback = object : Choreographer.FrameCallback {
         override fun doFrame(frameTimeNanos: Long) {
@@ -143,52 +128,8 @@ class WeatherBackdropView @JvmOverloads constructor(
         scene.draw(canvas, night)
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (!simulateTilt) return super.onTouchEvent(event)
-        when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                dragging = true
-                dragStartX = event.x
-                dragStartY = event.y
-                dragStartPitch = tilt.pitchDeg
-                dragStartRoll = tilt.rollDeg
-                return true
-            }
-
-            MotionEvent.ACTION_MOVE -> {
-                if (!dragging || viewWidth == 0 || viewHeight == 0) return true
-                val dx = event.x - dragStartX
-                val dy = event.y - dragStartY
-                // 整屏宽度对应 180° 横滚，整屏高度对应 180° 俯仰，并限制在 Tilt 的有效范围内。
-                val newRoll = (dragStartRoll + dx / viewWidth * TOUCH_FULL_SCALE_DEG)
-                    .coerceIn(Tilt.MIN_ROLL_DEG, Tilt.MAX_ROLL_DEG)
-                val newPitch = (dragStartPitch - dy / viewHeight * TOUCH_FULL_SCALE_DEG)
-                    .coerceIn(Tilt.MIN_PITCH_DEG, Tilt.MAX_PITCH_DEG)
-                // 本地先更新一次，手指拖动时无需等待 StateFlow 回传；ViewModel 会保存同一份值。
-                tilt = Tilt(newPitch, newRoll)
-                onSimulatedTiltChange?.invoke(newPitch, newRoll)
-                return true
-            }
-
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                dragging = false
-                performClick()
-                return true
-            }
-        }
-        return super.onTouchEvent(event)
-    }
-
-    override fun performClick(): Boolean {
-        super.performClick()
-        return true
-    }
-
     private companion object {
         /** 单帧最大时间步长，避免切后台回来时动画跳变。 */
         const val MAX_FRAME_MS = 30L
-
-        /** 手指从屏幕一侧拖到另一侧对应的姿态变化角度。 */
-        const val TOUCH_FULL_SCALE_DEG = 180f
     }
 }

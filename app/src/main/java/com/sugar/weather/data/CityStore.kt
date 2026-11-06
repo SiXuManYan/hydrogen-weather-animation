@@ -16,6 +16,7 @@ import com.sugar.weather.data.model.WeatherReport
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -52,20 +53,20 @@ class CityStore(context: Context) : CityStorage {
                 out.value(value.toString())
             }
             override fun read(reader: JsonReader): LocalDate = LocalDate.parse(reader.nextString())
-        })
+        }.nullSafe())
         .registerTypeAdapter(LocalDateTime::class.java, object : TypeAdapter<LocalDateTime>() {
             override fun write(out: JsonWriter, value: LocalDateTime) {
                 out.value(value.toString())
             }
             override fun read(reader: JsonReader): LocalDateTime =
                 LocalDateTime.parse(reader.nextString())
-        })
+        }.nullSafe())
         .registerTypeAdapter(LocalTime::class.java, object : TypeAdapter<LocalTime>() {
             override fun write(out: JsonWriter, value: LocalTime) {
                 out.value(value.toString())
             }
             override fun read(reader: JsonReader): LocalTime = LocalTime.parse(reader.nextString())
-        })
+        }.nullSafe())
         .create()
 
     /** 城市列表流;读失败按 §2.2 回退空列表。 */
@@ -75,15 +76,17 @@ class CityStore(context: Context) : CityStorage {
         }
         .map { prefs -> parseCities(prefs[CITY_LIST_KEY]) }
 
-    /** 城市读改写与已删除城市的缓存清理共用同一次事务，避免批量操作丢失修改。 */
+    /** 城市读改写与删除、坐标变化的缓存清理共用同一次事务，避免新地点沿用旧天气。 */
     override suspend fun updateCities(transform: (List<City>) -> List<City>): List<City> {
         var updated: List<City> = emptyList()
         appContext.weatherDataStore.edit { prefs ->
             val current = parseCities(prefs[CITY_LIST_KEY])
             updated = transform(current)
             if (updated != current) prefs[CITY_LIST_KEY] = gson.toJson(updated)
-            val retainedIds = updated.mapTo(HashSet()) { it.id }
-            current.filter { it.id !in retainedIds }.forEach { city ->
+            val updatedById = updated.associateBy { it.id }
+            current.filter { city ->
+                updatedById[city.id]?.let { city.hasSameWeatherIdentity(other = it) } != true
+            }.forEach { city ->
                 prefs.remove(weatherCacheKey(city.id))
             }
         }
@@ -108,7 +111,10 @@ class CityStore(context: Context) : CityStorage {
         for ((key, value) in prefs.asMap()) {
             val cityId = key.name.removePrefix(WEATHER_CACHE_PREFIX)
             if (cityId == key.name || value !is String) continue
-            runCatching { gson.fromJson(value, CachedWeather::class.java)?.report }
+            // 每条独立校验；一份坏 JSON 或缺字段报告不能阻断其余城市的离线缓存。
+            runCatching {
+                gson.fromJson(value, CachedWeather::class.java)?.report?.normalizedFor(cityId = cityId)
+            }
                 .getOrNull()
                 ?.let { result[cityId] = it }
         }
@@ -117,16 +123,27 @@ class CityStore(context: Context) : CityStorage {
 
     // ———————————————————————— 内部实现 ————————————————————————
 
-    private suspend fun readPrefs(): Preferences? = runCatching {
+    /** 读取缓存失败时允许联网恢复，但页面或进程取消必须继续向上传播。 */
+    private suspend fun readPrefs(): Preferences? = try {
         appContext.weatherDataStore.data.first()
-    }.getOrNull()
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        null
+    }
 
+    /** 单个城市结构损坏时忽略该条目，避免影响其他合法城市。 */
     private fun parseCities(json: String?): List<City> {
         if (json.isNullOrBlank()) return emptyList()
         return runCatching {
-            val parsed: Array<City>? = gson.fromJson(json, Array<City>::class.java)
+            val parsed: Array<City?>? = gson.fromJson(json, Array<City>::class.java)
             parsed?.toList()
-                ?.filter { !it.id.isNullOrBlank() && !it.name.isNullOrBlank() }
+                ?.filterNotNull()
+                ?.filter {
+                    !it.id.isNullOrBlank() && !it.name.isNullOrBlank() &&
+                        it.latitude.isFinite() && it.latitude in -90.0..90.0 &&
+                        it.longitude.isFinite() && it.longitude in -180.0..180.0
+                }
                 .orEmpty()
         }.getOrDefault(emptyList())
     }

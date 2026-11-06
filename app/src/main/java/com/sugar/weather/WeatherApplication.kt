@@ -29,5 +29,6 @@ class WeatherApplication : Application() {
             )
         )
         container = AppContainer(context = this)
+        container.weatherWidgetController.start()
     }
 }

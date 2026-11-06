@@ -1,6 +1,6 @@
 # 项目审查记录（2026-11-06）
 
-范围：仓库 Markdown、Android 资源与引用、网络 / 缓存 / 定位、页面状态和动画绘制。本文区分已完成的整理与尚未修改的行为问题；P2 表示应修复的功能问题，后续优化另列。
+范围：仓库 Markdown、Android 资源与引用、网络 / 缓存 / 定位、页面状态和动画绘制。本文保留审查与历史验证记录；P2 表示审查时确认的功能问题。本轮已处理 R5–R7、R11–R16 及对应性能、布局与收缩配置，按用户要求未运行验证。
 
 ## 已完成的文档整理
 
@@ -14,8 +14,8 @@
 纠正的主要表述：
 
 - CMA 的“前 5 天”包含今天，16 天报告其余 11 个日期使用 `best_match`；粗略坐标包围盒不等同于精确国界，也未证明该模型始终更准确。
-- 头部的 30 秒 ticker 只更新文案；天气缓存检查在页面进入 / 恢复时执行，阈值为 30 分钟，没有后台轮询。
-- 城市卡 `density × 0.35` 缩小粒子尺寸与速度，不减少粒子数量；全屏动画跟随屏幕刷新率，没有固定限为 60 fps。
+- 头部的 30 秒 ticker 只更新文案；天气缓存检查在页面进入 / 恢复时执行，阈值为 30 分钟。新增微件后，仅在有微件时通过 WorkManager 约每 30 分钟更新首城。
+- 城市卡 `density × 0.35` 只负责几何尺寸与速度；本轮另按面积减少粒子数量。全屏动画跟随屏幕刷新率，没有固定限为 60 fps。
 - `STORM` 与 `HAZE / SANDSTORM / SLEET` 都没有实况自动映射，需通过调试选择。
 - AGP 内置 Kotlin 不等于禁止所有编译器插件或 KSP；已依据官方迁移文档修正文档中的绝对结论。
 - 当前 PM2.5 分档使用当前浓度，不能称为完整中国 AQI。
@@ -75,48 +75,47 @@ Lint 与资源引用图扫描一致确认了以下 6 项闲置资源；未发现
 | 部分控件仍使用旧样式 | 按钮、开关、场景下拉、搜索输入、Assist Chip、FAB 和加载指示器采用 M3；移除不再使用的 FAB / 搜索背景 |
 | 普通页面固定浅色 | 提供明暗 M3 色彩角色，工具栏、正文、章节导航与系统栏图标随系统切换；天气场景色保持独立 |
 
-## 待修复的功能问题
+## 本轮审查问题的处理（含桌面微件）
 
-以下项目仍保留原实现。结论基于调用链和静态代码；定位和调试手势仍需专门回归。城市并发和删除缓存问题 R8–R10 已在 v1.2 处理，见上表。
+下表记录本次审查发现与已经实现的处理。**按用户“无需验证、直接完成功能”的要求，本轮未运行构建、测试、Lint、脚本检查或设备验证。** 本节“已处理”指实现已修改；后文历史测试和受控复现来自修复前，不能当作本次改动通过验证的结论。
 
-### R5 · P2：触摸模拟挂在被分页内容覆盖的背景上
-
-位置：[activity_main.xml](../app/src/main/res/layout/activity_main.xml)，背景与 ViewPager2 层级；[WeatherBackdropView.kt](../app/src/main/java/com/sugar/weather/view/WeatherBackdropView.kt)，`onTouchEvent`。
-
-模拟手势仅由最底层背景 View 接收，但上方 ViewPager2 铺满窗口；已有城市时，分页和 NestedScrollView 会消费触摸。透明背景不会让触摸自动穿透，代码也没有从覆盖层转发，因此开启模拟后不能依靠在天气页拖动来改变姿态。
-
-建议提供明确的调试触摸区域，或仅在调试模式下由统一手势入口转发；同时验证下拉刷新、逐小时横向滚动和城市分页仍可使用。
-
-### R6 · P2：大致位置权限与固定 100 m 精度门槛冲突
-
-位置：[LocationDataSource.kt](../app/src/main/java/com/sugar/weather/data/LocationDataSource.kt)，`hasPermission` / `awaitGoodFix`。
-
-权限检查接受 COARSE，但新位置必须满足 `accuracy <= 100f`。仅允许大致位置且没有 5 分钟内历史位置时，系统提供的位置通常达不到这个门槛，即使持续收到有效坐标也会等待到 10 秒后失败。
-
-建议按当前权限设置城市级精度门槛，或在超时前返回足够新鲜的最佳位置。回归覆盖仅 COARSE、FINE、关闭定位和超时。
-
-### R7 · P2：已有定位城市永远不会重新获取坐标
-
-位置：[MainActivity.kt](../app/src/main/java/com/sugar/weather/MainActivity.kt)，`maybeLocate`。
-
-只有无城市，或“没有定位城市且已有权限”时才定位。一旦创建 `isLocated=true` 的城市，以后即使换城市、重启应用也不会再定位；下拉刷新只查询保存的旧坐标。
-
-建议在合理的前台时机更新位置，并对频率、距离和缓存失效设置规则，避免每次恢复都弹权限或强制请求。回归需要模拟移动后更新原定位城市，而不是新增一张定位卡。
-
-## 优化建议
-
-| 优先顺序 | 位置与现状 | 建议与验证 |
+| 审查问题 | 修复前触发与影响 | 当前实现 |
 | --- | --- | --- |
-| 1 | `WeatherRepository` 没有同城市请求合并；页面刷新与管理页批量刷新可重叠 | 用按 cityId 共享的进行中任务合并请求；页面目前已等待磁盘预热。用请求计数验证一次逻辑刷新只产生一组请求 |
-| 2 | 天气转换已移到 Default，序列化 / 落盘移到 IO | 后续用帧耗时衡量收益；避免仅凭线程切换声称提升帧率 |
-| 3 | 每张城市卡有独立帧回调，仍遍历全量粒子；每次更新创建 `Tilt()` | 复用中性姿态，按卡片面积设置粒子数量，评估统一调度和仅可见卡片更新；先测雨雪多卡场景再确定预算 |
-| 4 | 主页面主题、根布局、Canvas 都提供背景；Lint 报告多处 Overdraw | 保留可靠的启动背景，评估移除运行时多余背景；验证首帧、切后台恢复与窗口透明效果 |
-| 5 | `WeatherMapper` 把缺失湿度、气压、风速等回退为 0 | 用可空字段和“—”区分缺测与真实 0；保持旧缓存兼容 |
-| 6 | 跨日太阳事件和缺日报曲线对齐已修复 | 继续验证极地日出日落缺测与不同城市时区的数据 |
-| 7 | release 的 `optimization.enable=false`；版本号已改为单一来源 | 独立评估 R8 和资源缩减，先验证 Gson / 旧缓存 |
-| 8 | 温度留白已按窗口重算，图标触摸区与安全区已统一；Manifest 仍指定竖屏 | 后续补充平板与折叠屏布局，不把手机排版改进当作完整大屏适配 |
+| R5 · P2：背景触摸被分页覆盖 | 已有城市时 ViewPager2 / 滚动内容消费触摸，底层背景无法收到模拟拖动 | `MainActivity.dispatchTouchEvent` 观察首指拖动并更新姿态，不消费、改写或截断原事件；背景 View 仅渲染 |
+| R6 · P2：大致位置达不到 100m 门槛 | 仅 COARSE 时持续收到有效城市级坐标仍可能超时 | FINE 理想精度 100m、COARSE 5km；10 秒内记录最佳新鲜位置，超时可回退至 10km 内候选；完成和取消均注销 |
+| R7 · P2：已有定位城市不更新坐标 | 移动或重启后仍请求保存的旧坐标 | 已授权时前台静默定位，成功 30 分钟 / 失败 2 分钟节流；位移达到 `max(1km, 精度半径)` 更新原定位城市、失效两层缓存并刷新；离开首页取消定位 |
+| R11 · P2：旧并发结果覆盖新天气 | 先发后回的旧观测覆盖较新内存与磁盘，还显示更晚更新时间 | 仓库按城市 id、坐标、添加时间和修订代次共享进行中的请求；提交核对身份与代次，拒绝较旧观测，保留已有报告与更新时间 |
+| R12 · P2：缺测成功响应清空缓存 | HTTP 成功但没有有效天气的 DTO 仍覆盖离线报告 | 提交前要求有效实况、观测时间和至少一条日报；缺失返回 Parse 失败，不改写已有内存、磁盘或成功时间 |
+| R13 · P2：损坏缓存阻断冷启动 | Gson 成功解析缺列表字段的 JSON 后，摘要恢复调用空引用 | `WeatherReportValidation` 归一化集合、日期、数值和城市归属；存储解析和摘要恢复逐条隔离，坏条目跳过，预热失败也允许启动 |
+| R14 · P2：15 天详情恢复不刷新日期 | 退后台过夜后恢复，只收集旧 StateFlow，“明天”可能实际为今天 | `onResume` 先按真实日期重建缓存列表，再检查 30 分钟新鲜度；刷新失败保留有效离线项，报告失效则清空旧位置内容 |
+| R15 · P2：微件离线跨日不重绘 | 唯一周期要求联网，无网跨日无法重算高低温与“明天” | 无联网约束的缓存 Worker 约 30 分钟重绘；独立联网 Worker 等待 CONNECTED。UPDATE 迁移旧周期约束，并清理旧即时队列 |
+| R16 · P2：新增城市结果传递中断 | 管理页用 startActivity 打开搜索，未接收 setResult，返回首页仍在原城市 | 管理页 Activity Result 接收并转发 cityId；首页读取真实城市快照，同步分页后切到新增或已有城市 |
 
-暂不建议为了“更新”而批量升级依赖、引入复杂注入框架，或逐条消除所有风格型 Lint 提示。先处理影响数据正确性和主要交互的问题，再以性能测量决定动画优化。
+实现入口：
+
+- 数据与缓存：[WeatherRepository.kt](../app/src/main/java/com/sugar/weather/data/WeatherRepository.kt)、[CityStore.kt](../app/src/main/java/com/sugar/weather/data/CityStore.kt)、[WeatherReportValidation.kt](../app/src/main/java/com/sugar/weather/data/WeatherReportValidation.kt)。
+- 定位与触摸：[MainActivity.kt](../app/src/main/java/com/sugar/weather/MainActivity.kt)、[MainViewModel.kt](../app/src/main/java/com/sugar/weather/ui/MainViewModel.kt)、[LocationDataSource.kt](../app/src/main/java/com/sugar/weather/data/LocationDataSource.kt)。
+- 页面：[FifteenDayViewModel.kt](../app/src/main/java/com/sugar/weather/ui/fifteenday/FifteenDayViewModel.kt)、[CityManageActivity.kt](../app/src/main/java/com/sugar/weather/ui/city/CityManageActivity.kt)。
+- 微件：[WeatherWidgetScheduler.kt](../app/src/main/java/com/sugar/weather/widget/WeatherWidgetScheduler.kt)、[WeatherWidgetCacheWorker.kt](../app/src/main/java/com/sugar/weather/widget/WeatherWidgetCacheWorker.kt)、[WeatherWidgetController.kt](../app/src/main/java/com/sugar/weather/widget/WeatherWidgetController.kt)。
+
+修复前，本地使用当时编译类与受控网络 / 存储边界确认了三项数据问题：A 请求 12:00 / 10℃ 被阻塞，B 请求 12:15 / 20℃ 先提交后，释放 A 会使两层缓存回退；完全缺测 DTO 会返回成功并清空缓存；合法但缺少 hourly/daily 的 JSON 在恢复摘要时抛 NPE。最后一种触发依赖缓存损坏或结构不兼容，正常缓存不会必现。这些是缺陷诊断证据，本轮没有重新执行。
+
+### 本轮一并实现的优化
+
+| 项目 | 当前处理与约束 |
+| --- | --- |
+| 城市卡帧调度 | 每张卡仍持有独立场景，统一使用一个最高约 24fps 的延迟帧回调；只更新实际可见卡片，最后一张注销后停止时钟 |
+| 粒子预算与分配 | 中性 Tilt 复用；雨雪、霾和沙尘按卡片面积使用全屏 12%–40% 的粒子（至少 12 个），数组和循环均按预算创建；全屏数量保留 |
+| 首页背景重复绘制 | 保留主题启动背景；内容挂载后移除窗口背景，去掉根布局纯色填充，由天气 Canvas 提供运行时不透明底色 |
+| 缺测数值 | 体感温度、湿度、气压、风速与风向改为可空，缺测显示“—”并隐藏单位；保留原 JSON 字段名，不猜测旧缓存零值是否缺测 |
+| 微件紧凑尺寸 | 72dp 时顶部更新栏 16dp，预报日期 / 图标 / 温度为 16 / 24 / 16dp；刷新触摸区维持 48dp |
+| Release 收缩 | AGP 9 启用 R8 和资源收缩，使用优化默认规则；显式保留 Gson DTO / 缓存类字段和构造器，不整包保留框架或业务方法 |
+
+本轮没有性能采样，也没有生成优化后的安装包，因此不量化帧率、耗电或体积收益。修复前 Debug APK 为 24,144,169 字节，22 个 DEX 的压缩体积合计 19,754,020 字节，仅作为历史基线。没有为更新而批量升级依赖，也没有为了风格消除全部 Lint 警告。
+
+大屏 / 折叠屏完整布局、TalkBack、极端字体、极地太阳事件、真实桌面调度和 Release 运行行为仍属于后续验收范围；不能把本次逻辑修改表述成已经通过设备验收。未使用已连接的诺基亚手机，未调用任何设备查询或模拟器命令。
+
+修复前的项目审查执行了 `:app:assembleDebug :app:testDebugUnitTest :core_framework:testDebugUnitTest :app:lintDebug :core_framework:lintDebug`：78 个测试（App 65 / Library 13）全部通过，Lint 均为 0 错误、警告分别 41 / 26。该结果与以下记录一样，不覆盖本次修复。
 
 ## 验证记录
 
@@ -155,3 +154,10 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" \
 - 本地执行 `:app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest :core_framework:testDebugUnitTest :app:lintDebug :core_framework:lintDebug` 全部通过。App 49 个测试、Library 13 个测试，共 62 个通过，0 失败 / 错误 / 跳过；两个模块 Lint 均为 0 错误，分别 41 / 26 条警告。
 - 新增 7 个 HTTP 用例覆盖三个独立服务地址、默认参数、JSON 解析、匿名 Header、超时、调试日志选择、HTTP / 解析失败、可空搜索结果及协程取消；请求仅发送至本机 MockWebServer。复制库的列表测试改用本机 Robolectric，补充了空条目回归。
 - 主资源 XML、Markdown 本地文件链接、上游源码差异与许可证核对通过；构建目录均被 Git 忽略。遵循用户要求，没有连接、查询或运行测试机 / 模拟器，也没有请求真实天气服务。
+
+2026-11-06 的桌面天气微件：
+
+- 新增系统微件声明、横向 RemoteViews、天气与昼夜矢量背景、手动刷新、对应城市跳转，以及首页添加微件入口。后台由 WorkManager 维护共享 30 分钟周期任务，无实例时停止，不请求后台定位。
+- 本地通过 Debug / AndroidTest APK 构建、78 个测试（App 65、Library 13）和两个模块 Lint，均为 0 错误，警告仍为 41 / 26。新增 16 个本地用例覆盖城市时区、离线跨日、日期缺测、报告身份、缓存预热、手动刷新、失败保留、前台成功清除失败标记、请求中删除首城及无微件停止。
+- 微件设备测试尝试因 ADB 中断未取得测试结果，不能据此声称通过；已按用户要求停止模拟器验证，并清理本轮临时模拟器。真实桌面布局、点击、长期后台调度、重启恢复和大字体尚未完成设备验收。设备测试源码保留供后续维护使用。
+- 使用帮助、中英文 README、设计、更新日志、隐私政策和开源说明已随实现更新；安装包中的帮助与政策仍由原同步任务生成。

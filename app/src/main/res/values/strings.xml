@@ -93,4 +93,20 @@
     <string name="external_link_title">打开外部网页</string>
     <string name="external_link_message">即将访问 %1$s\n\n%2$s\n\n网页由浏览器提供，可能使用 Cookie 和已有登录状态；不支持应用内浏览时将打开系统浏览器。是否继续？</string>
     <string name="external_link_open">继续打开</string>
+    <!-- 桌面天气微件：仅成功报告的时间可作为更新时间。 -->
+    <string name="widget_name">天气微件</string>
+    <string name="widget_description">城市、实况温度和未来三天预报，约每 30 分钟自动更新</string>
+    <string name="widget_refresh">刷新天气</string>
+    <string name="widget_updating">正在更新</string>
+    <string name="widget_waiting">等待更新</string>
+    <string name="widget_unknown">—</string>
+    <string name="widget_updated_at">%1$s 更新</string>
+    <string name="widget_update_failed_at">失败 · %1$s</string>
+    <string name="widget_update_failed">更新失败</string>
+    <string name="widget_add_city_hint">点击添加城市</string>
+    <string name="widget_loading_hint">正在获取天气</string>
+    <string name="widget_no_weather_hint">点击右上角重试</string>
+    <string name="widget_missing_forecast">暂无预报</string>
+    <string name="widget_pin">添加桌面微件</string>
+    <string name="widget_pin_hint">请长按桌面空白处，打开“微件”或“小部件”，选择“氢天气”。</string>
 </resources>

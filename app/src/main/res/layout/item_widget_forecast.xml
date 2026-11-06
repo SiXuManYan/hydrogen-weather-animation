@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 缺测保留对应日期槽；72dp 宿主下两行各 16dp，图标可使用完整 24dp。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_day_root"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_weight="1"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/widget_day_label"
+        android:layout_width="match_parent"
+        android:layout_height="16dp"
+        android:autoSizeMaxTextSize="11sp"
+        android:autoSizeMinTextSize="8sp"
+        android:autoSizeStepGranularity="1sp"
+        android:autoSizeTextType="uniform"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:textColor="@color/white" />
+
+    <ImageView
+        android:id="@+id/widget_day_icon"
+        android:layout_width="24dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:contentDescription="@null"
+        android:maxHeight="28dp"
+        android:scaleType="fitCenter" />
+
+    <TextView
+        android:id="@+id/widget_day_temperature"
+        android:layout_width="match_parent"
+        android:layout_height="16dp"
+        android:autoSizeMaxTextSize="10sp"
+        android:autoSizeMinTextSize="8sp"
+        android:autoSizeStepGranularity="1sp"
+        android:autoSizeTextType="uniform"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:textColor="@color/white" />
+</LinearLayout>

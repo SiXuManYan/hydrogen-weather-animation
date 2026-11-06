@@ -4,6 +4,8 @@ import com.sugar.weather.data.model.City
 import com.sugar.weather.data.model.WeatherReport
 import com.sugar.weather.data.remote.OpenMeteoApi
 import com.sugar.weather.data.remote.dto.AirQualityResponse
+import com.sugar.weather.data.remote.dto.CurrentBlock
+import com.sugar.weather.data.remote.dto.DailyBlock
 import com.sugar.weather.data.remote.dto.ForecastResponse
 import com.sugar.weather.data.remote.dto.GeocodingResponse
 import java.io.IOException
@@ -142,7 +144,10 @@ class CityDeletionTest {
     private class MemoryStorage(initial: List<City>) : CityStorage {
         override val cities = MutableStateFlow(initial)
         /** 模拟磁盘缓存，与仓库内存报告独立。 */
-        val weather = initial.associate { it.id to WeatherReport(cityId = it.id, fetchedAtMillis = 1L) }
+        val weather = initial.associate { city ->
+            city.id to deletionFixtureForecast(latitude = city.latitude, longitude = city.longitude)
+                .toDomain(cityId = city.id, fetchedAtMillis = 1L, pm25 = null)
+        }
             .toMutableMap()
         /** 在修改前模拟存储失败。 */
         var failUpdates = false
@@ -182,10 +187,7 @@ class CityDeletionTest {
         ): ForecastResponse {
             started.complete(Unit)
             release?.await()
-            return ForecastResponse(
-                latitude = latitude, longitude = longitude, timezone = "UTC",
-                current = null, hourly = null, daily = null
-            )
+            return deletionFixtureForecast(latitude = latitude, longitude = longitude)
         }
 
         override suspend fun airQuality(
@@ -197,3 +199,21 @@ class CityDeletionTest {
         ): GeocodingResponse = GeocodingResponse(results = emptyList())
     }
 }
+
+/** 删除测试的成功响应包含实况与日报，让断言继续聚焦城市事务而非缺测拒绝。 */
+private fun deletionFixtureForecast(latitude: Double, longitude: Double): ForecastResponse = ForecastResponse(
+    latitude = latitude,
+    longitude = longitude,
+    timezone = "UTC",
+    current = CurrentBlock(
+        time = "2026-11-06T12:00", interval = 900, temperature_2m = 10.0,
+        relative_humidity_2m = 50.0, apparent_temperature = 8.0, is_day = 1,
+        weather_code = 0, wind_speed_10m = 5.0, wind_direction_10m = 0.0, pressure_msl = 1010.0
+    ),
+    hourly = null,
+    daily = DailyBlock(
+        time = listOf("2026-11-06"), weather_code = listOf(0), temperature_2m_max = listOf(15.0),
+        temperature_2m_min = listOf(5.0), sunrise = null, sunset = null, uv_index_max = null,
+        precipitation_probability_max = null, wind_speed_10m_max = null
+    )
+)

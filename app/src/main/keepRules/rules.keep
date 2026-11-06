@@ -1,12 +1,33 @@
-# Add project specific R8 rules here.
-# AGP will combine all keep rule files in src/main/keepRules to pass to R8
-#
-# For more details, see
-#   https://d.android.com/r/tools/r8/keep-rules
+# Gson 通过字段名读取 Open-Meteo JSON；仅保留专用 DTO 包的反射结构。
+# 构造器和字段同时保留，避免 Unsafe 实例被收缩器推断为不可实例化或常量字段。
+-keep class com.sugar.weather.data.remote.dto.** {
+    <fields>;
+    <init>(...);
+}
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# 本地缓存沿用旧版 JSON 字段名，发布版混淆后也必须能读取升级前的数据。
+# 这些类的业务方法仍可收缩，不保留整个 data 包或基础框架。
+-keep class com.sugar.weather.data.model.City {
+    <fields>;
+    <init>(...);
+}
+-keep class com.sugar.weather.data.model.WeatherReport {
+    <fields>;
+    <init>(...);
+}
+-keep class com.sugar.weather.data.model.CurrentWeather {
+    <fields>;
+    <init>(...);
+}
+-keep class com.sugar.weather.data.model.DailyForecast {
+    <fields>;
+    <init>(...);
+}
+-keep class com.sugar.weather.data.model.HourForecast {
+    <fields>;
+    <init>(...);
+}
+-keep class com.sugar.weather.data.CityStore$CachedWeather {
+    <fields>;
+    <init>(...);
+}

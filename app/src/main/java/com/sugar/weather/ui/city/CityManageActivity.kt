@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
@@ -35,6 +36,16 @@ class CityManageActivity : AppCompatActivity() {
 
     /** 拖拽期间暂缓列表回流，避免天气刷新将卡片拉回旧位置。 */
     private var dragging = false
+
+    /** 搜索完成后把实际保存的城市标识传回首页，取消搜索则留在管理页。 */
+    private val searchResultLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val cityId = result.data?.getStringExtra(CitySearchActivity.EXTRA_ADDED_CITY_ID)
+            if (result.resultCode == RESULT_OK && !cityId.isNullOrBlank()) {
+                setResult(RESULT_OK, Intent().putExtra(EXTRA_SELECTED_CITY_ID, cityId))
+                finish()
+            }
+        }
 
     /** 卡片点击、长按与排序分别分发，避免长按操作冲突。 */
     private val adapter: CityCardAdapter = CityCardAdapter(
@@ -137,7 +148,9 @@ class CityManageActivity : AppCompatActivity() {
         binding.buttonDelete.setOnClickListener {
             confirmDelete(viewModel.uiState.value.selection.cityIds)
         }
-        binding.buttonAdd.setOnClickListener { startActivity(CitySearchActivity.intent(this)) }
+        binding.buttonAdd.setOnClickListener {
+            searchResultLauncher.launch(CitySearchActivity.intent(this))
+        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

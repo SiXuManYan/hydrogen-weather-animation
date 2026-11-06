@@ -33,25 +33,26 @@ enum class SceneType(
     /**
      * 场景工厂。雨夹雪用 [CompositeScene] 把一层小雨和一层小雪叠在一起；
      * 冰雹复用雨场景，并打开 hail 开关。
+     * @param particleScale 粒子数量相对全屏的预算；卡片按实际面积传入较小值。
      */
-    fun createScene(): WeatherScene = when (this) {
+    fun createScene(particleScale: Float = 1f): WeatherScene = when (this) {
         SUNNY -> SunnyScene()
         CLOUDY -> CloudScene(overcast = false)
         OVERCAST -> CloudScene(overcast = true)
         FOG -> FogScene()
-        HAZE -> HazeScene()
-        SANDSTORM -> SandstormScene()
-        LIGHT_RAIN -> RainScene(RainScene.Intensity.LIGHT)
-        RAIN -> RainScene(RainScene.Intensity.MEDIUM)
-        HEAVY_RAIN -> RainScene(RainScene.Intensity.HEAVY)
-        STORM -> RainScene(RainScene.Intensity.STORM)
-        THUNDER -> RainScene(RainScene.Intensity.THUNDER)
+        HAZE -> HazeScene(particleScale = particleScale)
+        SANDSTORM -> SandstormScene(particleScale = particleScale)
+        LIGHT_RAIN -> RainScene(intensity = RainScene.Intensity.LIGHT, particleScale = particleScale)
+        RAIN -> RainScene(intensity = RainScene.Intensity.MEDIUM, particleScale = particleScale)
+        HEAVY_RAIN -> RainScene(intensity = RainScene.Intensity.HEAVY, particleScale = particleScale)
+        STORM -> RainScene(intensity = RainScene.Intensity.STORM, particleScale = particleScale)
+        THUNDER -> RainScene(intensity = RainScene.Intensity.THUNDER, particleScale = particleScale)
         SLEET -> CompositeScene(
-            RainScene(RainScene.Intensity.LIGHT),
-            SnowScene(heavy = false)
+            RainScene(intensity = RainScene.Intensity.LIGHT, particleScale = particleScale),
+            SnowScene(heavy = false, particleScale = particleScale)
         )
-        LIGHT_SNOW -> SnowScene(heavy = false)
-        SNOW -> SnowScene(heavy = true)
-        HAIL -> RainScene(RainScene.Intensity.MEDIUM, hail = true)
+        LIGHT_SNOW -> SnowScene(heavy = false, particleScale = particleScale)
+        SNOW -> SnowScene(heavy = true, particleScale = particleScale)
+        HAIL -> RainScene(intensity = RainScene.Intensity.MEDIUM, hail = true, particleScale = particleScale)
     }
 }

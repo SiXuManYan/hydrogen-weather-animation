@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 主页溢出菜单(DESIGN.md §6.2):关于 / 动画调试 -->
+<!-- 主页溢出菜单：关于、桌面微件与动画调试。 -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/action_about"
         android:title="@string/menu_about" />
+    <item
+        android:id="@+id/action_add_widget"
+        android:title="@string/widget_pin" />
     <item
         android:id="@+id/action_anim_debug"
         android:title="@string/menu_anim_debug" />
