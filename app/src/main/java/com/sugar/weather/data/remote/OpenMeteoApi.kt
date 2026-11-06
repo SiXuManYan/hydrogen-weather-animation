@@ -33,7 +33,7 @@ interface OpenMeteoApi {
         /** 空气质量实况字段串。 */
         const val AIR_CURRENT_PARAMS = "pm2_5,us_aqi"
 
-        /** 中国气象局 CMA GRAPES 全球模型;中国境内优先用于前 5 天,贴合国内官方预报。 */
+        /** CMA GRAPES 全球数值模型；前 5 天优先使用，不等同国内官方成品预报。 */
         const val CMA_MODEL = "cma_grapes_global"
     }
 

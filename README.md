@@ -10,15 +10,15 @@ This project is for non-commercial learning and demonstration. It is not affilia
 
 ## Features and controls
 
-- **Weather home**: swipe between cities to view current conditions, a 6-day trend including today, hourly forecasts and 8 weather details. Supports pull-to-refresh and cached data offline.
-- **15-day forecast**: open an in-app page showing up to 15 days starting tomorrow. Reuses fresh cached weather and refreshes expired data, with an offline fallback.
+- **Weather home**: swipe between cities to view current conditions, a 6-day trend including today, hourly forecasts and 8 weather details. Daily summaries retain changes such as rain turning to snow and wrap without truncation. Scrolling up gently dims the animated background while keeping text and controls bright. Supports pull-to-refresh and cached data offline.
+- **15-day forecast**: open an in-app page showing up to 15 days starting tomorrow. Shares daily summaries with the home page, adds early-morning, daytime and nighttime details, and follows weather updates. Reuses fresh cached weather and refreshes expired data, with an offline fallback.
 - **City management**: long-press a card or tap Edit to select cities with blue outlines and confirm batch deletion. Use the independent handle to drag or move cities through a menu. The located city stays first and cannot be removed. Each card has an animated background.
 - **City search**: search with the full city name, or add one of 12 built-in popular cities.
 - **Location**: permission is requested when the app has no cities; manual search remains available if denied. Uses the system `LocationManager` without a GMS dependency.
 - **Animation debug**: open `⋮` → Animation debug to select a scene, day/night and simulated tilt. To return to weather control, choose Restore weather background and then Apply.
 - **About**: an original logo, current version, author 薯格's GitHub and Douyin details, and offline documents with chapter navigation. Website links show a confirmation before opening a browser tab. Documents are currently displayed in Simplified Chinese.
 
-Current version: **1.2**. No default city is preloaded. See [help](docs/USER_GUIDE.md) for controls and the [review record](docs/REVIEW.md) for remaining location and debug-gesture limitations (Chinese).
+Current version: **1.3** (`versionCode = 4`). No default city is preloaded. See the [changelog](CHANGELOG.md) for this version, [help](docs/USER_GUIDE.md) for controls and the [review record](docs/REVIEW.md) for remaining location and debug-gesture limitations (Chinese).
 
 ## Run
 
@@ -54,7 +54,7 @@ Validation:
 sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 ```
 
-See the [review record](docs/REVIEW.md#验证记录) for v1.2 verification. New selection and repository tests cover located-city protection, late responses after deletion, concurrent changes and failure recovery. No emulator was launched for this revision. Gestures, TalkBack, icon masks and large-font layouts still need device acceptance checks.
+The [review record](docs/REVIEW.md#验证记录) contains earlier v1.2 build, test and Lint results. Version 1.3 received static source, XML and diff checks only; Gradle compilation, tests and app installation were not run. The daily-condition regression suite now contains 23 cases covering nighttime precipitation, rain/snow transitions, brief hazardous weather and legacy caches; these cases have not been executed. Scroll dimming, narrow-screen wrapping and large-font layouts still need Android Studio and device verification.
 
 ## Data and limitations
 
@@ -62,13 +62,13 @@ See the [review record](docs/REVIEW.md#验证记录) for v1.2 verification. New 
 | --- | --- |
 | Current, hourly, daily, sunrise and sunset | Open-Meteo Forecast API; requests 16 days including today |
 | Model preference near China | Within the approximate box 18–54°N, 73–135°E, an additional CMA GRAPES request covers 5 days including today; remaining dates use `best_match` |
-| Daily condition text | Aggregates hourly data in the city's local `[08:00, 20:00)` window. Home shows a representative condition; the 15-day page shows transitions |
+| Daily condition text | Aggregates hourly data over the city's local calendar day `[00:00, 24:00)`. Both pages share a concise summary; the 15-day page adds time-of-day details |
 | PM2.5 | Open-Meteo Air Quality API; the air-quality label is an approximate PM2.5 concentration band, not a complete Chinese AQI |
 | City search | Open-Meteo Geocoding API; located-city naming uses the system Geocoder |
 
-The CMA selection box includes parts of neighboring countries. Preferring that model does not guarantee a more accurate forecast. A failed `best_match` request fails the refresh; a CMA failure falls back to `best_match`; an air-quality failure retains the previous PM2.5 value, or displays “—” when none is available.
+The CMA selection box includes parts of neighboring countries. Preferring that model does not guarantee a more accurate forecast or reproduce a local meteorological bureau's published forecast. Daily high and low temperatures retain the selected model's values. Brief precipitation, thunder, hail and freezing rain remain in the summaries; sequential rain and snow are not inferred to be sleet. A failed `best_match` request fails the refresh; a CMA failure falls back to `best_match`; an air-quality failure retains the previous PM2.5 value, or displays “—” when none is available.
 
-City pages check the 30-minute cache on first entry and whenever they resume, after disk-cache initialization. Pull-to-refresh is also available, and city management refreshes once when its ViewModel is created. There is no background polling. Pages use 16dp horizontal gutters and 48dp touch targets, with 14sp document text; the home temperature starts around 36% of the usable window height. See the [design notes](docs/DESIGN.md#6-页面与动画).
+City pages check the 30-minute cache on first entry and whenever they resume, after disk-cache initialization. Older caches rebuild daily summaries from existing hourly data without an extra request. Pull-to-refresh is also available, and city management refreshes once when its ViewModel is created. There is no background polling. Pages use 16dp horizontal gutters and 48dp touch targets, with 14sp document text; the home temperature starts around 36% of the usable window height. See the [design notes](docs/DESIGN.md#6-页面与动画).
 
 Weather data is attributed under **CC BY 4.0** on the About page. Open-Meteo's free service is intended for non-commercial use, has request limits and provides no availability guarantee. See the [official terms](https://open-meteo.com/en/terms).
 
@@ -118,7 +118,7 @@ adb shell am start -n com.sugar.weather/.MainActivity \
 
 If physical tilt has no effect, disable simulated tilt in Animation debug and check the displayed values. Devices without an orientation sensor enable simulation automatically; touch-event delivery has a known issue described in the [review record](docs/REVIEW.md). Sunny-scene tuning is in `scene/SunnySceneConfig.kt`; other tuning points are in [design §10](docs/DESIGN.md#10-开发与调参入口).
 
-In the sunny daytime scene, the flat-to-upright pitch range produces a smaller visual shift so halos and clouds remain visible while the phone lies flat. Debug values retain the actual device angles. The latest layout, document, Custom Tabs and flat-phone changes received static checks only; Gradle and device verification were not run for these changes.
+In the sunny daytime scene, the flat-to-upright pitch range produces a smaller visual shift so halos and clouds remain visible while the phone lies flat. Debug values retain the actual device angles.
 
 ## Documentation
 

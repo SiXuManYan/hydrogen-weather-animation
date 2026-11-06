@@ -62,7 +62,10 @@ class WeatherRepository(
     private val cacheReady = externalScope.launch {
         cityMutationMutex.withLock {
             val retainedIds = cityStore.cities.first().mapTo(HashSet()) { it.id }
-            val cached = cityStore.loadAllCachedWeather().filterKeys { it in retainedIds }
+            val cached = withContext(Dispatchers.Default) {
+                cityStore.loadAllCachedWeather().filterKeys { it in retainedIds }
+                    .mapValues { (_, report) -> report.restoreDailyConditions() }
+            }
             _reports.update { current -> cached + current }
         }
     }
@@ -93,7 +96,7 @@ class WeatherRepository(
                 }
             }
             // 中国境内并行请求 CMA GRAPES 前 5 天;失败静默回退 best_match。
-            // 国内官方 App 通常使用 CMA 数据,优先它可以显著减少降水相态(雨/雪)偏差。
+            // CMA 是短期模型偏好，不等同地方气象台的成品预报，也不保证相态更准确。
             val cmaDeferred = if (isInChina(city.latitude, city.longitude)) {
                 async {
                     try {
@@ -246,7 +249,7 @@ class WeatherRepository(
 
     /**
      * 合并中国区 CMA 与 best_match 报告:
-     * - 实况/时区优先 CMA(更贴近国内官方预报);
+     * - 实况/时区优先 CMA;
      * - 逐日:CMA 覆盖的前 5 天优先,其余日期保留 best_match;
      * - 逐时:按时间合并,CMA 优先(其 5 天完整覆盖首页 24h 窗口)。
      */
@@ -313,7 +316,7 @@ class WeatherRepository(
         /** 同坐标判重的经纬度容差(约 11m)。 */
         private const val COORDINATE_EPSILON = 1e-4
 
-        /** CMA GRAPES 可用预报天数;超出部分回退 best_match。 */
+        /** 本项目选择 CMA 覆盖今天起 5 天，并非模型本身的最大预报天数。 */
         private const val CMA_FORECAST_DAYS = 5
     }
 }

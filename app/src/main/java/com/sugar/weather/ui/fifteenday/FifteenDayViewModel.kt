@@ -17,7 +17,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -40,6 +43,13 @@ class FifteenDayViewModel(application: Application, private val cityId: String) 
     private var loadJob: Job? = null
 
     init {
+        // 首页或其他页面刷新后同步最新报告，避免详情一直停留在进入时的快照。
+        viewModelScope.launch {
+            repository.reports.map { it[cityId] }.distinctUntilChanged().filterNotNull()
+                .collect { report ->
+                    _uiState.update { it.copy(days = buildRows(report), error = false) }
+                }
+        }
         load()
     }
 
@@ -82,8 +92,12 @@ class FifteenDayViewModel(application: Application, private val cityId: String) 
                 weekText = if (day.date == today.plusDays(1)) app.getString(R.string.tomorrow)
                 else WEEKDAYS[day.date.dayOfWeek.value - 1],
                 dateText = app.getString(R.string.date_md, day.date.monthValue, day.date.dayOfMonth),
-                // 15 天页空间充足,优先展示白天转折(如「小雨转晴」);旧缓存无该字段时回退短文案。
-                desc = day.conditionText ?: wmoDesc(day.weatherCode),
+                // 摘要与首页一致，详情另起一行说明凌晨、白天和夜间的变化。
+                desc = buildList {
+                    val summary = day.summaryText ?: wmoDesc(day.weatherCode)
+                    add(summary)
+                    day.conditionText?.takeIf { it != summary }?.let { add(it) }
+                }.joinToString("\n"),
                 iconRes = iconRes(day.weatherCode, night = false),
                 precipProbText = day.precipProbabilityMaxPercent
                     ?.let { app.getString(R.string.precip_probability, it) },

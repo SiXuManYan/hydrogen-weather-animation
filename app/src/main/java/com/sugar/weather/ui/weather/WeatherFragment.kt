@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -57,7 +58,11 @@ class WeatherFragment : Fragment() {
         }
         binding.scrollContent.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             updateTopSpacing(headerHeight)
+            updateBackgroundDimming()
         }
+        binding.scrollContent.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, _, _, _ ->
+            updateBackgroundDimming()
+        })
 
         binding.swipeRefresh.setColorSchemeResources(R.color.white)
         binding.recyclerDaily.layoutManager = GridLayoutManager(requireContext(), DAILY_COLUMNS)
@@ -105,7 +110,17 @@ class WeatherFragment : Fragment() {
     /** 每次回到当前城市页都复查缓存，覆盖后台恢复及 ViewPager 保留页面的情况。 */
     override fun onResume() {
         super.onResume()
+        updateBackgroundDimming()
         viewModel.refreshIfStale()
+    }
+
+    /** 按当前页的上滑距离轻微压暗动画；回顶、恢复滚动或切换城市时自然匹配页面状态。 */
+    private fun updateBackgroundDimming() {
+        val current = _binding ?: return
+        val fadeDistance = (current.scrollContent.height * SCRIM_SCROLL_WINDOW_FRACTION)
+            .coerceAtLeast(MIN_SCRIM_SCROLL_DP * resources.displayMetrics.density)
+        val progress = (current.scrollContent.scrollY / fadeDistance).coerceIn(0f, 1f)
+        current.backgroundScrim.alpha = if (current.scrollContent.isVisible) progress * MAX_SCRIM_ALPHA else 0f
     }
 
     /** 按实际可用窗口上移温度区；尺寸变化时重算，短窗口仍为头部保留间距。 */
@@ -128,6 +143,7 @@ class WeatherFragment : Fragment() {
         binding.errorContainer.isVisible = state.status == WeatherStatus.ERROR
         binding.scrollContent.isVisible = showContent
         binding.swipeRefresh.isEnabled = showContent
+        updateBackgroundDimming()
 
         binding.textTemp.text = state.tempText.orEmpty()
         binding.textCondition.text = state.conditionText.orEmpty()
@@ -152,6 +168,13 @@ class WeatherFragment : Fragment() {
 
         /** 温度区位于可用窗口约 36% 处，兼顾动画留白与首屏预报可见性。 */
         private const val TOP_SPACING_WINDOW_FRACTION = 0.36f
+
+        /** 背景最多压暗 14%，保留天气氛围并降低阅读预报时的动画干扰。 */
+        private const val MAX_SCRIM_ALPHA = 0.14f
+
+        /** 上滑约三分之一窗口时达到目标暗度，短窗口至少保留 160dp 渐变距离。 */
+        private const val SCRIM_SCROLL_WINDOW_FRACTION = 0.35f
+        private const val MIN_SCRIM_SCROLL_DP = 160f
 
         fun newInstance(cityId: String): WeatherFragment =
             WeatherFragment().apply {

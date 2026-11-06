@@ -97,6 +97,20 @@ fun WeatherReport.hourlyWindow(hours: Int = 24): List<HourForecast> {
     return hourly.filter { !it.time.isBefore(start) }.take(hours)
 }
 
+/** 旧缓存用已有小时数据补齐全天摘要，离线升级也能保持两页一致，无需额外请求。 */
+internal fun WeatherReport.restoreDailyConditions(): WeatherReport {
+    if (hourly.isEmpty() || daily.none { it.summaryText == null }) return this
+    return copy(daily = daily.map { day ->
+        if (day.summaryText != null) return@map day
+        val condition = deriveDayCondition(hourly, day.date, day.weatherCode)
+        day.copy(
+            weatherCode = condition.weatherCode,
+            summaryText = condition.summaryText,
+            conditionText = condition.conditionText
+        )
+    })
+}
+
 // ———————————————————————— 内部实现 ————————————————————————
 
 /** 当前小时的能见度(米→km,§5.4):按 current.time 截断到整点,在 hourly.time 中定位下标。 */
@@ -139,8 +153,7 @@ private fun mapDaily(block: DailyBlock?, hourly: List<HourForecast>): List<Daily
         val rawCode = codes?.getOrNull(i) ?: continue
         val max = maxes?.getOrNull(i) ?: continue
         val min = mins?.getOrNull(i) ?: continue
-        // 日天气取白天主导/转折,避免 Open-Meteo 的 daily.weather_code(当天最严重)
-        // 把两小时大雪夸大成全天大雪。
+        // 按城市本地全天汇总，保留夜间降水和雨雪转换；同类强度不机械取最恶劣值。
         val condition = deriveDayCondition(hourly, date, rawCode)
         result += DailyForecast(
             date = date,
@@ -153,7 +166,8 @@ private fun mapDaily(block: DailyBlock?, hourly: List<HourForecast>): List<Daily
                 ?: LocalTime.MIN,
             sunset = sunsets?.getOrNull(i)?.let(::parseLocalDateTime)?.toLocalTime()
                 ?: LocalTime.MAX,
-            conditionText = condition.conditionText
+            conditionText = condition.conditionText,
+            summaryText = condition.summaryText
         )
     }
     return result
