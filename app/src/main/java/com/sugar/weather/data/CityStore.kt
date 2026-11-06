@@ -136,7 +136,8 @@ class CityStore(context: Context) : CityStorage {
     private fun parseCities(json: String?): List<City> {
         if (json.isNullOrBlank()) return emptyList()
         return runCatching {
-            val parsed: Array<City?>? = gson.fromJson(json, Array<City>::class.java)
+            // 只读取数组；使用 out 投影接收 Gson 的 City[]，同时过滤 JSON 中可能存在的 null。
+            val parsed: Array<out City?>? = gson.fromJson(json, Array<City>::class.java)
             parsed?.toList()
                 ?.filterNotNull()
                 ?.filter {
