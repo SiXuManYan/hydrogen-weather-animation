@@ -158,6 +158,8 @@ Mapper 在实况缺气温或天气码时舍弃整个实况块；部分其他缺�
 | 15 天预报 | `FifteenDayActivity` + `FifteenDayViewModel` | 日期列表、加载与重试 |
 | 关于与离线文档 | `AboutActivity` + `DocumentActivity` | 版本、入口、本地读取与失败重试 |
 
+详情导航参照 CollageWorkshop 的四段 `nav_detail_*` 动画：前进时新页面从右侧进入，上一页向左移动 16% 并轻微淡出；返回时反向恢复，统一使用 280ms 与 `fast_out_slow_in`。本项目详情由 Activity 承载，通过 `Theme.Weather.Detail` 的窗口动画统一处理城市管理、搜索、15 天预报、关于与文档的进入及退出。首页城市 Fragment 继续使用 ViewPager2 横滑；管理或搜索结果选城使用平滑切页，城市增删 / 重排时的身份校正仍立即定位，避免无关翻页。
+
 ### 6.1.1 UI 排版规范
 
 尺寸集中在 `values/dimens.xml`，工具栏和图标样式位于 `values/styles.xml`：

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 与拼图工坊详情导航共用 280ms 时长。 -->
+    <integer name="navigation_detail_transition_duration">280</integer>
+</resources>

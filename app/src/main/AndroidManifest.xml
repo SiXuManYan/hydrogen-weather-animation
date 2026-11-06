@@ -51,7 +51,7 @@
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.Weather" />
+            android:theme="@style/Theme.Weather.Detail" />
 
         <!-- 城市管理页(§6.5):setResult(cityId) 回传主页切页 -->
         <activity
@@ -59,7 +59,7 @@
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.Weather" />
+            android:theme="@style/Theme.Weather.Detail" />
 
         <!-- 搜索添加页(§6.4):防抖搜索 + 热门城市,添加成功回传城市 id -->
         <activity
@@ -67,7 +67,7 @@
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.Weather"
+            android:theme="@style/Theme.Weather.Detail"
             android:windowSoftInputMode="adjustResize" />
 
         <!-- 关于页(§7):静态页 -->
@@ -75,13 +75,13 @@
             android:name=".ui.about.AboutActivity"
             android:exported="false"
             android:screenOrientation="portrait"
-            android:theme="@style/Theme.Weather" />
+            android:theme="@style/Theme.Weather.Detail" />
 
         <!-- 包内 Markdown 阅读页，无网络或定位前置条件。 -->
         <activity
             android:name=".ui.about.DocumentActivity"
             android:exported="false"
-            android:theme="@style/Theme.Weather" />
+            android:theme="@style/Theme.Weather.Detail" />
     </application>
 
 </manifest>

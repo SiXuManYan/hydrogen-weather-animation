@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 与拼图工坊保持一致，详情页从右侧推进并轻微淡入。 -->
+    <translate
+        android:duration="@integer/navigation_detail_transition_duration"
+        android:fromXDelta="100%p"
+        android:interpolator="@android:interpolator/fast_out_slow_in"
+        android:toXDelta="0" />
+    <alpha
+        android:duration="@integer/navigation_detail_transition_duration"
+        android:fromAlpha="0.92"
+        android:interpolator="@android:interpolator/fast_out_slow_in"
+        android:toAlpha="1" />
+</set>

@@ -51,6 +51,19 @@
         <item name="android:enforceStatusBarContrast">false</item>
     </style>
 
+    <!-- 详情页使用统一的前进与返回动画，首页启动保留系统的启动过渡。 -->
+    <style name="Theme.Weather.Detail" parent="Theme.Weather">
+        <item name="android:windowAnimationStyle">@style/Animation.Weather.Navigation</item>
+    </style>
+
+    <!-- 复用拼图工坊的四段导航动效，由窗口统一覆盖工具栏、系统返回与结果回传。 -->
+    <style name="Animation.Weather.Navigation" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/nav_detail_enter</item>
+        <item name="android:activityOpenExitAnimation">@anim/nav_detail_exit</item>
+        <item name="android:activityCloseEnterAnimation">@anim/nav_detail_pop_enter</item>
+        <item name="android:activityCloseExitAnimation">@anim/nav_detail_pop_exit</item>
+    </style>
+
     <!-- 固定深色天气页中的输入与标签使用 M3 深色角色，不受系统浅色模式影响。 -->
     <style name="ThemeOverlay.Weather.Forecast" parent="ThemeOverlay.Material3.Dark">
         <item name="colorPrimary">@color/forecast_primary</item>

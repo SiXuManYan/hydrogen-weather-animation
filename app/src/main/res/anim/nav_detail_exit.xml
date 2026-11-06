@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 上一页轻微后退，保留前进导航的空间层级。 -->
+    <translate
+        android:duration="@integer/navigation_detail_transition_duration"
+        android:fromXDelta="0"
+        android:interpolator="@android:interpolator/fast_out_slow_in"
+        android:toXDelta="-16%p" />
+    <alpha
+        android:duration="@integer/navigation_detail_transition_duration"
+        android:fromAlpha="1"
+        android:interpolator="@android:interpolator/fast_out_slow_in"
+        android:toAlpha="0.92" />
+</set>

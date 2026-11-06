@@ -233,7 +233,7 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * 城市管理/搜索页返回(多页协作契约):
-     * onCityListChanged() 重建页序(城市流本身已自动回流),结果带 cityId 时切到该城市;
+     * onCityListChanged() 重建页序(城市流本身已自动回流),结果带 cityId 时平滑切到该城市;
      * 城市可能已被删除( indexOfFirst = -1)→ 只保持当前位置。
      */
     private fun onCityPickerResult(result: ActivityResult) {
@@ -241,9 +241,12 @@ class MainActivity : AppCompatActivity() {
         val cityId = result.data?.getStringExtra(CityManageActivity.EXTRA_SELECTED_CITY_ID)
             ?: result.data?.getStringExtra(CitySearchActivity.EXTRA_ADDED_CITY_ID)
             ?: return
-        val index = viewModel.pages.value.cities.indexOfFirst { it.id == cityId }
+        val state = viewModel.pages.value
+        // 结果回调可能早于状态收集，先更新适配器，避免新城市索引被旧页数截断。
+        renderPages(state)
+        val index = state.cities.indexOfFirst { it.id == cityId }
         if (index >= 0 && binding.viewPager.currentItem != index) {
-            binding.viewPager.setCurrentItem(index, false)
+            binding.viewPager.setCurrentItem(index, true)
         }
     }
 
