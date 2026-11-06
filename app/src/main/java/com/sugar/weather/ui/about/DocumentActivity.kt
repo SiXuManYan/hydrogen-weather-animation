@@ -1,21 +1,19 @@
 package com.sugar.weather.ui.about
 
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.snackbar.Snackbar
-import com.sugar.weather.R
 import com.sugar.weather.databinding.ActivityDocumentBinding
 import com.sugar.weather.ui.applySafeInsets
 import com.sugar.weather.ui.configureEdgeToEdge
+import com.sugar.weather.ui.confirmAndOpenExternalLink
 import io.noties.markwon.AbstractMarkwonPlugin
 import io.noties.markwon.Markwon
 import io.noties.markwon.MarkwonConfiguration
+import io.noties.markwon.core.MarkwonTheme
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -33,13 +31,20 @@ class DocumentActivity : AppCompatActivity() {
     /** 防止连续点击重试启动重复文件读取。 */
     private var loadJob: Job? = null
 
-    /** 章节排版由 Markdown 渲染器负责，网页链接交给系统浏览器。 */
+    /** 文档章节导航只依赖渲染后的正文与视图位置。 */
+    private lateinit var navigation: DocumentNavigation
+
+    /** 14sp 正文配合克制的标题倍率，所有网页链接先提示再使用浏览器标签页。 */
     private val markwon by lazy {
         Markwon.builder(this)
             .usePlugin(object : AbstractMarkwonPlugin() {
-                /** Markdown 网页链接统一使用浏览器入口。 */
+                override fun configureTheme(builder: MarkwonTheme.Builder) {
+                    builder.headingTextSizeMultipliers(floatArrayOf(1.5f, 1.25f, 1.15f, 1.1f, 1f, 1f))
+                }
+
+                /** Markdown 网页链接统一使用带确认的浏览器入口。 */
                 override fun configureConfiguration(builder: MarkwonConfiguration.Builder) {
-                    builder.linkResolver { _, link -> openExternalLink(link) }
+                    builder.linkResolver { _, link -> confirmAndOpenExternalLink(link) }
                 }
             })
             .build()
@@ -60,14 +65,16 @@ class DocumentActivity : AppCompatActivity() {
         binding = ActivityDocumentBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.toolbar.applySafeInsets(top = true)
+        binding.documentNavigation.applySafeInsets()
         binding.scrollContent.applySafeInsets(bottom = true)
         binding.textTitle.setText(document.titleRes)
         binding.buttonBack.setOnClickListener { finish() }
         binding.buttonRetry.setOnClickListener { loadDocument() }
+        navigation = DocumentNavigation(binding)
         loadDocument()
     }
 
-    /** IO 线程读包内正文，失败时展示重试；不以摘要替代完整法律文本。 */
+    /** IO 线程读取包内正文，失败可重试，成功后安装统一链接与章节导航。 */
     private fun loadDocument() {
         if (loadJob?.isActive == true) return
         loadJob = lifecycleScope.launch {
@@ -85,18 +92,11 @@ class DocumentActivity : AppCompatActivity() {
             val failed = markdown.isNullOrBlank()
             binding.textError.isVisible = failed
             binding.buttonRetry.isVisible = failed
-            if (!failed) markwon.setMarkdown(binding.textBody, markdown!!)
-        }
-    }
-
-    /** 仅允许 http(s)，避免本地文档链接误触发其他应用协议。 */
-    private fun openExternalLink(link: String) {
-        val uri = link.toUri()
-        if (uri.scheme !in setOf("http", "https")) return
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE))
-        } catch (_: ActivityNotFoundException) {
-            Snackbar.make(binding.root, R.string.document_no_browser, Snackbar.LENGTH_LONG).show()
+            if (!failed) {
+                markwon.setMarkdown(binding.textBody, markdown!!)
+                binding.textBody.installDocumentLinks { link -> confirmAndOpenExternalLink(link) }
+                navigation.render()
+            }
         }
     }
 

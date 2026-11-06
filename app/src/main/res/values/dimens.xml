@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 页面采用 8dp 间距节奏；图标触摸区与可见图形分别设置。 -->
-    <dimen name="page_gutter">24dp</dimen>
+    <!-- 普通页面左右留白与拼图工坊一致；图标触摸区与可见图形分别设置。 -->
+    <dimen name="page_gutter">16dp</dimen>
+    <dimen name="toolbar_title_size">18sp</dimen>
+    <dimen name="body_text_size">14sp</dimen>
+    <dimen name="document_anchor_text_size">12sp</dimen>
     <dimen name="space_small">8dp</dimen>
     <dimen name="space_medium">16dp</dimen>
     <dimen name="space_large">32dp</dimen>

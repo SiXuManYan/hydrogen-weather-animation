@@ -36,7 +36,7 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:overScrollMode="never"
-            android:paddingBottom="@dimen/page_gutter"
+            android:paddingBottom="24dp"
             tools:itemCount="8"
             tools:listitem="@layout/item_fifteen_day_row" />
 

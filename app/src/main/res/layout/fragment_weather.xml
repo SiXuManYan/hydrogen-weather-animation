@@ -60,7 +60,7 @@
                         android:maxLines="2"
                         android:ellipsize="end"
                         android:textColor="@color/white"
-                        android:textSize="18sp"
+                        android:textSize="16sp"
                         tools:text="小雨" />
 
                     <TextView
@@ -69,7 +69,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/space_medium"
                         android:textColor="@color/text_secondary_on_dark"
-                        android:textSize="18sp"
+                        android:textSize="16sp"
                         tools:text="16/3°C" />
                 </LinearLayout>
 
@@ -268,7 +268,8 @@
         android:id="@+id/error_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="@dimen/page_gutter"
+        android:paddingHorizontal="@dimen/page_gutter"
+        android:paddingVertical="24dp"
         android:layout_gravity="center"
         android:gravity="center"
         android:orientation="vertical"

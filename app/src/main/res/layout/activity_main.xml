@@ -34,7 +34,7 @@
             android:layout_height="@dimen/home_header_height"
             android:layout_gravity="top"
             android:paddingStart="@dimen/page_gutter"
-            android:paddingEnd="12dp"
+            android:paddingEnd="@dimen/page_gutter"
             android:baselineAligned="false"
             android:gravity="center_vertical"
             android:orientation="horizontal">
@@ -68,7 +68,7 @@
                         android:ellipsize="end"
                         android:maxLines="1"
                         android:textColor="@color/white"
-                        android:textSize="22sp"
+                        android:textSize="20sp"
                         tools:text="沙河口区" />
 
                     <TextView
@@ -140,7 +140,8 @@
             android:id="@+id/empty_state"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="@dimen/page_gutter"
+            android:paddingHorizontal="@dimen/page_gutter"
+            android:paddingVertical="24dp"
             android:layout_gravity="center"
             android:gravity="center"
             android:orientation="vertical"

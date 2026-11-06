@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 版本信息、离线文档入口与数据署名集中在关于页。 -->
+<!-- 版本、作者、离线文档入口与数据署名集中在关于页。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -24,24 +24,39 @@
         android:layout_weight="1" android:clipToPadding="false"
         android:fillViewport="true" android:overScrollMode="never">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:padding="@dimen/page_gutter">
+            android:orientation="vertical" android:paddingHorizontal="@dimen/page_gutter"
+            android:paddingTop="24dp" android:paddingBottom="24dp">
             <ImageView android:id="@+id/image_logo"
-                android:layout_width="112dp" android:layout_height="112dp"
-                android:layout_gravity="center_horizontal" android:layout_marginTop="24dp"
+                android:layout_width="96dp" android:layout_height="96dp"
+                android:layout_gravity="center_horizontal" android:layout_marginTop="16dp"
                 android:contentDescription="@null" android:src="@drawable/ic_weather_logo" />
             <TextView android:id="@+id/text_version"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal" android:layout_marginTop="16dp"
-                android:textColor="@color/about_text_primary" android:textSize="24sp"
+                android:textColor="@color/about_text_primary" android:textSize="20sp"
                 android:fontFamily="sans-serif-medium" tools:text="氢天气 V1.2" />
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="8dp" android:gravity="center"
                 android:text="@string/about_tagline" android:textColor="@color/about_text_secondary"
-                android:textSize="14sp" />
+                android:textSize="@dimen/body_text_size" />
+
+            <!-- 沿用拼图工坊公开的作者资料，抖音入口展示二维码并支持复制账号。 -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="24dp" android:orientation="vertical"
+                android:background="@drawable/bg_about_section">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:paddingHorizontal="16dp" android:paddingTop="16dp" android:paddingBottom="8dp"
+                    android:text="@string/about_author" android:textColor="@color/about_text_primary"
+                    android:fontFamily="sans-serif-medium" android:textSize="16sp" />
+                <TextView android:id="@+id/row_github"
+                    style="@style/Weather.DocumentRow" android:text="@string/about_github" />
+                <TextView android:id="@+id/row_douyin"
+                    style="@style/Weather.DocumentRow" android:text="@string/about_douyin" />
+            </LinearLayout>
 
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="32dp" android:orientation="vertical"
-                android:background="@drawable/bg_about_section" android:padding="4dp">
+                android:layout_marginTop="16dp" android:orientation="vertical"
+                android:background="@drawable/bg_about_section">
                 <TextView android:id="@+id/row_changelog"
                     style="@style/Weather.DocumentRow" android:text="@string/about_changelog_title" />
                 <TextView android:id="@+id/row_user_guide"

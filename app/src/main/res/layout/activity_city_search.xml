@@ -89,7 +89,7 @@
             android:clipToPadding="false"
             android:overScrollMode="never"
             android:paddingTop="@dimen/space_small"
-            android:paddingBottom="@dimen/page_gutter">
+            android:paddingBottom="24dp">
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chip_group"

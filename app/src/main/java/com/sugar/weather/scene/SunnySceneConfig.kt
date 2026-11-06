@@ -92,6 +92,9 @@ object SunnySceneConfig {
     /** 俯仰中性角（度）：竖直握持时保持初始构图。 */
     const val PITCH_NEUTRAL_DEG = 90f
 
+    /** 白天平放时使用的视觉俯仰；压缩 0°～90° 的响应，保留光晕与云朵。 */
+    const val DAY_MIN_VISIBLE_PITCH_DEG = 70f
+
     /** 低于该俯仰角时云朵开始淡出。 */
     const val CLOUD_ALPHA_START_DEG = 30f
 

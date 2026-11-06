@@ -152,9 +152,18 @@ class SunnyScene : WeatherScene {
         val dt = dtMs / 1000f
         if (dt <= 0f) return
 
-        pitchAbs = abs(tilt.pitchDeg)
+        val devicePitch = abs(tilt.pitchDeg)
+        // 仅压缩白天从平放到竖直的视觉角度，避免光晕移出屏幕、云朵完全透明。
+        // 传感器原值和夜景响应保持原样，竖直握持仍对应 90° 的初始构图。
+        pitchAbs = if (!night && devicePitch < SunnySceneConfig.PITCH_NEUTRAL_DEG) {
+            SunnySceneConfig.DAY_MIN_VISIBLE_PITCH_DEG + devicePitch /
+                SunnySceneConfig.PITCH_NEUTRAL_DEG *
+                (SunnySceneConfig.PITCH_NEUTRAL_DEG - SunnySceneConfig.DAY_MIN_VISIBLE_PITCH_DEG)
+        } else {
+            devicePitch
+        }
         rollAbs = abs(tilt.rollDeg)
-        // 以竖直握持（约 90°）为俯仰中性点：手机向前/向后放倒时太阳整体上移/下移。
+        // 以竖直握持为中性点，白天平放时只保留小幅上移。
         val pitchOffset = (pitchAbs - SunnySceneConfig.PITCH_NEUTRAL_DEG).coerceIn(-90f, 90f)
         val roll = tilt.rollDeg.coerceIn(-90f, 90f)
 
@@ -240,7 +249,7 @@ class SunnyScene : WeatherScene {
             canvas.restore()
         }
 
-        // 云的透明度随俯仰变化：竖直握持时最明显，手机放平后逐渐淡出。
+        // 云的透明度随视觉俯仰变化，白天平放时也保留可见的云朵。
         val alphaFactor = ((pitchAbs - SunnySceneConfig.CLOUD_ALPHA_START_DEG) /
             (SunnySceneConfig.CLOUD_ALPHA_FULL_DEG - SunnySceneConfig.CLOUD_ALPHA_START_DEG))
             .coerceIn(0f, 1f)

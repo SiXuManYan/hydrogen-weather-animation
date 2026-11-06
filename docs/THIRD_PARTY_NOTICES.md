@@ -14,7 +14,7 @@
 
 以下为主要直接运行时依赖；具体版本和传递依赖以当前构建的 Gradle 依赖图及上游许可为准。链接指向官方源码或说明，许可证不由本项目替换。
 
-- [AndroidX / Jetpack](https://android.googlesource.com/platform/frameworks/support/)：Activity、Fragment、AppCompat、Core、Lifecycle、RecyclerView、ViewPager2、SwipeRefreshLayout、DataStore；Apache License 2.0。
+- [AndroidX / Jetpack](https://android.googlesource.com/platform/frameworks/support/)：界面、列表、本机存储及 Browser（Custom Tabs 网页标签页）等组件；Apache License 2.0。
 - [Material Components for Android](https://github.com/material-components/material-components-android)：界面控件与对话框；Apache License 2.0。
 - [Kotlin 标准库](https://github.com/JetBrains/kotlin)：语言运行库；Apache License 2.0。
 - [Kotlin Coroutines](https://github.com/Kotlin/kotlinx.coroutines)：异步任务与状态流；Apache License 2.0。

@@ -1,49 +1,35 @@
 # Hydrogen Weather User Agreement
 
-Updated: November 6, 2026. Applies to the current version of `com.sugar.weather`.
+Updated: November 6, 2026.
 
-## 1. Application and service
+## 1. About the app
 
-Hydrogen Weather is an independent Android project inspired by the Hydrogen OS weather interface, for non-commercial learning and demonstration. It provides city search, current conditions, forecasts, local city management and weather animation. It has no accounts, paid subscriptions or project-operated cloud sync.
+Hydrogen Weather is a non-commercial learning and demonstration project with city search, weather forecasts, local city management and weather animation. It has no accounts, ads, paid subscriptions or project-operated cloud sync.
 
-The project is not affiliated with, authorized by or endorsed by OnePlus, Hydrogen OS or the original weather app. Names and trademarks belong to their respective owners. Its programmatic animations and newly drawn logo do not represent official manufacturer assets.
+The interface is inspired by Hydrogen OS weather. The project is not affiliated with or authorized by OnePlus, Hydrogen OS or the original app; trademarks belong to their owners.
 
-## 2. Use of weather information
+## 2. Weather is for reference
 
-Open-Meteo supplies the data. Forecasts may differ from local observations or other apps because of models, observation times, grid resolution, connectivity and service availability. The app merges models, rounds values and aggregates daytime conditions.
+Open-Meteo supplies the data. Models, update times, connectivity and the app's processing can cause differences from observations or other apps. Air-quality labels are approximate PM2.5 concentration bands; UV is the daily forecast maximum. Offline or failed updates retain older data, so check the update time.
 
-Air-quality wording is an approximate band of current PM2.5 concentration, not a complete Chinese AQI. UV uses the daily forecast maximum. Offline or failed refreshes may show an older cached report; check the update time.
+The app does not provide severe-weather alerts. Consult local official forecasts and warnings for travel and decisions involving personal safety or property.
 
-The app does not provide severe-weather alerts. For travel, navigation, climbing, medical, emergency or other safety decisions, consult local official forecasts and warnings and do not rely solely on this app.
+## 3. Permissions and local data
 
-## 3. Acceptable use and third-party terms
+Location permission is optional; cities can be added manually. Weather queries send city coordinates to the weather service, and city searches send the entered query. See the privacy policy for details.
 
-Use the app lawfully. Do not abuse or disrupt services, bypass rate limits or infringe others' rights. Check applicable permissions before using, modifying or distributing code or assets; this agreement does not grant additional commercial-use rights.
+Cities and the latest weather are stored locally. Deleting a manual city also removes its weather cache; the located city cannot currently be deleted individually. Clearing app storage or uninstalling removes private on-device copies, but system backup may restore data according to device settings. The app cannot restore cleared data or manage system backups for you.
 
-Weather data is attributed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Open-Meteo's free service has non-commercial-use and quota conditions; its [terms](https://open-meteo.com/en/terms) govern that service. Components and processing are described in About → Data sources and open-source components.
+## 4. Use and external websites
 
-## 4. Permissions, local data and deletion
+Use the app lawfully without abusing services or infringing others' rights. Weather data is attributed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), and [Open-Meteo's terms](https://open-meteo.com/en/terms) apply to its service. Code, components and assets have their own applicable permissions; this agreement grants no additional commercial-use rights.
 
-Location permission is optional; manual city search remains available if denied. Weather queries send city coordinates to the weather service, and search sends the query text. See the privacy policy for details.
+Website links show a prompt first. After confirmation, they open in a browser tab, falling back to the system browser when unsupported. Websites may use cookies and existing browser logins under their own policies. Bundled documents require no external visit.
 
-The device stores cities, order and the latest weather. Removing a manual city also removes its local weather cache. The located city currently stays first and cannot be removed individually. Clearing app storage or uninstalling removes private on-device copies; Android backup or device transfer may restore eligible data according to device settings.
+## 5. Changes and contact
 
-The app has no cloud account and cannot restore cleared local data or manage system backups for you.
+The app and third-party services may change, become unavailable or contain errors. Forecast accuracy and continuous availability are not guaranteed. Applicable law governs rights and responsibilities; these terms do not exclude rights that cannot lawfully be excluded.
 
-## 5. Availability and responsibility
+Changes to functionality or data handling will be reflected in dated documents and the changelog. Bundled documents apply to the installed version.
 
-The app and third-party services may change, be interrupted or contain errors. Continuous availability, forecast accuracy and suitability for a particular purpose cannot be guaranteed. To the extent permitted by applicable law, assess whether information is suitable for your use; responsibility for interruptions, device faults or mistakes depends on the circumstances and applicable law.
-
-These statements do not exclude or limit rights or liabilities that cannot legally be excluded or limited, and do not guarantee any safety outcome or accuracy level.
-
-## 6. External links
-
-Only an explicit link tap opens a website in the device browser. Websites and browsers may process IP addresses, cookies or browsing records under their own policies. No external visit is necessary to read the bundled agreement, policy, help or changelog.
-
-## 7. Changes
-
-Changes to functionality, data handling or service conditions will be reflected in dated documents and the changelog. Bundled documents apply to the installed version; repository documents may describe a later version.
-
-## 8. Contact
-
-Use [project Issues](https://github.com/SiXuManYan/hydrogen-weather-animation/issues) for usage, legal, privacy or rights questions. Issues are public; do not include precise locations, identity information or sensitive logs.
+Contact the author through [project Issues](https://github.com/SiXuManYan/hydrogen-weather-animation/issues) for usage, privacy or rights questions. Issues are public by default; omit precise locations, identity information and sensitive logs.

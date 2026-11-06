@@ -14,7 +14,21 @@
             android:contentDescription="@string/back"
             android:src="@drawable/ic_back" app:tint="@color/white" />
         <TextView android:id="@+id/text_title" style="@style/Weather.ToolbarTitle" />
+        <ImageView android:id="@+id/button_back_to_top"
+            style="@style/Weather.IconButton"
+            android:contentDescription="@string/document_back_to_top"
+            android:src="@drawable/ic_arrow_top" app:tint="@color/white" />
     </LinearLayout>
+
+    <!-- 章节导航固定在正文上方，横向滚动，不重复叠加正文左右留白。 -->
+    <HorizontalScrollView android:id="@+id/document_navigation"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/page_gutter" android:paddingVertical="4dp"
+        android:clipToPadding="false" android:scrollbars="none" android:visibility="gone">
+        <LinearLayout android:id="@+id/document_anchor_row"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:gravity="center_vertical" android:orientation="horizontal" />
+    </HorizontalScrollView>
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll_content"
@@ -26,7 +40,8 @@
         <LinearLayout android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="@dimen/page_gutter">
+            android:paddingHorizontal="@dimen/page_gutter"
+            android:paddingTop="12dp" android:paddingBottom="32dp">
             <ProgressBar android:id="@+id/progress_loading"
                 android:layout_width="32dp" android:layout_height="32dp"
                 android:layout_gravity="center_horizontal"
@@ -35,7 +50,7 @@
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="@string/document_load_failed"
                 android:textColor="@color/about_text_secondary"
-                android:textSize="16sp" android:visibility="gone" />
+                android:textSize="@dimen/body_text_size" android:visibility="gone" />
             <Button android:id="@+id/button_retry"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="@string/retry" android:visibility="gone" />
@@ -43,8 +58,8 @@
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:textColor="@color/about_text_primary"
                 android:textColorLink="@color/about_link"
-                android:lineSpacingMultiplier="1.35"
-                android:textSize="16sp"
+                android:lineSpacingExtra="2dp"
+                android:textSize="@dimen/body_text_size"
                 android:textIsSelectable="true" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

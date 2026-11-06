@@ -162,11 +162,11 @@ Mapper 在实况缺气温或天气码时舍弃整个实况块；部分其他缺�
 
 | 项目 | 约定 |
 | --- | --- |
-| 页面左右边距 | 24dp，额外叠加刘海 / 侧边系统栏安全区 |
+| 页面左右边距 | 16dp，额外叠加刘海 / 侧边系统栏安全区，与 CollageWorkshop 的普通窗口规格一致 |
 | 组件间距 | 以 8 / 16 / 24 / 32dp 为主，分组内部 16dp |
 | 触摸目标 | 返回、清空、首页动作至少 48 × 48dp，图形通常 24dp |
 | 内容分组 | 天气页使用 24dp 圆角浅色描边和半透明深色底，保留动画可见性 |
-| 字号层级 | 实况 88sp、页标题 20–22sp、正文 14–18sp、辅助信息 11–13sp |
+| 字号层级 | 实况 88sp、首页城市 20sp、工具栏 18sp、文档与入口正文 14sp、辅助信息 11–13sp |
 | 安全区 | 背景铺满窗口；工具栏避让状态栏，列表末项避让导航栏，搜索同时避让键盘 |
 
 View 安全区统一由 `ui/WindowInsets.kt` 处理，以 XML 原始 padding 为基准，重复派发不累加；不消费 insets，兼容 Android 10 的兄弟视图分发。
@@ -209,9 +209,11 @@ View 安全区统一由 `ui/WindowInsets.kt` 处理，以 XML 原始 padding 为
 
 ## 7. 关于页
 
-展示原创 Logo、由 Gradle 生成的 `BuildConfig.VERSION_NAME`、数据署名，以及协议、隐私、版本历史、帮助和组件说明入口。没有账号登录或阅读前的权限要求。
+展示原创 Logo、由 Gradle 生成的 `BuildConfig.VERSION_NAME`、作者薯格、GitHub 主页、抖音号及二维码、数据署名，以及协议、隐私、版本历史、帮助和组件说明入口。抖音入口沿用 CollageWorkshop 的公开二维码并支持主动复制账号；没有账号登录或阅读前的权限要求。
 
-`DocumentActivity` 只接受 `LocalDocument` 枚举白名单中的文档，在 IO 线程读取包内 Markdown，再通过 Markwon 渲染。正文可选择、滚动，安全区与字体使用页面规范；读取失败可重试。仅用户点击的 http(s) 外链交由系统浏览器，没有 WebView。
+`DocumentActivity` 只接受 `LocalDocument` 枚举白名单中的文档，在 IO 线程读取包内 Markdown，再通过 Markwon 渲染。正文为 14sp、额外行距 2dp，标题使用 1.5 / 1.25 等倍率；读取失败可重试。`DocumentNavigation` 根据渲染后的 HeadingSpan 生成章节胶囊并高亮当前章节，右上角可回到顶部。
+
+显式 Markdown 链接和裸网址统一经 `ui/ExternalLinks.kt`：仅允许 http(s)，显示目标域名和完整地址，用户确认后才启动浏览器。通过 AndroidX Browser 优先选择 Chrome Custom Tabs，其余支持标签页的浏览器次之，不可用时回退系统浏览器；没有 WebView，也不预先加载目标网页。
 
 构建任务 `syncAppDocuments` 把 `docs/legal/`、根目录 `CHANGELOG.md`、`docs/USER_GUIDE.md` 和 `docs/THIRD_PARTY_NOTICES.md` 同步到生成的 assets。研发资料、Logo 导出和场景 MP4 不打包。正文只维护仓库版本，旧 `docs/PRIVACY.md` 为索引；当前应用展示中文，仓库另提供英文法律文本。
 
@@ -287,8 +289,12 @@ sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 
 全屏背景跟随 Choreographer 的屏幕刷新节奏，并未固定限为 60 fps；时间步长最多 30 ms。姿态传感器在主页 `onStart / onStop` 注册 / 注销；全屏帧循环在 `onResume / onPause` 启停。
 
+晴天白天将设备俯仰绝对值 0°～90° 映射到视觉俯仰 70°～90°，平放时保留彩色光晕及云朵；竖直构图、夜景与其他场景不变。该映射只在 SunnyScene 内生效，不更改传感器原值或调试读数，最低视觉角由 `DAY_MIN_VISIBLE_PITCH_DEG` 调整。
+
 ## 11. 已知问题与验证范围
 
 2026-11-06 的文档、资源和代码审查见 [REVIEW.md](REVIEW.md)，其中区分了已经清理的项目、可复现逻辑问题和待设备验证的优化建议。
 
 本轮 v1.2 的构建、28 个 JVM 测试和 Lint 结果集中记录在[审查记录](REVIEW.md#验证记录)。本轮未运行模拟器或设备，新增多选手势、TalkBack、图标遮罩与字体放大仍需设备验收；没有据此宣称定位、性能或大屏适配已完成。
+
+后续 16dp 留白、文档导航、作者入口、Custom Tabs 和晴天平放可见性改动仅做源码与资源静态核查，未运行 Gradle 构建、测试或设备验证；上述较早的 v1.2 验证结果不覆盖这些改动。

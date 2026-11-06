@@ -16,7 +16,7 @@ This project is for non-commercial learning and demonstration. It is not affilia
 - **City search**: search with the full city name, or add one of 12 built-in popular cities.
 - **Location**: permission is requested when the app has no cities; manual search remains available if denied. Uses the system `LocationManager` without a GMS dependency.
 - **Animation debug**: open `⋮` → Animation debug to select a scene, day/night and simulated tilt. To return to weather control, choose Restore weather background and then Apply.
-- **About**: an original weather logo, current version and offline agreement, privacy policy, changelog, help and component notices. The app currently displays these documents in Simplified Chinese.
+- **About**: an original logo, current version, author 薯格's GitHub and Douyin details, and offline documents with chapter navigation. Website links show a confirmation before opening a browser tab. Documents are currently displayed in Simplified Chinese.
 
 Current version: **1.2**. No default city is preloaded. See [help](docs/USER_GUIDE.md) for controls and the [review record](docs/REVIEW.md) for remaining location and debug-gesture limitations (Chinese).
 
@@ -68,7 +68,7 @@ See the [review record](docs/REVIEW.md#验证记录) for v1.2 verification. New 
 
 The CMA selection box includes parts of neighboring countries. Preferring that model does not guarantee a more accurate forecast. A failed `best_match` request fails the refresh; a CMA failure falls back to `best_match`; an air-quality failure retains the previous PM2.5 value, or displays “—” when none is available.
 
-City pages check the 30-minute cache on first entry and whenever they resume, after disk-cache initialization. Pull-to-refresh is also available, and city management refreshes once when its ViewModel is created. There is no background polling. Pages use 24dp gutters and 48dp touch targets; the home temperature starts around 36% of the usable window height. See the [design notes](docs/DESIGN.md#6-页面与动画).
+City pages check the 30-minute cache on first entry and whenever they resume, after disk-cache initialization. Pull-to-refresh is also available, and city management refreshes once when its ViewModel is created. There is no background polling. Pages use 16dp horizontal gutters and 48dp touch targets, with 14sp document text; the home temperature starts around 36% of the usable window height. See the [design notes](docs/DESIGN.md#6-页面与动画).
 
 Weather data is attributed under **CC BY 4.0** on the About page. Open-Meteo's free service is intended for non-commercial use, has request limits and provides no availability guarantee. See the [official terms](https://open-meteo.com/en/terms).
 
@@ -117,6 +117,8 @@ adb shell am start -n com.sugar.weather/.MainActivity \
 ```
 
 If physical tilt has no effect, disable simulated tilt in Animation debug and check the displayed values. Devices without an orientation sensor enable simulation automatically; touch-event delivery has a known issue described in the [review record](docs/REVIEW.md). Sunny-scene tuning is in `scene/SunnySceneConfig.kt`; other tuning points are in [design §10](docs/DESIGN.md#10-开发与调参入口).
+
+In the sunny daytime scene, the flat-to-upright pitch range produces a smaller visual shift so halos and clouds remain visible while the phone lies flat. Debug values retain the actual device angles. The latest layout, document, Custom Tabs and flat-phone changes received static checks only; Gradle and device verification were not run for these changes.
 
 ## Documentation
 

@@ -19,6 +19,7 @@ viewpager2 = "1.1.0"
 recyclerview = "1.4.0"
 swiperefreshlayout = "1.2.0"
 markwon = "4.6.2"
+browser = "1.8.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +42,7 @@ androidx-viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", vers
 androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 markwon-core = { group = "io.noties.markwon", name = "core", version.ref = "markwon" }
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 
 # [plugins] 不新增任何条目 —— 全部依赖免编译器插件,这是 D4 的核心收益
 
