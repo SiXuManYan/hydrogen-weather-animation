@@ -5,8 +5,8 @@ import android.content.Intent
 import android.location.Geocoder
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.ArrayAdapter
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -16,6 +16,7 @@ import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.sugar.weather.data.LocationFix
 import com.sugar.weather.databinding.ActivityMainBinding
 import com.sugar.weather.databinding.DialogScenePickerBinding
@@ -45,7 +46,7 @@ import java.util.Locale
  * - 头部 overlay(图钉 + 城市名/更新时间 + 告警占位 + 城市管理 + 溢出菜单)由 [HeaderUiState] 驱动;
  * - 定位:权限申请(ActivityResultContracts)→ LocationDataSource.currentLocation → Geocoder 命名
  *   → MainViewModel.submitLocatedPlace(§2.4);Activity 不直接写 Repository;
- * - 场景调试面板移入溢出菜单「动画调试」,原对话框逻辑零改动保留(§10.3)。
+ * - 溢出菜单「动画调试」使用 M3 弹窗、下拉菜单与开关，确认后提交预览配置(§10.3)。
  */
 class MainActivity : AppCompatActivity() {
 
@@ -305,24 +306,30 @@ class MainActivity : AppCompatActivity() {
             ?.let { place -> place.locality ?: place.subAdminArea ?: place.adminArea }
     }.getOrNull()
 
-    /** 场景面板只负责收集输入，状态变更全部提交给 ViewModel。 */
+    /** 使用 M3 弹窗上下文构建场景面板，确认后才把输入提交给 ViewModel。 */
     private fun showSceneDialog() {
-        val dialogBinding = DialogScenePickerBinding.inflate(layoutInflater)
+        val builder = MaterialAlertDialogBuilder(this)
+        val dialogBinding = DialogScenePickerBinding.inflate(LayoutInflater.from(builder.context))
         val state = viewModel.sceneState.value
 
         val labels = SceneType.entries.map { it.label }
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, labels)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        dialogBinding.spinnerScene.adapter = adapter
-        dialogBinding.spinnerScene.setSelection(state.sceneType.ordinal)
+        var selectedScene = state.sceneType
+        dialogBinding.dropdownScene.setSimpleItems(labels.toTypedArray())
+        dialogBinding.dropdownScene.setText(selectedScene.label, false)
+        dialogBinding.dropdownScene.setOnItemClickListener { _, _, position, _ ->
+            selectedScene = SceneType.entries[position]
+        }
         dialogBinding.switchNight.isChecked = state.isNight
         dialogBinding.switchSimulate.isChecked = state.simulateTilt
         dialogBinding.switchDebug.isChecked = state.showDebug
 
         if (!viewModel.hasTiltSensor) {
             dialogBinding.switchSimulate.isChecked = true
-            dialogBinding.textHint.text =
-                getString(R.string.no_sensor_hint) + "\n" + getString(R.string.scene_picker_hint)
+            dialogBinding.textHint.text = getString(
+                R.string.scene_picker_no_sensor_hint,
+                getString(R.string.no_sensor_hint),
+                getString(R.string.scene_picker_hint)
+            )
         }
 
         var resetRequested = false
@@ -337,7 +344,7 @@ class MainActivity : AppCompatActivity() {
             restoreWeatherRequested = true
         }
 
-        val dialog = AlertDialog.Builder(this)
+        val dialog = builder
             .setTitle(R.string.scene_picker_title)
             .setView(dialogBinding.root)
             .setPositiveButton(R.string.apply, null)
@@ -346,8 +353,10 @@ class MainActivity : AppCompatActivity() {
 
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val selected = SceneType.entries[dialogBinding.spinnerScene.selectedItemPosition]
-                viewModel.selectScene(selected, dialogBinding.switchNight.isChecked)
+                viewModel.selectScene(
+                    sceneType = selectedScene,
+                    isNight = dialogBinding.switchNight.isChecked
+                )
                 if (resetRequested) {
                     viewModel.resetSimulatedTilt()
                 } else {

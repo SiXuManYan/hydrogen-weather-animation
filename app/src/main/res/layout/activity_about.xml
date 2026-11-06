@@ -9,14 +9,13 @@
     android:orientation="vertical">
 
     <LinearLayout android:id="@+id/toolbar"
-        style="@style/Weather.Toolbar"
-        android:background="@color/city_manage_toolbar_bg">
+        style="@style/Weather.Toolbar.Surface">
         <ImageView android:id="@+id/button_back"
             style="@style/Weather.IconButton"
             android:contentDescription="@string/back"
-            android:src="@drawable/ic_back" app:tint="@color/white" />
+            android:src="@drawable/ic_back" app:tint="?attr/colorOnSurface" />
         <TextView android:id="@+id/text_title"
-            style="@style/Weather.ToolbarTitle" android:text="@string/about_title" />
+            style="@style/Weather.ToolbarTitle.Surface" android:text="@string/about_title" />
     </LinearLayout>
 
     <androidx.core.widget.NestedScrollView android:id="@+id/scroll_content"

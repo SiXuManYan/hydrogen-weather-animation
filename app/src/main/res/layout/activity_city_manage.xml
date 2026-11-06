@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 城市管理页(DESIGN.md §6.5,截图 005350):深色工具栏「选择城市」+ 浅灰页面底 + 城市卡列表 + 白色 FAB -->
+<!-- 城市管理使用 M3 普通表面与 FAB，天气卡继续独立显示动画。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -10,27 +10,29 @@
 
     <LinearLayout
         android:id="@+id/toolbar"
-        style="@style/Weather.Toolbar"
-        android:background="@color/city_manage_toolbar_bg">
+        style="@style/Weather.Toolbar.Surface">
 
         <ImageView
             android:id="@+id/button_back"
             style="@style/Weather.IconButton"
             android:contentDescription="@string/back"
             android:src="@drawable/ic_back"
-            app:tint="@color/white" />
+            app:tint="?attr/colorOnSurface" />
 
         <TextView
             android:id="@+id/text_title"
-            style="@style/Weather.ToolbarTitle"
+            style="@style/Weather.ToolbarTitle.Surface"
             android:text="@string/choose_city" />
 
-        <ProgressBar
+        <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_loading"
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_marginStart="16dp"
-            android:indeterminateTint="@color/text_secondary_on_dark"
+            android:indeterminate="true"
+            app:indicatorSize="20dp"
+            app:indicatorInset="0dp"
+            app:trackThickness="2dp"
             android:visibility="gone"
             tools:visibility="visible" />
 
@@ -39,7 +41,7 @@
             style="@style/Weather.IconButton"
             android:contentDescription="@string/city_edit"
             android:src="@drawable/ic_edit"
-            app:tint="@color/white" />
+            app:tint="?attr/colorOnSurface" />
 
         <ImageView
             android:id="@+id/button_delete"
@@ -47,7 +49,7 @@
             android:contentDescription="@string/city_delete"
             android:src="@drawable/ic_delete"
             android:visibility="gone"
-            app:tint="@color/white" />
+            app:tint="?attr/colorOnSurface" />
     </LinearLayout>
 
     <TextView
@@ -90,7 +92,7 @@
             android:textSize="15sp"
             android:visibility="gone" />
 
-        <ImageView
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/button_add"
             android:layout_width="56dp"
             android:layout_height="56dp"
@@ -99,14 +101,9 @@
             android:layout_marginTop="24dp"
             android:layout_marginEnd="@dimen/page_gutter"
             android:layout_marginBottom="24dp"
-            android:background="@drawable/bg_fab_white"
             android:contentDescription="@string/add_city"
-            android:elevation="6dp"
             android:clickable="true"
             android:focusable="true"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:padding="16dp"
-            android:src="@drawable/ic_add"
-            app:tint="@color/black" />
+            app:srcCompat="@drawable/ic_add" />
     </FrameLayout>
 </LinearLayout>

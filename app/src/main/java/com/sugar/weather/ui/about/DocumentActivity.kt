@@ -61,7 +61,7 @@ class DocumentActivity : AppCompatActivity() {
             return
         }
         document = selected
-        configureEdgeToEdge(lightNavigationBar = true)
+        configureEdgeToEdge(surfaceBackground = true)
         binding = ActivityDocumentBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.toolbar.applySafeInsets(top = true)

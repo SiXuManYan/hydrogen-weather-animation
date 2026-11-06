@@ -1,11 +1,44 @@
 <resources>
-    <style name="Theme.Weather" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <!-- 与拼图工坊相同的 M3 日夜主题体系；天气动画保留独立的场景色。 -->
+    <style name="Theme.Weather" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/weather_accent</item>
-        <item name="colorPrimaryVariant">@color/weather_accent_dark</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/weather_accent</item>
-        <item name="colorSecondaryVariant">@color/weather_accent_dark</item>
-        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorOnPrimary">@color/theme_on_primary</item>
+        <item name="colorPrimaryContainer">@color/theme_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/theme_on_primary_container</item>
+        <item name="colorSecondary">@color/theme_secondary</item>
+        <item name="colorOnSecondary">@color/theme_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/theme_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/theme_on_secondary_container</item>
+        <item name="colorTertiary">@color/theme_tertiary</item>
+        <item name="colorOnTertiary">@color/theme_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/theme_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/theme_on_tertiary_container</item>
+        <item name="android:colorBackground">@color/theme_background</item>
+        <item name="colorOnBackground">@color/theme_on_surface</item>
+        <item name="colorSurface">@color/theme_surface</item>
+        <item name="colorSurfaceVariant">@color/theme_surface_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/theme_surface_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/theme_surface_low</item>
+        <item name="colorSurfaceContainer">@color/theme_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/theme_surface_high</item>
+        <item name="colorSurfaceContainerHighest">@color/theme_surface_highest</item>
+        <item name="colorSurfaceBright">@color/theme_surface_bright</item>
+        <item name="colorSurfaceDim">@color/theme_surface_dim</item>
+        <item name="colorOnSurface">@color/theme_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/theme_on_surface_variant</item>
+        <item name="colorOutline">@color/theme_outline</item>
+        <item name="colorOutlineVariant">@color/theme_outline_variant</item>
+        <item name="colorSurfaceInverse">@color/theme_surface_inverse</item>
+        <item name="colorOnSurfaceInverse">@color/theme_on_surface_inverse</item>
+        <item name="colorPrimaryInverse">@color/theme_primary_inverse</item>
+        <item name="colorError">@color/theme_error</item>
+        <item name="colorOnError">@color/theme_on_error</item>
+        <item name="colorErrorContainer">@color/theme_error_container</item>
+        <item name="colorOnErrorContainer">@color/theme_on_error_container</item>
+        <item name="colorAccent">?attr/colorPrimary</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.Material3.MaterialAlertDialog</item>
+        <item name="materialSwitchStyle">@style/Widget.Material3.CompoundButton.MaterialSwitch</item>
+        <item name="chipStandaloneStyle">@style/Widget.Material3.Chip.Assist</item>
         <item name="android:windowBackground">@color/weather_sun</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -16,5 +49,22 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:enforceNavigationBarContrast">false</item>
         <item name="android:enforceStatusBarContrast">false</item>
+    </style>
+
+    <!-- 固定深色天气页中的输入与标签使用 M3 深色角色，不受系统浅色模式影响。 -->
+    <style name="ThemeOverlay.Weather.Forecast" parent="ThemeOverlay.Material3.Dark">
+        <item name="colorPrimary">@color/forecast_primary</item>
+        <item name="colorOnPrimary">@color/forecast_on_primary</item>
+        <item name="colorPrimaryContainer">@color/forecast_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/forecast_on_primary_container</item>
+        <item name="colorSecondary">@color/forecast_secondary</item>
+        <item name="colorOnSecondary">@color/forecast_on_secondary</item>
+        <item name="colorSurface">@color/fifteen_day_bg</item>
+        <item name="colorOnSurface">@color/forecast_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/forecast_on_surface_variant</item>
+        <item name="colorSurfaceContainerHigh">@color/forecast_surface_high</item>
+        <item name="colorSurfaceContainerHighest">@color/city_tag_bg</item>
+        <item name="colorOutline">@color/forecast_outline</item>
+        <item name="colorOutlineVariant">@color/forecast_outline_variant</item>
     </style>
 </resources>

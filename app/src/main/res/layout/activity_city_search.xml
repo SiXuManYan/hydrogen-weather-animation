@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/fifteen_day_bg"
+    android:theme="@style/ThemeOverlay.Weather.Forecast"
     android:orientation="vertical">
 
     <LinearLayout
@@ -25,56 +26,33 @@
             android:text="@string/add_city" />
     </LinearLayout>
 
-    <!-- 搜索框:深色圆角底 + 白字 + 次要色 hint;自动聚焦由 Activity 发起 -->
-    <LinearLayout
+    <!-- M3 输入框提供搜索图标与清空动作；自动聚焦由 Activity 发起。 -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/query_input"
+        style="@style/Widget.Material3.TextInputLayout.FilledBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/page_gutter"
         android:layout_marginTop="12dp"
         android:layout_marginEnd="@dimen/page_gutter"
-        android:background="@drawable/bg_search_input"
-        android:gravity="center_vertical"
-        android:minHeight="56dp"
-        android:orientation="horizontal"
-        android:paddingStart="14dp"
-        android:paddingEnd="8dp">
+        android:hint="@string/search_hint"
+        app:endIconMode="clear_text"
+        app:endIconContentDescription="@string/clear_input"
+        app:startIconDrawable="@drawable/ic_search">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:contentDescription="@null"
-            android:src="@drawable/ic_search"
-            app:tint="@color/text_secondary_on_dark" />
-
-        <EditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/edit_query"
             android:minHeight="@dimen/touch_target"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_weight="1"
-            android:background="@null"
-            android:hint="@string/search_hint"
             android:imeOptions="actionSearch"
             android:importantForAutofill="no"
             android:inputType="text"
             android:maxLines="1"
             android:singleLine="true"
-            android:textColor="@color/white"
-            android:textColorHint="@color/text_secondary_on_dark"
-            android:textCursorDrawable="@null"
-            android:textSize="15sp"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
             tools:text="大连市" />
-
-        <ImageView
-            android:id="@+id/button_clear"
-            style="@style/Weather.IconButton"
-            android:contentDescription="@string/clear_input"
-            android:src="@drawable/ic_close"
-            android:visibility="gone"
-            app:tint="@color/text_secondary_on_dark"
-            tools:visibility="visible" />
-    </LinearLayout>
+    </com.google.android.material.textfield.TextInputLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -116,12 +94,13 @@
             tools:itemCount="6"
             tools:listitem="@layout/item_search_result" />
 
-        <ProgressBar
+        <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_searching"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:indeterminateTint="@color/white"
+            android:indeterminate="true"
+            app:indicatorColor="@color/white"
             android:visibility="gone" />
 
         <TextView

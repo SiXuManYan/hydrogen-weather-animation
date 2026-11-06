@@ -18,7 +18,7 @@
         android:importantForAccessibility="no" />
 
     <!-- SwipeRefreshLayout 只承载滚动内容；加载和错误态由外层 FrameLayout 居中。 -->
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    <com.sugar.weather.view.WeatherSwipeRefreshLayout
         android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -99,6 +99,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/space_small"
                         android:layout_marginEnd="@dimen/space_small"
+                        android:nestedScrollingEnabled="false"
                         android:overScrollMode="never"
                         tools:itemCount="6"
                         tools:listitem="@layout/item_daily_forecast" />
@@ -113,7 +114,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/button_fifteen_day"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        style="@style/Weather.Button.OnForecast"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/space_medium"
@@ -122,7 +123,6 @@
                         android:text="@string/fifteen_day_forecast"
                         android:textColor="@color/white"
                         android:textSize="14sp"
-                        app:cornerRadius="16dp"
                         app:icon="@drawable/ic_chevron_right"
                         app:iconGravity="textEnd"
                         app:iconSize="16dp"
@@ -150,6 +150,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_medium"
                         android:clipToPadding="false"
+                        android:nestedScrollingEnabled="false"
                         android:overScrollMode="never"
                         android:paddingStart="@dimen/space_small"
                         android:paddingEnd="@dimen/space_small"
@@ -263,15 +264,16 @@
 
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    </com.sugar.weather.view.WeatherSwipeRefreshLayout>
 
     <!-- 首次加载中(无缓存且请求中) -->
-    <ProgressBar
+    <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/progress_loading"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:indeterminateTint="@color/white"
+        android:indeterminate="true"
+        app:indicatorColor="@color/white"
         android:visibility="gone" />
 
     <!-- 错误态(无缓存且请求失败,§9):提示 + 重试 -->
@@ -296,7 +298,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_retry"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            style="@style/Weather.Button.OnForecast"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
@@ -305,7 +307,6 @@
             android:text="@string/retry"
             android:textColor="@color/white"
             android:textSize="14sp"
-            app:cornerRadius="20dp"
             app:strokeColor="@color/text_secondary_on_dark" />
     </LinearLayout>
 </FrameLayout>

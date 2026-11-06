@@ -14,7 +14,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.chip.Chip
-import androidx.core.content.ContextCompat
 import com.sugar.weather.R
 import com.sugar.weather.databinding.ActivityCitySearchBinding
 import com.sugar.weather.ui.applySafeInsets
@@ -48,7 +47,7 @@ class CitySearchActivity : AppCompatActivity() {
         binding.recyclerResults.adapter = adapter
 
         binding.buttonBack.setOnClickListener { finish() }
-        binding.buttonClear.setOnClickListener { viewModel.onQueryCleared() }
+        binding.queryInput.setEndIconOnClickListener { viewModel.onQueryCleared() }
         binding.editQuery.setOnEditorActionListener { _, _, _ ->
             hideKeyboard()
             true
@@ -84,7 +83,6 @@ class CitySearchActivity : AppCompatActivity() {
             binding.editQuery.setText(state.query)
             binding.editQuery.setSelection(state.query.length)
         }
-        binding.buttonClear.isVisible = state.query.isNotEmpty()
         renderPopular(state.popular, showChips = state.query.isBlank())
 
         binding.recyclerResults.isVisible = state.query.isNotBlank()
@@ -97,30 +95,18 @@ class CitySearchActivity : AppCompatActivity() {
         binding.textNoResult.isVisible = noResults
     }
 
-    /** 热门城市标签只创建一次，输入切换时复用视图与监听器。 */
+    /** 热门城市使用搜索页深色 M3 Assist Chip，输入切换时复用视图与监听器。 */
     private fun renderPopular(popular: List<PopularCity>, showChips: Boolean) {
         binding.popularContainer.isVisible = showChips && popular.isNotEmpty()
         if (!showChips) return
         if (binding.chipGroup.childCount == popular.size) return
         binding.chipGroup.removeAllViews()
-        val tagBg = ContextCompat.getColor(this, R.color.city_tag_bg)
-        val tagText = ContextCompat.getColor(this, R.color.text_primary_on_dark)
         for (city in popular) {
-            val chip = Chip(this)
+            val chip = Chip(binding.chipGroup.context)
             chip.text = city.name
             chip.isCheckable = false
             chip.isCloseIconVisible = false
             chip.setEnsureMinTouchTargetSize(true)
-            chip.chipStrokeWidth = 0f
-            chip.chipBackgroundColor = android.content.res.ColorStateList.valueOf(tagBg)
-            // chipCornerRadius setter 在 Material 1.12+ 已弃用,改用 shapeAppearanceModel
-            chip.shapeAppearanceModel = chip.shapeAppearanceModel.toBuilder()
-                .setAllCornerSizes(resources.getDimension(R.dimen.tag_corner_radius))
-                .build()
-            chip.setTextColor(tagText)
-            chip.rippleColor = android.content.res.ColorStateList.valueOf(
-                ContextCompat.getColor(this, R.color.city_tag_ripple)
-            )
             chip.setOnClickListener { viewModel.onPickPopular(city) }
             binding.chipGroup.addView(chip)
         }

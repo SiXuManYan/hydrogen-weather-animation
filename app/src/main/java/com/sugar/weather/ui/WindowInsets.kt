@@ -7,14 +7,21 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnAttach
 import androidx.core.view.updatePadding
+import com.google.android.material.color.MaterialColors
 
-/** 让背景延伸至系统栏，并按页面底色设置导航栏图标。 */
-fun AppCompatActivity.configureEdgeToEdge(lightNavigationBar: Boolean = false) {
+/**
+ * 让背景延伸至系统栏，普通表面页按 M3 日夜底色选择系统栏图标。
+ * @param surfaceBackground 是否使用主题表面；天气场景始终采用浅色系统栏图标。
+ */
+fun AppCompatActivity.configureEdgeToEdge(surfaceBackground: Boolean = false) {
     WindowCompat.enableEdgeToEdge(window)
     window.isNavigationBarContrastEnforced = false
+    val lightSurface = surfaceBackground && MaterialColors.isColorLight(
+        MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurface, "Theme.Weather")
+    )
     WindowCompat.getInsetsController(window, window.decorView).apply {
-        isAppearanceLightStatusBars = false
-        isAppearanceLightNavigationBars = lightNavigationBar
+        isAppearanceLightStatusBars = lightSurface
+        isAppearanceLightNavigationBars = lightSurface
     }
 }
 

@@ -8,12 +8,14 @@ import com.sugar.weather.scene.SceneType
  *
  * 文本字段全部由 [WeatherViewModel] 按 §5 格式化完成,Fragment 只做绑定;
  * [trend] 保留原始 [DailyForecast] 供 WeatherTrendView 自绘坐标归一化。
+ * @property isRefreshing 当前城市是否有刷新请求进行中，视图重建后仍可恢复刷新反馈。
  */
 data class WeatherUiState(
     val cityId: String,
     val cityName: String = "",
     val isLocated: Boolean = false,
     val status: WeatherStatus = WeatherStatus.LOADING,
+    val isRefreshing: Boolean = false,
     val fetchedAtMillis: Long? = null,
     val tempText: String? = null,
     val conditionText: String? = null,

@@ -33,6 +33,23 @@
         <item name="android:textSize">@dimen/toolbar_title_size</item>
     </style>
 
+    <!-- 普通页面使用 M3 表面色；天气页继续使用透明工具栏和白字。 -->
+    <style name="Weather.Toolbar.Surface" parent="Weather.Toolbar">
+        <item name="android:background">?attr/colorSurface</item>
+    </style>
+
+    <style name="Weather.ToolbarTitle.Surface" parent="Weather.ToolbarTitle">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- 场景上方的操作使用 M3 描边按钮，并保持足够的文字与图标对比度。 -->
+    <style name="Weather.Button.OnForecast" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textColor">@color/white</item>
+        <item name="iconTint">@color/white</item>
+        <item name="strokeColor">@color/text_secondary_on_dark</item>
+        <item name="rippleColor">@color/city_tag_ripple</item>
+    </style>
+
     <style name="Weather.SectionTitle" parent="">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>

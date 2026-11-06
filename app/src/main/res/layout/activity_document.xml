@@ -7,17 +7,16 @@
     android:background="@color/about_page_bg">
 
     <LinearLayout android:id="@+id/toolbar"
-        style="@style/Weather.Toolbar"
-        android:background="@color/city_manage_toolbar_bg">
+        style="@style/Weather.Toolbar.Surface">
         <ImageView android:id="@+id/button_back"
             style="@style/Weather.IconButton"
             android:contentDescription="@string/back"
-            android:src="@drawable/ic_back" app:tint="@color/white" />
-        <TextView android:id="@+id/text_title" style="@style/Weather.ToolbarTitle" />
+            android:src="@drawable/ic_back" app:tint="?attr/colorOnSurface" />
+        <TextView android:id="@+id/text_title" style="@style/Weather.ToolbarTitle.Surface" />
         <ImageView android:id="@+id/button_back_to_top"
             style="@style/Weather.IconButton"
             android:contentDescription="@string/document_back_to_top"
-            android:src="@drawable/ic_arrow_top" app:tint="@color/white" />
+            android:src="@drawable/ic_arrow_top" app:tint="?attr/colorOnSurface" />
     </LinearLayout>
 
     <!-- 章节导航固定在正文上方，横向滚动，不重复叠加正文左右留白。 -->
@@ -42,16 +41,20 @@
             android:orientation="vertical"
             android:paddingHorizontal="@dimen/page_gutter"
             android:paddingTop="12dp" android:paddingBottom="32dp">
-            <ProgressBar android:id="@+id/progress_loading"
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progress_loading"
                 android:layout_width="32dp" android:layout_height="32dp"
                 android:layout_gravity="center_horizontal"
+                android:indeterminate="true"
+                app:indicatorSize="32dp" app:indicatorInset="0dp"
                 android:contentDescription="@string/document_loading" />
             <TextView android:id="@+id/text_error"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:text="@string/document_load_failed"
                 android:textColor="@color/about_text_secondary"
                 android:textSize="@dimen/body_text_size" android:visibility="gone" />
-            <Button android:id="@+id/button_retry"
+            <com.google.android.material.button.MaterialButton android:id="@+id/button_retry"
+                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="@string/retry" android:visibility="gone" />
             <TextView android:id="@+id/text_body"

@@ -40,12 +40,13 @@
             tools:itemCount="8"
             tools:listitem="@layout/item_fifteen_day_row" />
 
-        <ProgressBar
+        <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progress_loading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:indeterminateTint="@color/white"
+            android:indeterminate="true"
+            app:indicatorColor="@color/white"
             android:visibility="gone" />
 
         <LinearLayout
@@ -67,7 +68,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_retry"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Weather.Button.OnForecast"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
@@ -76,7 +77,6 @@
                 android:text="@string/retry"
                 android:textColor="@color/white"
                 android:textSize="14sp"
-                app:cornerRadius="20dp"
                 app:strokeColor="@color/text_secondary_on_dark" />
         </LinearLayout>
     </FrameLayout>

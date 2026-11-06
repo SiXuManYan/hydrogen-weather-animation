@@ -17,6 +17,7 @@ This project is for non-commercial learning and demonstration. It is not affilia
 - **Location**: permission is requested when the app has no cities; manual search remains available if denied. Uses the system `LocationManager` without a GMS dependency.
 - **Animation debug**: open `⋮` → Animation debug to select a scene, day/night and simulated tilt. To return to weather control, choose Restore weather background and then Apply.
 - **About**: an original logo, current version, author 薯格's GitHub and Douyin details, and offline documents with chapter navigation. Website links show a confirmation before opening a browser tab. Documents are currently displayed in Simplified Chinese.
+- **Theme**: Material 3 dialogs and controls throughout, with system light/dark mode on standard surfaces. Weather animations retain their scene colors.
 
 Current version: **1.3** (`versionCode = 4`). No default city is preloaded. See the [changelog](CHANGELOG.md) for this version, [help](docs/USER_GUIDE.md) for controls and the [review record](docs/REVIEW.md) for remaining location and debug-gesture limitations (Chinese).
 
@@ -54,7 +55,7 @@ Validation:
 sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 ```
 
-The [review record](docs/REVIEW.md#验证记录) contains earlier v1.2 build, test and Lint results. Version 1.3 received static source, XML and diff checks only; Gradle compilation, tests and app installation were not run. The daily-condition regression suite now contains 23 cases covering nighttime precipitation, rain/snow transitions, brief hazardous weather and legacy caches; these cases have not been executed. Scroll dimming, narrow-screen wrapping and large-font layouts still need Android Studio and device verification.
+The current workspace passes the Debug build, all 42 JVM tests and Lint (0 errors, 37 warnings), including 23 daily-condition cases. Six device tests cover gesture dispatch using isolated content and M3 theme creation; see the [review record](docs/REVIEW.md#验证记录) for scope and the interrupted connection attempt. No further test-device operations are permitted under the current agreement. Real network refreshes, narrow-screen wrapping, large-font layouts and full-page appearance still require maintainer verification.
 
 ## Data and limitations
 
@@ -68,7 +69,7 @@ The [review record](docs/REVIEW.md#验证记录) contains earlier v1.2 build, te
 
 The CMA selection box includes parts of neighboring countries. Preferring that model does not guarantee a more accurate forecast or reproduce a local meteorological bureau's published forecast. Daily high and low temperatures retain the selected model's values. Brief precipitation, thunder, hail and freezing rain remain in the summaries; sequential rain and snow are not inferred to be sleet. A failed `best_match` request fails the refresh; a CMA failure falls back to `best_match`; an air-quality failure retains the previous PM2.5 value, or displays “—” when none is available.
 
-City pages check the 30-minute cache on first entry and whenever they resume, after disk-cache initialization. Older caches rebuild daily summaries from existing hourly data without an extra request. Pull-to-refresh is also available, and city management refreshes once when its ViewModel is created. There is no background polling. Pages use 16dp horizontal gutters and 48dp touch targets, with 14sp document text; the home temperature starts around 36% of the usable window height. See the [design notes](docs/DESIGN.md#6-页面与动画).
+City pages check the 30-minute cache on first entry and whenever they resume, after disk-cache initialization. Older caches rebuild daily summaries from existing hourly data without an extra request. At the top of the content, pull down below the header to force a refresh; the indicator appears below the header. Horizontal drags inside the hourly list scroll its items before switching cities. City management refreshes once when its ViewModel is created, with no background polling. Pages use 16dp horizontal gutters and 48dp touch targets, with 14sp document text; the home temperature starts around 36% of the usable window height. See the [design notes](docs/DESIGN.md#6-页面与动画).
 
 Weather data is attributed under **CC BY 4.0** on the About page. Open-Meteo's free service is intended for non-commercial use, has request limits and provides no availability guarantee. See the [official terms](https://open-meteo.com/en/terms).
 

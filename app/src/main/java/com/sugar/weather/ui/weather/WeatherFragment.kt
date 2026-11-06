@@ -64,8 +64,11 @@ class WeatherFragment : Fragment() {
             updateBackgroundDimming()
         })
 
-        binding.swipeRefresh.setColorSchemeResources(R.color.white)
-        binding.recyclerDaily.layoutManager = GridLayoutManager(requireContext(), DAILY_COLUMNS)
+        configureRefresh()
+        binding.recyclerDaily.layoutManager = object : GridLayoutManager(requireContext(), DAILY_COLUMNS) {
+            /** 日报完整铺开，不与外层页面竞争纵向拖动。 */
+            override fun canScrollVertically(): Boolean = false
+        }
         binding.recyclerDaily.adapter = dailyAdapter
         binding.recyclerHourly.layoutManager =
             LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
@@ -84,10 +87,7 @@ class WeatherFragment : Fragment() {
                 launch {
                     viewModel.events.collect { event ->
                         when (event) {
-                            WeatherViewModel.WeatherEvent.RefreshFinished ->
-                                binding.swipeRefresh.isRefreshing = false
                             WeatherViewModel.WeatherEvent.RefreshFailed -> {
-                                binding.swipeRefresh.isRefreshing = false
                                 Toast.makeText(
                                     requireContext(), R.string.offline_toast, Toast.LENGTH_SHORT
                                 ).show()
@@ -96,6 +96,14 @@ class WeatherFragment : Fragment() {
                     }
                 }
             }
+        }
+    }
+
+    /** 刷新只判断外层内容是否回顶；小时横滑与城市分页按起手方向协调。 */
+    private fun configureRefresh() {
+        binding.swipeRefresh.apply {
+            horizontalScrollChild = binding.recyclerHourly
+            setOnChildScrollUpCallback { _, _ -> binding.scrollContent.canScrollVertically(-1) }
         }
     }
 
@@ -143,6 +151,7 @@ class WeatherFragment : Fragment() {
         binding.errorContainer.isVisible = state.status == WeatherStatus.ERROR
         binding.scrollContent.isVisible = showContent
         binding.swipeRefresh.isEnabled = showContent
+        binding.swipeRefresh.isRefreshing = showContent && state.isRefreshing
         updateBackgroundDimming()
 
         binding.textTemp.text = state.tempText.orEmpty()

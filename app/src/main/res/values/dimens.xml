@@ -23,6 +23,4 @@
     <!-- 城市管理页(DESIGN.md §6.5/§10.2) -->
     <dimen name="city_card_radius">24dp</dimen>
     <dimen name="city_card_height">160dp</dimen>
-    <!-- 热门城市 tag 圆角(§6.4) -->
-    <dimen name="tag_corner_radius">20dp</dimen>
 </resources>

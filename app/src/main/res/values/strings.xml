@@ -1,4 +1,5 @@
 <resources>
+    <string name="scene_picker_no_sensor_hint">%1$s\n%2$s</string>
     <string name="app_name">氢天气</string>
     <string name="scene_picker_title">动画场景</string>
     <string name="scene_picker_scene">天气</string>

@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isVisible
@@ -17,6 +16,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.sugar.weather.R
 import com.sugar.weather.databinding.ActivityCityManageBinding
 import com.sugar.weather.ui.applySafeInsets
@@ -119,7 +119,7 @@ class CityManageActivity : AppCompatActivity() {
     /** 安装安全区、城市手势及随生命周期收集的状态。 */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        configureEdgeToEdge(lightNavigationBar = true)
+        configureEdgeToEdge(surfaceBackground = true)
         binding = ActivityCityManageBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.toolbar.applySafeInsets(top = true)
@@ -190,10 +190,10 @@ class CityManageActivity : AppCompatActivity() {
         }
     }
 
-    /** 删除确认绑定城市标识快照，后台刷新不会改变目标。 */
+    /** M3 删除确认绑定城市标识快照，后台刷新不会改变目标。 */
     private fun confirmDelete(cityIds: Set<String>) {
         if (cityIds.isEmpty() || viewModel.uiState.value.deleting) return
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.city_delete_title, cityIds.size))
             .setMessage(R.string.city_delete_message)
             .setNegativeButton(R.string.cancel, null)

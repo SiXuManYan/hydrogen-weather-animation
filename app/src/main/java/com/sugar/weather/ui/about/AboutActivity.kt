@@ -24,7 +24,7 @@ class AboutActivity : AppCompatActivity() {
     /** 文档使用同一阅读页；版本直接读取 Gradle 生成的 BuildConfig。 */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        configureEdgeToEdge(lightNavigationBar = true)
+        configureEdgeToEdge(surfaceBackground = true)
         binding = ActivityAboutBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.toolbar.applySafeInsets(top = true)

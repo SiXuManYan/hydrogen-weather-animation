@@ -173,6 +173,10 @@ Mapper 在实况缺气温或天气码时舍弃整个实况块；部分其他缺�
 
 View 安全区统一由 `ui/WindowInsets.kt` 处理，以 XML 原始 padding 为基准，重复派发不累加；不消费 insets，兼容 Android 10 的兄弟视图分发。
 
+全局主题继承 `Theme.Material3.DayNight.NoActionBar`，参照 CollageWorkshop 的湖蓝主色与 M3 色彩角色设置。`values/colors.xml` 与 `values-night/colors.xml` 分别提供表面、文字、容器、描边与错误色；普通页面的工具栏、正文和系统栏图标随明暗模式切换。天气场景色独立于主题色，搜索页通过 `ThemeOverlay.Weather.Forecast` 为 M3 输入框与 Assist Chip 提供固定深色角色。
+
+所有确认弹窗统一使用 `MaterialAlertDialogBuilder` 和 `ThemeOverlay.Material3.MaterialAlertDialog`，保留 M3 默认 28dp 圆角及标题 / 正文 / 操作区排版。动画调试弹窗使用自身主题上下文创建自定义内容，场景选择为 M3 Exposed Dropdown Menu，开关为 MaterialSwitch。按钮、加载指示器、城市添加 FAB、搜索输入和热门城市标签均使用 M3 组件或其样式，不再显式引用 M2 样式。
+
 ### 6.2 天气首页
 
 全屏 `WeatherBackdropView` 位于透明 ViewPager2 下方，仅绘制当前城市。头部显示定位标记、城市名、更新时间、城市管理和溢出菜单；预警图标隐藏占位。
@@ -182,6 +186,8 @@ View 安全区统一由 `ui/WindowInsets.kt` 处理，以 XML 原始 padding 为
 每个城市页在滚动内容下方放置不接收触摸的黑色遮罩，上滑约 35% 窗口高度时达到 14% 暗度（渐变距离至少 160dp）；回顶恢复透明。遮罩仅压暗动画，文字、按钮和顶部头部保持亮度；布局变化、页面恢复及加载/错误态切换时按当前滚动位置重算，不改变场景或帧循环。
 
 逐时窗口从报告观测时间的下一整点开始。窗口内的日出 / 日落使用完整日期时间排序，包含次日事件；事件温度取其时刻或之后第一个整点。SwipeRefreshLayout 仅承载滚动视图，加载 / 错误覆盖层由外层 FrameLayout 布局。
+
+`WeatherSwipeRefreshLayout` 按系统 touch slop 锁定起手方向：纵向拖动保留给 NestedScrollView / 刷新链，普通内容横向拖动交给 ViewPager2；从逐时列表起手且仍可滚动时优先保留小时横滑，到边界后可交给城市分页。日报完整铺开，禁止自身纵向滚动；两份内部 RecyclerView 不参与嵌套滚动，只有外层 NestedScrollView 提交纵向未消费距离。刷新判断显式读取正文能否继续向上滚动；刷新圈按 `paddingTop` 避让状态栏和固定标题，使用主题主色箭头与容器底色，重新布局不丢失进行中标志。`WeatherUiState.isRefreshing` 持有持续刷新状态，成功、失败或任务取消均复位，一次性事件仅保留失败提示。
 
 ### 6.3 日报与温度曲线
 
@@ -205,7 +211,7 @@ View 安全区统一由 `ui/WindowInsets.kt` 处理，以 XML 原始 padding 为
 
 ### 6.6 图标与资源
 
-页面图标使用 vector XML。原创“晴空轻云”标识用于关于页与 adaptive icon，并有独立单色前景供主题图标使用。最低 API 29 已支持 adaptive icon，旧版默认机器人 WebP 与旧关于页云图已移除。矢量稿、PNG、颜色与路径生成方式见[品牌资产说明](brand/README.md)。日夜主题统一使用 `values/themes.xml`。
+页面图标使用 vector XML。原创“晴空轻云”标识用于关于页与 adaptive icon，并有独立单色前景供主题图标使用。最低 API 29 已支持 adaptive icon，旧版默认机器人 WebP 与旧关于页云图已移除。矢量稿、PNG、颜色与路径生成方式见[品牌资产说明](brand/README.md)。日夜共用 `values/themes.xml`，明暗色值分别在 `values/` 与 `values-night/` 中维护。
 
 ### 6.7 功能边界
 
@@ -303,4 +309,4 @@ sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 
 后续 16dp 留白、文档导航、作者入口、Custom Tabs 和晴天平放可见性改动仅做源码与资源静态核查，未运行 Gradle 构建、测试或设备验证；上述较早的 v1.2 验证结果不覆盖这些改动。
 
-v1.3 的全天摘要、两页同步、完整换行和上滑压暗仅完成源码、XML 与差异静态核查。天气聚合回归扩充到 23 个用例，尚未执行；按用户要求未运行 Gradle 编译、测试或应用安装，滚动效果与窄屏/大字体布局待 Android Studio 和设备确认。
+v1.3 最初的全天摘要、两页同步、完整换行和上滑压暗只做静态核查；本轮刷新与 M3 迁移后，当前工作区已通过 Debug 构建、42 个 JVM 测试（含 23 个全天气聚合用例）与 Lint（0 错误、37 条警告）。停止测试机操作前完成的 6 个设备测试只覆盖隔离内容手势和明暗主题创建，不能代表真实联网刷新或完整视觉验收；执行细节见审查记录。按用户当前要求不再调用测试机，窄屏 / 大字体、TalkBack、实际页面视觉和性能仍待维护者确认。

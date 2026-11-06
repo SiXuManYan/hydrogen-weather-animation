@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- 搜索框底:深色页面上的半透明白圆角(20dp,与热门 tag 圆角一致) -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <corners android:radius="20dp" />
-    <solid android:color="#1AFFFFFF" />
-</shape>

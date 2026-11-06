@@ -164,7 +164,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_add_city"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                style="@style/Weather.Button.OnForecast"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
@@ -173,7 +173,6 @@
                 android:text="@string/add_city"
                 android:textColor="@color/white"
                 android:textSize="14sp"
-                app:cornerRadius="20dp"
                 app:strokeColor="@color/text_secondary_on_dark" />
         </LinearLayout>
     </FrameLayout>

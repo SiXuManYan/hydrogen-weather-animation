@@ -51,7 +51,7 @@ import java.util.Locale
  *
  * - 数据只来自 [com.sugar.weather.data.WeatherRepository] 的 `reports` / `cities` StateFlow;
  * - 进入或恢复页面时复查缓存，有缓存直接渲染，超过 30 分钟才发起网络;
- * - 下拉刷新走 `refreshWeather`;forecast 失败整体失败 → 有缓存保持 Success + Toast,无缓存转 Error;
+ * - 下拉刷新走 `refreshWeather`，进行中标志随状态恢复；forecast 失败有缓存保留 Success，无缓存转 Error;
  * - 所有文本格式化(§5 表)在本类完成,Fragment 零业务逻辑。
  * @param application 提供应用资源与仓库。
  * @property cityId 当前页面绑定的城市标识。
@@ -65,7 +65,7 @@ class WeatherViewModel(application: Application, private val cityId: String) :
     private val _uiState = MutableStateFlow(WeatherUiState(cityId = cityId))
     val uiState: StateFlow<WeatherUiState> = _uiState.asStateFlow()
 
-    /** 一次性事件:刷新结束(停下拉圈)/ 刷新失败(Toast)。 */
+    /** 一次性事件仅承载失败提示；刷新圈由 UiState 的持续状态控制。 */
     private val _events = Channel<WeatherEvent>(Channel.BUFFERED)
     val events: Flow<WeatherEvent> = _events.receiveAsFlow()
 
@@ -96,17 +96,23 @@ class WeatherViewModel(application: Application, private val cityId: String) :
     fun refresh() {
         if (refreshJob?.isActive == true) return
         refreshJob = viewModelScope.launch {
-            if (_uiState.value.status != WeatherStatus.SUCCESS) {
-                _uiState.update { it.copy(status = WeatherStatus.LOADING) }
+            _uiState.update {
+                it.copy(
+                    isRefreshing = true,
+                    status = if (it.status == WeatherStatus.SUCCESS) it.status else WeatherStatus.LOADING
+                )
             }
-            val result = repository.refreshWeather(cityId)
-            _events.send(WeatherEvent.RefreshFinished)
-            if (result.isFailure) {
-                // 无缓存且失败进入错误态；已有缓存保持内容，仅提示刷新失败。
-                if (_uiState.value.status != WeatherStatus.SUCCESS) {
-                    _uiState.update { it.copy(status = WeatherStatus.ERROR) }
+            try {
+                val result = repository.refreshWeather(cityId)
+                if (result.isFailure) {
+                    // 无缓存且失败进入错误态；已有缓存保持内容，仅提示刷新失败。
+                    if (_uiState.value.status != WeatherStatus.SUCCESS) {
+                        _uiState.update { it.copy(status = WeatherStatus.ERROR) }
+                    }
+                    _events.send(WeatherEvent.RefreshFailed)
                 }
-                _events.send(WeatherEvent.RefreshFailed)
+            } finally {
+                _uiState.update { it.copy(isRefreshing = false) }
             }
         }
     }
@@ -250,9 +256,8 @@ class WeatherViewModel(application: Application, private val cityId: String) :
     private fun formatTime(time: LocalTime): String =
         String.format(Locale.US, "%02d:%02d", time.hour, time.minute)
 
-    /** 一次性事件(下拉圈停止 / 失败 Toast)。 */
+    /** 一次性失败提示，避免界面重新收集状态时重复弹出 Toast。 */
     sealed interface WeatherEvent {
-        data object RefreshFinished : WeatherEvent
         data object RefreshFailed : WeatherEvent
     }
 
