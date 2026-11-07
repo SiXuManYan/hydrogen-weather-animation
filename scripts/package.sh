@@ -1,5 +1,5 @@
 #!/bin/bash
-# 构建项目签名 APK，支持 macOS 自带 Bash 3.2；调用方可传入额外 Gradle 参数。
+# 构建 APK；Debug 使用默认签名，Release 使用项目签名，兼容 Bash 3.2。
 set -euo pipefail
 
 PROJECT_NAME='hydrogen-weather-animation'
@@ -13,9 +13,10 @@ usage() {
 项目：$PROJECT_NAME
 用法：$0 [debug|release|all] [Gradle 参数...]
 默认构建 release；all 同时构建 debug 和 release。
-两个变体均使用 app/jks/$KEYSTORE_NAME，APK 导出到 app/release/。
-签名凭据：app/keystore.properties（参照 .example），或同名 Gradle 属性。
-无凭据文件时交互输入，非交互运行请设置：
+Debug 使用 Android 默认 debug.jks，无需项目签名凭据。
+Release 使用 app/jks/$KEYSTORE_NAME；两个变体的 APK 均导出到 app/release/。
+Release 签名凭据：app/keystore.properties（参照 .example），或同名 Gradle 属性。
+release/all 无凭据文件时交互输入，非交互运行请设置：
   ORG_GRADLE_PROJECT_storePassword
   ORG_GRADLE_PROJECT_keyAlias
   ORG_GRADLE_PROJECT_keyPassword
@@ -38,7 +39,8 @@ if [[ ! -f "$PROJECT_ROOT/gradlew" || ! -f "$PROJECT_ROOT/app/build.gradle.kts" 
     printf '项目目录不完整：%s\n' "$PROJECT_ROOT" >&2
     exit 1
 fi
-if [[ ! -f "$PROJECT_ROOT/app/jks/$KEYSTORE_NAME" ]]; then
+# 只有包含 Release 的打包才需要项目密钥。
+if [[ "$variant" != "debug" && ! -f "$PROJECT_ROOT/app/jks/$KEYSTORE_NAME" ]]; then
     printf '缺少项目签名文件：%s/app/jks/%s\n' "$PROJECT_ROOT" "$KEYSTORE_NAME" >&2
     exit 1
 fi
@@ -58,8 +60,8 @@ elif ! command -v java >/dev/null 2>&1; then
     exit 1
 fi
 
-# 已有凭据文件由 Gradle 读取；无文件时仅把交互结果传给本次进程，不落盘、不打印口令。
-if [[ ! -f "$PROJECT_ROOT/app/keystore.properties" ]]; then
+# Debug 跳过项目凭据；Release 已有文件由 Gradle 读取，交互口令仅传给本次进程。
+if [[ "$variant" != "debug" && ! -f "$PROJECT_ROOT/app/keystore.properties" ]]; then
     if [[ -z "${ORG_GRADLE_PROJECT_storePassword:-}" || -z "${ORG_GRADLE_PROJECT_keyAlias:-}" || -z "${ORG_GRADLE_PROJECT_keyPassword:-}" ]]; then
         if [[ ! -t 0 ]]; then
             printf '缺少签名凭据。请填写 app/keystore.properties，或设置帮助中列出的三个环境变量。\n' >&2

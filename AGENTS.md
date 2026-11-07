@@ -74,8 +74,8 @@
 
 ## 签名、日志与打包
 
-- Debug 和 Release 均固定使用本项目 `app/jks/` 中的签名文件，不回退到默认 `debug.jks`；实际文件名与凭据入口见 `scripts/README.md`。
-- 口令通过未跟踪的 `app/keystore.properties` 或同名 Gradle 属性提供。缺少密钥或凭据时打包应明确失败，不能产出未签名包。口令不写入源码、脚本、日志或提交。
+- Debug 不指定 `signingConfig`，使用 Android 默认 `debug.jks`，无需项目密钥或正式签名凭据；Release 固定使用本项目 `app/jks/` 中的签名文件，实际文件名与凭据入口见 `scripts/README.md`。
+- Release 口令通过未跟踪的 `app/keystore.properties` 或同名 Gradle 属性提供。项目签名校验仅挂接 Release 打包与签名任务；缺少密钥或凭据时 Release 打包应明确失败，不能产出未签名包。`scripts/package.sh debug` 跳过项目签名检查与凭据输入，`release` / `all` 保留检查。口令不写入源码、脚本、日志或提交。
 - Debug 显式 `isDebuggable = true`，由 `BuildConfig.DEBUG` 开启现有调试日志；Release 显式不可调试，不打开调试日志。日志不输出签名口令、会话凭据或完整敏感请求正文。
 - APK 按 `<项目前缀>_<versionName>_<yyyy-MM-dd>_<buildType>.apk` 命名，版本名保持原值；`exportDebugApk` / `exportReleaseApk` 导出到 `app/release/`，脚本入口为 `scripts/package.sh`。
 - `app/release/`、本机口令及 IDE 状态不随源码提交。构建、脚本静态检查、单测、Lint 与设备验收分别报告；仅用户要求或确有需要且符合本项目验证约定时运行相应检查。

@@ -344,6 +344,6 @@ v1.3 最初的全天摘要、两页同步、完整换行和上滑压暗只做静
 
 ## 维护补充：签名与模型保留（2026-11-07）
 
-Debug / Release 固定共用 `app/jks/weather.jks`，凭据由 Gradle 属性或本机 `app/keystore.properties` 提供，缺少配置时打包失败。Debug 可调试并保留调试日志，Release 不可调试。APK 按 `HydrogenWeather_<版本名>_<yyyy-MM-dd>_<变体>.apk` 命名，两个导出任务统一放入 `app/release/`，脚本用法见[打包说明](../scripts/README.md)。
+Debug 不指定 `signingConfig`，使用 Android 默认 `debug.jks`，无需项目密钥或正式签名凭据。Release 固定使用 `app/jks/weather.jks`，凭据由 Gradle 属性或本机 `app/keystore.properties` 提供；项目签名校验仅挂接 Release 打包与签名任务，缺少配置时 Release 打包失败。Debug 可调试并保留调试日志，Release 不可调试。APK 按 `HydrogenWeather_<版本名>_<yyyy-MM-dd>_<变体>.apk` 命名，两个导出任务统一放入 `app/release/`，脚本用法见[打包说明](../scripts/README.md)。
 
 Open-Meteo DTO、天气与城市领域模型、CachedWeather、SceneType 及框架响应添加 `@Keep`，模块显式依赖 Annotation，既有 Gson 字段保留规则继续适用。根 AGENTS.md 吸收通用分层、Insets、生命周期、性能、文档和交付约定，保留天气、微件与定位边界。本轮仅做静态和脚本替身检查，未运行 Gradle 或设备验证；不改变版本及用户功能发布状态。

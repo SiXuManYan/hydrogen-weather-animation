@@ -16,18 +16,18 @@ val keystoreProperties = Properties().apply {
     }
 }
 
-/** 两个变体共用 app/jks 中的项目密钥；Gradle 属性优先于本机凭据文件。 */
+/** Release 固定使用 app/jks 中的项目密钥，保持已有发布身份。 */
 val projectKeystoreFile = file("jks/weather.jks")
-/** 两个变体共享的口令与别名；不在配置输出中显示实际值。 */
+/** Release 的口令与别名；Gradle 属性优先于本机文件，实际值不输出。 */
 val projectSigningValues = listOf("storePassword", "keyAlias", "keyPassword").associateWith { key ->
     providers.gradleProperty(key).orNull?.takeIf(String::isNotBlank)
         ?: keystoreProperties.getProperty(key)?.takeIf(String::isNotBlank)
 }
 
-/** 打包前检查配置，缺少凭据时明确失败，避免输出未签名 APK 或使用默认 debug.jks。 */
+/** Release 打包前检查项目签名，避免缺少配置时输出未签名包。 */
 val validateProjectSigning = tasks.register("validateProjectSigning") {
     group = "verification"
-    description = "检查 app/jks 项目签名及本机凭据是否完整。"
+    description = "检查 Release 使用的 app/jks 项目签名及本机凭据是否完整。"
     // 仅捕获可序列化的局部值，任务执行时不读取 Project 或脚本实例。
     val signingFile = projectKeystoreFile
     val missingKeys = projectSigningValues.filterValues { it.isNullOrBlank() }.keys.joinToString()
@@ -70,7 +70,7 @@ android {
     buildTypes {
         debug {
             isDebuggable = true
-            signingConfig = signingConfigs.getByName("project")
+            // 不指定 signingConfig，使用 Android 默认 debug.jks。
         }
         release {
             isDebuggable = false
@@ -126,15 +126,17 @@ androidComponents.onVariants { variant ->
         )
     }
 
-    // 只在 APK/AAB 打包或签名时检查凭据；IDE Sync 和纯编译无需持有密钥口令。
-    tasks.matching { task ->
-        task.name in setOf(
-            "validateSigning$variantName",
-            "package$variantName",
-            "package${variantName}Bundle",
-            "sign${variantName}Bundle",
-        )
-    }.configureEach { dependsOn(validateProjectSigning) }
+    // 仅 Release 的 APK/AAB 打包与签名检查项目凭据；Debug 使用默认签名。
+    if (variant.buildType == "release") {
+        tasks.matching { task ->
+            task.name in setOf(
+                "validateSigning$variantName",
+                "package$variantName",
+                "package${variantName}Bundle",
+                "sign${variantName}Bundle",
+            )
+        }.configureEach { dependsOn(validateProjectSigning) }
+    }
 
     // 从官方 APK 产物目录导出，支持变体目录变化，并保持 app/release 作为统一查找入口。
     tasks.register<Copy>("export${variantName}Apk") {
