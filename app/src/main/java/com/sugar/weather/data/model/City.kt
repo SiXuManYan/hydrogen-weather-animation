@@ -1,5 +1,7 @@
 package com.sugar.weather.data.model
 
+import androidx.annotation.Keep
+
 /**
  * 城市条目(DESIGN.md §2.2)。
  *
@@ -14,6 +16,7 @@ package com.sugar.weather.data.model
  * @property displayOrder 列表顺序,由 Repository 在每次写盘时按列表下标归一化
  * @property addedAtMillis 添加时间戳(用于「最近添加」类排序,当前仅记录)
  */
+@Keep
 data class City(
     val id: String,
     val name: String,

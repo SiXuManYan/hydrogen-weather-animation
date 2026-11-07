@@ -341,3 +341,9 @@ sh ./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 v1.3 最初的全天摘要、两页同步、完整换行和上滑压暗只做静态核查；刷新与 M3 迁移后曾通过 Debug 构建、42 个 JVM 测试与 Lint（0 错误、37 条警告）。此后页面过渡和基础框架网络迁移通过 Debug / AndroidTest APK 编译、62 个本地测试（App 49 / Library 13）与两个模块 Lint（均为 0 错误，警告分别为 41 / 26）。微件初版及本轮修复前的审查通过 78 个本地测试（App 65 / Library 13），Lint 警告数相同。网络迁移的 7 个新增用例只请求本机 MockWebServer，库的列表用例在 JVM 中使用 Robolectric；这些是历史记录，不代表本次修复已经验证。
 
 停止测试机操作前完成的 6 个历史设备测试只覆盖隔离内容手势和明暗主题创建，不能代表真实联网刷新、页面过渡观感或完整视觉验收；执行细节见审查记录。按用户当前要求不再调用测试机，窄屏 / 大字体、TalkBack、实际页面视觉和性能仍待维护者确认。
+
+## 维护补充：签名与模型保留（2026-11-07）
+
+Debug / Release 固定共用 `app/jks/weather.jks`，凭据由 Gradle 属性或本机 `app/keystore.properties` 提供，缺少配置时打包失败。Debug 可调试并保留调试日志，Release 不可调试。APK 按 `HydrogenWeather_<版本名>_<yyyy-MM-dd>_<变体>.apk` 命名，两个导出任务统一放入 `app/release/`，脚本用法见[打包说明](../scripts/README.md)。
+
+Open-Meteo DTO、天气与城市领域模型、CachedWeather、SceneType 及框架响应添加 `@Keep`，模块显式依赖 Annotation，既有 Gson 字段保留规则继续适用。根 AGENTS.md 吸收通用分层、Insets、生命周期、性能、文档和交付约定，保留天气、微件与定位边界。本轮仅做静态和脚本替身检查，未运行 Gradle 或设备验证；不改变版本及用户功能发布状态。

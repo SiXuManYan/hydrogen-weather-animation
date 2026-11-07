@@ -1,5 +1,6 @@
 package com.template.framework.api.model
 
+import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 
 /**
@@ -26,6 +27,7 @@ import com.google.gson.annotations.SerializedName
  * @property message human-readable backend message mapped from JSON field `msg`
  * @property data nullable response payload
  */
+@Keep
 data class ApiResponse<T>(
     val code: Int,
     @SerializedName("msg")

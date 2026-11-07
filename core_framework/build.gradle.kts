@@ -26,6 +26,8 @@ android {
 }
 
 dependencies {
+    // 显式依赖模型使用的 @Keep，避免依赖其他库的传递实现细节。
+    implementation(libs.androidx.annotation)
     implementation(libs.androidx.core.ktx)
     // 公开 API 暴露的类型使用 api，使用者无需重复声明同一依赖。
     api(libs.androidx.appcompat)

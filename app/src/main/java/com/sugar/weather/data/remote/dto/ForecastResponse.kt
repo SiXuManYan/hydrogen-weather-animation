@@ -1,5 +1,7 @@
 package com.sugar.weather.data.remote.dto
 
+import androidx.annotation.Keep
+
 /**
  * Open-Meteo `/v1/forecast` 响应(DESIGN.md §1.1 实测结构,2026-11-05 会话 curl 复验)。
  *
@@ -7,6 +9,7 @@ package com.sugar.weather.data.remote.dto
  * 所有字段可空:Gson 反射实例化不经过构造函数,缺键时字段为 null 而非 Kotlin 默认值,
  * 因此一律声明可空,由 WeatherMapper 决定兜底策略。
  */
+@Keep
 data class ForecastResponse(
     val latitude: Double?,
     val longitude: Double?,
@@ -17,6 +20,7 @@ data class ForecastResponse(
 )
 
 /** 实况块,10 字段与实测一致。 */
+@Keep
 data class CurrentBlock(
     val time: String?,
     val interval: Int?,
@@ -34,6 +38,7 @@ data class CurrentBlock(
  * 逐小时块(384 点)。列表元素也可能为 null(API 对个别格点返回 null),
  * Mapper 逐元素判空,不依赖 Kotlin 非空类型。
  */
+@Keep
 data class HourlyBlock(
     val time: List<String>?,
     val temperature_2m: List<Double>?,
@@ -42,6 +47,7 @@ data class HourlyBlock(
 )
 
 /** 逐日块(16 天 = 今天 + 未来 15 天)。 */
+@Keep
 data class DailyBlock(
     val time: List<String>?,
     val weather_code: List<Int>?,

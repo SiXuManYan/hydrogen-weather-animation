@@ -1,11 +1,14 @@
 package com.sugar.weather.scene
 
+import androidx.annotation.Keep
+
 /**
  * 演示用天气场景清单。
  *
  * 背景色取自原天气 App 的 weather_* 颜色资源；场景全部由 Canvas 程序化绘制，不读取图片资源。
  * 晴天、多云、阴天、夜间等配色均按原 App 的日/夜两套色板配置。
  */
+@Keep
 enum class SceneType(
     val label: String,
     val dayBackground: Int,

@@ -1,6 +1,7 @@
 package com.sugar.weather.data
 
 import android.content.Context
+import androidx.annotation.Keep
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
@@ -150,6 +151,7 @@ class CityStore(context: Context) : CityStorage {
     }
 
     /** `weather_cache_{cityId}` 的持久化外壳(§2.2)。report 可空以抵御损坏 JSON 的反序列化。 */
+    @Keep
     data class CachedWeather(val report: WeatherReport?, val fetchedAtMillis: Long)
 
     companion object {

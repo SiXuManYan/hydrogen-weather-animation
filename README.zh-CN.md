@@ -40,15 +40,15 @@ macOS / Linux 命令行：
 ```bash
 # 按本机安装位置设置 JAVA_HOME；以下是 macOS 的常见路径。
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-sh ./gradlew :app:assembleDebug
+sh ./scripts/package.sh debug
 
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r "app/release/HydrogenWeather_1.3_YYYY-MM-DD_debug.apk"
 adb shell am start -n com.sugar.weather/.MainActivity
 ```
 
 Windows 使用 `gradlew.bat :app:assembleDebug`。仓库中的 `gradlew` 没有可执行位，因此 macOS / Linux 示例通过 `sh` 调用。
 
-构建产物为 `app/build/outputs/apk/debug/app-debug.apk`；Release 构建启用 R8 代码优化与压缩。`local.properties` 的 SDK 路径和 `gradle/gradle-daemon-jvm.properties` 的本机 JDK 绑定不提交到仓库。
+APK 按 `HydrogenWeather_<versionName>_<yyyy-MM-dd>_<buildType>.apk` 命名并导出到 `app/release/`，安装示例中的 `YYYY-MM-DD` 需替换为实际构建日期。两个变体均使用 `app/jks/weather.jks`，打包前需提供本机凭据，详见[打包说明](scripts/README.md)和[开发规则](AGENTS.md)。Release 构建启用 R8 代码优化与压缩。`local.properties` 的 SDK 路径和 `gradle/gradle-daemon-jvm.properties` 的本机 JDK 绑定不提交到仓库。根 `.gitignore` 同时排除本机签名目录 `app/jks/` 和 Android Studio 配置目录 `.idea/`；克隆后需另行提供签名密钥，由 IDE 重新生成本机配置。
 
 验证命令：
 

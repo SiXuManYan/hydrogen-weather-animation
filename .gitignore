@@ -16,5 +16,12 @@ local.properties
 
 /.idea/
 
+# 本机签名密钥不随源码提交。
+/app/jks/
+
 # 本机 Gradle daemon 的 JDK 绑定，不随仓库提交
 gradle/gradle-daemon-jvm.properties
+
+# 本机签名口令与导出 APK 不随源码提交。
+keystore.properties
+/app/release/

@@ -40,15 +40,15 @@ Command line on macOS / Linux:
 ```bash
 # Set JAVA_HOME to your installation; this is a common macOS path.
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-sh ./gradlew :app:assembleDebug
+sh ./scripts/package.sh debug
 
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb install -r "app/release/HydrogenWeather_1.3_YYYY-MM-DD_debug.apk"
 adb shell am start -n com.sugar.weather/.MainActivity
 ```
 
 On Windows, use `gradlew.bat :app:assembleDebug`. The repository's `gradlew` has no executable bit, so macOS / Linux examples invoke it through `sh`.
 
-The APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Release builds enable R8 code optimization and shrinking. Local SDK paths in `local.properties` and machine-specific JDK bindings in `gradle/gradle-daemon-jvm.properties` are not committed.
+APKs are named `HydrogenWeather_<versionName>_<yyyy-MM-dd>_<buildType>.apk` and exported to `app/release/`. Replace `YYYY-MM-DD` in the install example with the actual build date. Both variants use `app/jks/weather.jks`; supply local credentials before packaging. See the bilingual [packaging guide](scripts/README.md) and [development rules](AGENTS.md). Release builds enable R8 code optimization and shrinking. Local SDK paths in `local.properties` and machine-specific JDK bindings in `gradle/gradle-daemon-jvm.properties` are not committed. The root `.gitignore` also excludes local signing files under `app/jks/` and Android Studio configuration under `.idea/`. After cloning, supply signing keys separately and let the IDE regenerate local configuration.
 
 Validation:
 

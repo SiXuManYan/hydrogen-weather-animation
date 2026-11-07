@@ -31,3 +31,6 @@
     <fields>;
     <init>(...);
 }
+
+# 保留显式标记的请求、响应及可序列化业务模型，含其字段与构造器。
+-keep @androidx.annotation.Keep class * { *; }

@@ -1,5 +1,6 @@
 package com.sugar.weather.data.model
 
+import androidx.annotation.Keep
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -19,6 +20,7 @@ import java.time.LocalTime
  * @property daily 逐日预报,forecast_days=16:今天 + 未来 15 天(『15 天天气预报』数据源,DESIGN.md §3)
  * @property hourly 逐小时预报(全量 384 点,裁剪由 [hourlyWindow] / ViewModel 完成)
  */
+@Keep
 data class WeatherReport(
     val cityId: String,
     val fetchedAtMillis: Long,
@@ -43,6 +45,7 @@ data class WeatherReport(
  * @property isNight 夜间(current.is_day == 0)
  * @property pm25 PM2.5 浓度(μg/m³,来自 air-quality 接口;该接口失败时沿用旧值或 null)
  */
+@Keep
 data class CurrentWeather(
     val temperatureC: Double,
     val apparentTemperatureC: Double?,
@@ -70,6 +73,7 @@ data class CurrentWeather(
  * @property conditionText 全天分时段描述，如「白天阴；夜间小雨」；缺少小时数据时为 null
  * @property summaryText 两个页面共用的简短天气过程；旧缓存缺失时回退 [weatherCode]
  */
+@Keep
 data class DailyForecast(
     val date: LocalDate,
     val weatherCode: Int,
@@ -90,6 +94,7 @@ data class DailyForecast(
  * @property temperatureC 气温(°C)
  * @property weatherCode WMO weather_code
  */
+@Keep
 data class HourForecast(
     val time: LocalDateTime,
     val temperatureC: Double,
@@ -106,6 +111,7 @@ data class HourForecast(
  * @property lon 经度
  * @property population 人口;同名小地点为 null,排序时排在有值条目之后
  */
+@Keep
 data class CitySearchResult(
     val name: String,
     val admin1: String?,
