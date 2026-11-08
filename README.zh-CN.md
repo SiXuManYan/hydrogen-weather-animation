@@ -55,7 +55,7 @@
 | --- | --- |
 | Android 系统 | Android 10 / API 29 及以上 |
 | compileSdk / targetSdk | 37 |
-| 构建工具 | AGP 9.3.3 / Gradle 9.5.0，使用内置 Kotlin |
+| 构建工具 | AGP 9.5.1 / Gradle 9.6.1，使用内置 Kotlin |
 | Java | Gradle 运行需要 JDK 17+；推荐使用 Android Studio 自带 JBR |
 | 布局 | 以竖屏手机为主要设计目标，大屏适配尚未完善 |
 | 权限 | 网络；可选的精确 / 大致位置 |

@@ -5,6 +5,7 @@
 ## 项目边界
 
 - Kotlin + 原生 XML / Android View / ViewBinding + Canvas，沿用现有 ViewModel、Repository 与 AppContainer；不引入 Compose。工具链以构建文件与版本目录为准。
+- 当前工具链：AGP 9.5.1（内置 Kotlin）/ Gradle Wrapper 9.6.1；minSdk 29，compileSdk / targetSdk 37，Java 17。主要依赖：Annotation 1.11.0、Core 1.19.1、AppCompat 1.8.0、Activity 1.13.0、Fragment 1.9.1、Lifecycle 2.11.0、Coroutines 1.11.0、Retrofit 3.0.0、Gson 2.15.0、OkHttp 5.5.1、DataStore 1.3.0、WorkManager 2.12.0、Browser 1.10.0、Material 1.14.0；Robolectric 4.17 仅用于本地测试。版本以 `gradle/libs.versions.toml` 为准，升级时同步本文和当前实现文档，默认采用稳定版；历史验证保留原日期。AGP 9.5 要求 Gradle ≥9.6.0、JDK ≥17。
 - `app` 单向依赖 `core_framework`，框架不引用 App 资源、BuildConfig 或业务类型。三个 Open-Meteo 服务通过框架 HTTP 工厂共享客户端，页面不得自行创建客户端。
 - Open-Meteo 的接口、模型选择、当地日期聚合、缺测和回退规则以 `docs/DESIGN.md` 为准；无有效天气的响应不覆盖成功缓存，损坏缓存按条目跳过。
 - 城市身份、坐标和请求代次需匹配，删除或移动后的旧结果不得写回；同城同坐标并发刷新复用任务。Gson 缓存模型和枚举保持历史 JSON 兼容。

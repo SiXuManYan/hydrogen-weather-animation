@@ -55,7 +55,7 @@ Current version: **1.3** (`versionCode = 4`). No default city is preloaded. See 
 | --- | --- |
 | Android | Android 10 / API 29 or later |
 | compileSdk / targetSdk | 37 |
-| Build tools | AGP 9.3.3 / Gradle 9.5.0, with built-in Kotlin |
+| Build tools | AGP 9.5.1 / Gradle 9.6.1, with built-in Kotlin |
 | Java | JDK 17+ to run Gradle; Android Studio's bundled JBR is recommended |
 | Layout | Designed primarily for portrait phones; large-screen support is incomplete |
 | Permissions | Internet; optional precise / approximate location |

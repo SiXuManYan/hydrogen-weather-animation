@@ -163,3 +163,25 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" \
 - 本地通过 Debug / AndroidTest APK 构建、78 个测试（App 65、Library 13）和两个模块 Lint，均为 0 错误，警告仍为 41 / 26。新增 16 个本地用例覆盖城市时区、离线跨日、日期缺测、报告身份、缓存预热、手动刷新、失败保留、前台成功清除失败标记、请求中删除首城及无微件停止。
 - 微件设备测试尝试因 ADB 中断未取得测试结果，不能据此声称通过；已按用户要求停止模拟器验证，并清理本轮临时模拟器。真实桌面布局、点击、长期后台调度、重启恢复和大字体尚未完成设备验收。设备测试源码保留供后续维护使用。
 - 使用帮助、中英文 README、设计、更新日志、隐私政策和开源说明已随实现更新；安装包中的帮助与政策仍由原同步任务生成。
+
+## 2026-11-08 稳定依赖与工具链升级
+
+核对来源为 [Google Maven](https://dl.google.com/dl/android/maven2/master-index.xml)、[Maven Central](https://repo.maven.apache.org/maven2/)、各构件的 `maven-metadata.xml` 与发布 POM/Gradle Module Metadata；仅采用正式稳定版。AGP 9.5.1 的[官方兼容说明](https://developer.android.com/build/releases/agp-9-5-0-release-notes)要求 Gradle ≥9.6.0、JDK ≥17，Wrapper 从 9.5.0 升至 9.6.1，并用[官方 SHA-256](https://services.gradle.org/distributions/gradle-9.6.1-bin.zip.sha256)校验发行包。
+
+| 组件 | 原版本 | 升级后 |
+| --- | --- | --- |
+| AndroidX Annotation | 1.10.0 | 1.11.0 |
+| Core KTX | 1.19.0 | 1.19.1 |
+| AppCompat | 1.7.1 | 1.8.0 |
+| Activity KTX | 1.10.1 | 1.13.0 |
+| Coroutines | 1.10.2 | 1.11.0 |
+| Gson | 2.13.1 | 2.15.0 |
+| OkHttp 及关联构件 | 4.12.0 | 5.5.1 |
+| Robolectric | 4.16.1 | 4.17 |
+| Browser | 1.8.0 | 1.10.0 |
+| AGP | 9.3.3 | 9.5.1 |
+| Gradle Wrapper | 9.5.0 | 9.6.1 |
+
+Retrofit 3.0.0、Fragment 1.9.1、Lifecycle 2.11.0、DataStore 1.3.0、WorkManager 2.12.0 等已为稳定最新版，保留；Markwon、Timber、JUnit 等未发布更新。OkHttp 5.5.1 保留原坐标，由 Gradle 元数据选择 Android/JVM 变体；旧包名 MockWebServer 5.5.1 仍正式发布，保留现有测试 API，无需迁移 mockwebserver3。Gson 模型与历史 JSON 字段协议不变，缓存旧数据读取仍需后续回归。
+
+同步 AGENTS、双语 README、DESIGN 的当前工具链与网络版本。已有构建缓存中的 OkHttp 成员引用辅助对照未发现缺失；缓存不是当前源码编译证据。实际检查仅包含版本目录 TOML 与引用一致性、升级目标的发布元数据、AAR 的 minSdk / minCompileSdk / AGP 要求、Wrapper 校验值、当前文档版本与本地链接、历史记录保全及 `git diff --check`。本次未运行 Gradle、构建、依赖图解析、单元测试、Lint、安装或设备验收，旧构建/测试结果不覆盖本次升级；没有变更应用版本号或登记新发布。后续按需验证包括本机 HTTP 契约、取消/错误与旧缓存恢复、Robolectric 用例和微件调度。

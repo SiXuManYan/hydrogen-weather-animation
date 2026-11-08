@@ -65,7 +65,7 @@ CMA 的实况、时区、观测时间优先；逐日按日期、逐时按时间�
 
 ### 2.1 网络、JSON 与 Kotlin
 
-网络基础设施来自本仓库的 [`core_framework`](../core_framework/README.md) Android Library，复制自 AndroidFrameworkTemplate，App 通过 `implementation(project(":core_framework"))` 接入，无本机外部路径依赖。模块沿用宿主的 AGP 9 内置 Kotlin、compileSdk 37 和 Java 17；当前使用 Retrofit 3.0.0、Gson 2.13.1 和 OkHttp 4.12.0，不降级宿主工具链。
+网络基础设施来自本仓库的 [`core_framework`](../core_framework/README.md) Android Library，复制自 AndroidFrameworkTemplate，App 通过 `implementation(project(":core_framework"))` 接入，无本机外部路径依赖。模块沿用宿主的 AGP 9 内置 Kotlin、compileSdk 37 和 Java 17；当前使用 Retrofit 3.0.0、Gson 2.15.0 和 OkHttp 5.5.1，不降级宿主工具链。
 
 `WeatherApplication` 先调用 `Framework.init` 注入 Debug / 版本信息与日志，再创建 `AppContainer`。`WeatherApiClient` 使用库的 `NetworkModule.createOkHttpClient` 和 `createApiService` 工厂为三个域名创建接口，共用一个客户端及连接池；连接 / 读取 / 写入超时保留为 10 / 15 / 10 秒。没有启用全局单地址 Retrofit、认证、client ID、版本 Header、框架存储或 WebSocket。Open-Meteo 原生 DTO、`WeatherDataException`、仓库降级规则与原 DataStore 缓存格式继续由 App 管理。
 
@@ -295,7 +295,7 @@ flowchart LR
 
 ### 10.1 构建与验证
 
-依赖版本由 `gradle/libs.versions.toml` 管理；Android 配置在 `app/build.gradle.kts` 与 `core_framework/build.gradle.kts`。Release 使用 AGP 9 的 `optimization.enable=true`，同时启用 R8 和资源收缩，保留优化版默认规则。`app/src/main/keepRules/rules.keep` 仅保留 Gson 专用 DTO 与缓存实体的字段和构造器，保留旧 JSON 字段名，不整包保留业务代码或框架。Retrofit / WorkManager 等继续使用库自带规则。本轮按要求未生成优化后的安装包，实际体积与运行行为尚未测量。
+当前工具链为 AGP 9.5.1（内置 Kotlin）/ Gradle Wrapper 9.6.1，JDK ≥17；稳定依赖变更及静态检查范围见[2026-11-08 升级记录](REVIEW.md#2026-11-08-稳定依赖与工具链升级)。依赖版本由 `gradle/libs.versions.toml` 管理；Android 配置在 `app/build.gradle.kts` 与 `core_framework/build.gradle.kts`。Release 使用 AGP 9 的 `optimization.enable=true`，同时启用 R8 和资源收缩，保留优化版默认规则。`app/src/main/keepRules/rules.keep` 仅保留 Gson 专用 DTO 与缓存实体的字段和构造器，保留旧 JSON 字段名，不整包保留业务代码或框架。Retrofit / WorkManager 等继续使用库自带规则。本轮按要求未生成优化后的安装包，实际体积与运行行为尚未测量。
 
 后续维护需要验证时，可运行两个模块的 JVM 测试与 Lint；`WeatherApiClientTest` 使用 MockWebServer 检查端点、参数、JSON、匿名 Header、错误映射和取消，不连接外部服务或 Android 设备。
 
