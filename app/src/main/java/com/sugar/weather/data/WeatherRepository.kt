@@ -285,6 +285,24 @@ class WeatherRepository(
     }
 
     /**
+     * 为未发生明显移动的定位城市补齐区县名，不改坐标或清除天气缓存。
+     * @param city 反地理开始前的城市快照，迟到名称不能覆盖另一地点或并发改名。
+     * @param name 系统解析名称；缺失时保留已保存名称。
+     */
+    suspend fun updateLocatedCityName(city: City, name: String?) {
+        val resolvedName = name?.trim()?.takeIf { it.isNotEmpty() } ?: return
+        if (resolvedName == city.name) return
+        mutateCities { current ->
+            current.map { candidate ->
+                // 在同一城市事务内核对身份，避免查询期间坐标已更新后再写入旧区名。
+                if (candidate.isLocated && candidate.hasSameWeatherIdentity(other = city) &&
+                    candidate.name == city.name
+                ) candidate.copy(name = resolvedName) else candidate
+            }
+        }
+    }
+
+    /**
      * 插入或更新定位城市(§2.4 回退链第 2/3/4 条):
      * 已有定位城市 → 只更新名称与坐标;同坐标普通城市 → 就地转正并置顶;
      * 否则新建。[name] 为 null(Geocoder 失败)→ 使用回退名「我的位置」。

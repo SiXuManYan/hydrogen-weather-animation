@@ -24,10 +24,11 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 仓库级删除回归：真实协程交错与可控制的网络、存储边界，不依赖设备。 */
+/** 仓库级城市事务回归：真实协程交错与可控制的网络、存储边界，不依赖设备。 */
 class CityDeletionTest {
     /** 多选删除只移除手动城市，同时清除两层天气，定位城市保留。 */
     @Test fun `batch delete protects located city and clears both caches`() = runBlocking {
@@ -95,6 +96,71 @@ class CityDeletionTest {
             assertEquals("located", actual.id)
             assertTrue(actual.isLocated)
             assertEquals(1, storage.cities.value.size)
+        }
+    }
+
+    /** 原地从市名细化为区名，只更新名称，城市身份、顺序和两层天气保持不变。 */
+    @Test fun `located city name can be refined without moving or dropping caches`() = runBlocking {
+        val located = city(id = "located", located = true).copy(name = "北京市")
+        val manual = city(id = "manual", latitude = 6.0).copy(displayOrder = 1)
+        fixture(listOf(located, manual)) { repository, storage, api ->
+            val memoryReport = checkNotNull(repository.cachedReport(cityId = located.id))
+            val diskReport = checkNotNull(storage.weather[located.id])
+
+            repository.updateLocatedCityName(city = located, name = " 海淀区 ")
+
+            assertEquals(listOf(located.copy(name = "海淀区"), manual), storage.cities.value)
+            assertSame(memoryReport, repository.reports.value[located.id])
+            assertSame(diskReport, storage.weather[located.id])
+            assertFalse(api.started.isCompleted)
+        }
+    }
+
+    /** 系统缺测、空白或名称未变化时不降级为回退名，也不清空已保存天气。 */
+    @Test fun `missing or unchanged located name preserves saved place`() = runBlocking {
+        val located = city(id = "located", located = true).copy(name = "海淀区")
+        fixture(listOf(located)) { repository, storage, _ ->
+            val report = checkNotNull(repository.cachedReport(cityId = located.id))
+            for (name in listOf(null, " \t ", " 海淀区 ")) {
+                repository.updateLocatedCityName(city = located, name = name)
+            }
+            assertEquals(listOf(located), storage.cities.value)
+            assertSame(report, repository.reports.value[located.id])
+            assertTrue(located.id in storage.weather)
+        }
+    }
+
+    /** 反地理返回前已移动到其他坐标时，旧名称不能写到新地点上。 */
+    @Test fun `late located name cannot overwrite a moved city`() = runBlocking {
+        val located = city(id = "located", located = true).copy(name = "北京市")
+        fixture(listOf(located)) { repository, storage, _ ->
+            val moved = repository.upsertLocatedCity(
+                name = "西湖区", latitude = 8.0, longitude = 11.0
+            )
+            repository.updateLocatedCityName(city = located, name = "海淀区")
+            assertEquals(listOf(moved), storage.cities.value)
+        }
+    }
+
+    /** 同一坐标已经提交新名称后，基于旧名称的迟到结果也应被拒绝。 */
+    @Test fun `late located name cannot overwrite a newer name`() = runBlocking {
+        val located = city(id = "located", located = true).copy(name = "北京市")
+        fixture(listOf(located)) { repository, storage, _ ->
+            repository.updateLocatedCityName(city = located, name = "海淀区")
+            repository.updateLocatedCityName(city = located, name = "朝阳区")
+            assertEquals(listOf(located.copy(name = "海淀区")), storage.cities.value)
+        }
+    }
+
+    /** 只改名入口不触碰手动城市，过期或缺失的城市快照也不能新建条目。 */
+    @Test fun `located name update ignores manual and missing cities`() = runBlocking {
+        val manual = city(id = "manual")
+        fixture(listOf(manual)) { repository, storage, _ ->
+            repository.updateLocatedCityName(city = manual, name = "海淀区")
+            repository.updateLocatedCityName(
+                city = city(id = "missing", located = true), name = "海淀区"
+            )
+            assertEquals(listOf(manual), storage.cities.value)
         }
     }
 

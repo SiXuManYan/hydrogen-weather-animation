@@ -1,6 +1,6 @@
 # Hydrogen Weather Privacy Policy
 
-Updated: November 6, 2026.
+Updated: November 11, 2026.
 
 ## 1. What is processed
 
@@ -16,7 +16,7 @@ After a home screen weather widget is added, the app reads the first city's loca
 
 The system asks for precise or approximate location permission. Both support finding your city. You can deny or revoke permission and add cities manually.
 
-With permission, the app reads a recent system location or requests one update while the weather home page is visible, to find the city and query weather. Coordinates are also passed to the system place-name service. With permission already granted, foreground resume silently checks location, waiting at least 30 minutes after success or 2 minutes after failure before another attempt. Moving at least 1km from the saved location updates the existing located city's name, coordinates and weather; intermediate positions are not kept as a list.
+With permission, the app reads a recent system location or requests one update while the weather home page is visible, to find the city and query weather. Coordinates are also passed to the system place-name service, preferring a district or county name and falling back to a city or province. Roads, house numbers and full addresses are not used as location names. With permission already granted, foreground resume silently checks location, waiting at least 30 minutes after success or 2 minutes after failure before another attempt. Even without significant movement, saved coordinates are passed to the system place-name service to refine the name while retaining coordinates and cached weather. Moving at least 1km from the saved location and beyond the reported accuracy radius updates the existing located city's name, coordinates and weather; intermediate positions are not kept as a list.
 
 Each location request stops on success, timeout, cancellation or when the home page leaves the foreground. The app neither requests background location permission nor acquires background location, and keeps no route history. System location and place-name services may connect to the network under the device provider's rules.
 

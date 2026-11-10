@@ -185,3 +185,11 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" \
 Retrofit 3.0.0、Fragment 1.9.1、Lifecycle 2.11.0、DataStore 1.3.0、WorkManager 2.12.0 等已为稳定最新版，保留；Markwon、Timber、JUnit 等未发布更新。OkHttp 5.5.1 保留原坐标，由 Gradle 元数据选择 Android/JVM 变体；旧包名 MockWebServer 5.5.1 仍正式发布，保留现有测试 API，无需迁移 mockwebserver3。Gson 模型与历史 JSON 字段协议不变，缓存旧数据读取仍需后续回归。
 
 同步 AGENTS、双语 README、DESIGN 的当前工具链与网络版本。已有构建缓存中的 OkHttp 成员引用辅助对照未发现缺失；缓存不是当前源码编译证据。实际检查仅包含版本目录 TOML 与引用一致性、升级目标的发布元数据、AAR 的 minSdk / minCompileSdk / AGP 要求、Wrapper 校验值、当前文档版本与本地链接、历史记录保全及 `git diff --check`。本次未运行 Gradle、构建、依赖图解析、单元测试、Lint、安装或设备验收，旧构建/测试结果不覆盖本次升级；没有变更应用版本号或登记新发布。后续按需验证包括本机 HTTP 契约、取消/错误与旧缓存恢复、Robolectric 用例和微件调度。
+
+## 2026-11-11 区县级定位名称
+
+- 原实现以 `locality` 优先且不读取 `subLocality`，区县字段会被市名遮住；未达移动阈值时直接返回，已有城市也无法原地细化名称。本次新增 [LocatedPlaceNaming](../app/src/main/java/com/sugar/weather/data/LocatedPlaceNaming.kt)，优先使用行政字段中的明确区县，缺失时回退到城市和省级名称；过滤空白、分类占位和明确街道 / 乡镇 / 村 / 社区，不从完整地址或门牌猜测区县。地区、自治区和特别行政区不会因“区”后缀被误当成县级区，县级市及海外名称保持原有字段层级。
+- 首页沿用前台权限、定位精度与成功 30 分钟 / 失败 2 分钟节流。未达移动阈值时反查已保存坐标，交给仓库只更新名称，保留城市 id、坐标、创建时间、顺序和两层天气，不因改名触发额外天气请求。事务内核对原城市身份、坐标及名称，迟到结果不能覆盖移动后的地点或并发提交的新名称。没有新增服务方、权限或后台定位。
+- 新增 9 个 [命名规则测试](../app/src/test/java/com/sugar/weather/data/LocatedPlaceNamingTest.kt)及 5 个 [仓库回归测试](../app/src/test/java/com/sugar/weather/data/CityDeletionTest.kt)，覆盖直辖市 / 普通市的区名、不同字段中的县 / 自治县 / 旗、县级市、地区等上级行政区、街道排除、空白回退、海外层级、原地改名保留缓存和不请求天气，以及移动 / 并发改名后的迟到结果、手动与缺失城市保护。测试源码已补充，本次没有执行测试。
+- 双语 README、设计、使用帮助、更新日志及中英文隐私政策随实现更新；版本号保持 1.3，功能记录在未发布条目中。通过 `android-cli` 检索后，另核对本机 Android SDK 的 `Address` / `Geocoder` 官方源码：`subLocality` 可表示市内分区或社区，反查的细度及可用性由系统提供方决定，因此不保证每台设备都能取得区县，大致位置也可能落入相邻区县。
+- 实际检查范围：源码调用与事务 / 缓存边界静态核对、UTF-8 与本地 Markdown 文件链接检查、`git diff --check`。遵循仓库验证约定，未运行 Gradle、构建、JVM 测试、Lint、安装或任何设备任务。待设备验收：已有市名在原地更新为区县、精确 / 大致权限、系统缺少区县或反查失败的回退，以及首页、管理页与桌面微件名称同步；历史通过记录不覆盖本次改动。

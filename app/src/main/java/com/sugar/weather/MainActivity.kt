@@ -23,6 +23,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.sugar.weather.data.LocationFix
+import com.sugar.weather.data.locatedPlaceName
 import com.sugar.weather.databinding.ActivityMainBinding
 import com.sugar.weather.databinding.DialogScenePickerBinding
 import com.sugar.weather.scene.SceneType
@@ -377,7 +378,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** 前台一次性定位；足够大的位移才更新原城市，失败保留原坐标与天气。 */
+    /** 前台一次性定位；原地也补齐区县名，足够大的位移才更新坐标和天气。 */
     private fun locate() {
         if (locationJob?.isActive == true || !viewModel.beginLocationCheck()) return
         locationJob = lifecycleScope.launch {
@@ -395,12 +396,19 @@ class MainActivity : AppCompatActivity() {
                     )
                     // 大致定位的精度半径也计入阈值，避免正常漂移反复清除天气缓存。
                     if (distance[0] < max(LOCATION_MOVE_THRESHOLD_M, fix.accuracyMeters)) {
-                        succeeded = true
+                        // 按保存坐标补齐区县，避免粗略位置漂移使名称与天气地点不一致。
+                        val name = withContext(Dispatchers.IO) {
+                            resolvePlaceName(
+                                latitude = locatedCity.latitude,
+                                longitude = locatedCity.longitude
+                            )
+                        }
+                        succeeded = viewModel.updateLocatedPlaceName(city = locatedCity, name = name)
                         return@launch
                     }
                 }
                 val name = withContext(Dispatchers.IO) {
-                    resolvePlaceName(fix.latitude, fix.longitude)
+                    resolvePlaceName(latitude = fix.latitude, longitude = fix.longitude)
                 }
                 succeeded = viewModel.submitLocatedPlace(
                     name = name,
@@ -417,14 +425,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** 框架 Geocoder 反地理(§2.4 第 3 条):locality → subAdminArea → adminArea,任一步失败 → null(兜底名由 Repository 处理)。 */
+    /** 系统 Geocoder 优先解析区县；字段选择交给纯规则，失败回退名由仓库处理。 */
     @Suppress("DEPRECATION")
     private fun resolvePlaceName(latitude: Double, longitude: Double): String? = runCatching {
         if (!Geocoder.isPresent()) return@runCatching null
         Geocoder(this, Locale.CHINA)
             .getFromLocation(latitude, longitude, 1)
             ?.firstOrNull()
-            ?.let { place -> place.locality ?: place.subAdminArea ?: place.adminArea }
+            ?.let { place ->
+                locatedPlaceName(
+                    subLocality = place.subLocality,
+                    locality = place.locality,
+                    subAdminArea = place.subAdminArea,
+                    adminArea = place.adminArea
+                )
+            }
     }.getOrNull()
 
     /** 使用 M3 弹窗上下文构建场景面板，确认后才把输入提交给 ViewModel。 */

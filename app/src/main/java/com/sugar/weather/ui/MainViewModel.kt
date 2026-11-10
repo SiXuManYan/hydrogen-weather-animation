@@ -246,6 +246,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         lastLocationCheckSucceeded = succeeded
     }
 
+    /** 原地定位只补齐名称，不触发天气请求；取消和存储失败沿用定位流程的处理。 */
+    suspend fun updateLocatedPlaceName(city: City, name: String?): Boolean = try {
+        weatherRepository.updateLocatedCityName(city = city, name = name)
+        true
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        false
+    }
+
     /** 保存或更新原定位城市，再补齐其坐标对应的天气；失败保留已有城市。 */
     suspend fun submitLocatedPlace(name: String?, latitude: Double, longitude: Double): Boolean {
         return try {
