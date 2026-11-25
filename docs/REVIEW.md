@@ -2,6 +2,10 @@
 
 范围：仓库 Markdown、Android 资源与引用、网络 / 缓存 / 定位、页面状态和动画绘制。本文保留审查与历史验证记录；P2 表示审查时确认的功能问题。本轮已处理 R5–R7、R11–R16 及对应性能、布局与收缩配置，按用户要求未运行验证。
 
+## 2026-11-25 文档构建命令与入口修正
+
+中英文 README 改用 `bash ./scripts/package.sh debug`，区分 Bash 打包入口与内部的 `sh ./gradlew`；产品介绍与使用方式前置，完整致谢和来源链接保留在文末。未修改打包脚本或应用行为。静态检查：核对相关源码、文档差异、本地链接与 `git diff --check`；未运行 Gradle、构建、测试、Lint 或设备验证。
+
 ## 2026-11-25 Material 3 主题使用规则
 
 在 [AGENTS.md](../AGENTS.md) 中新增规则：如果项目中使用了 Android 的 Material Design，使用主题时必须采用最新的 Material 3，不得使用旧版 Material 2。本次仅维护工程规则，未修改现有主题、控件或依赖，也不代表已完成旧主题迁移。检查规则一致性、历史内容保全、本地链接与 `git diff --check`；未运行 Gradle、构建、测试、Lint 或设备验证。

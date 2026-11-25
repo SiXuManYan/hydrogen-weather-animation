@@ -2,33 +2,6 @@
 
 [中文](README.zh-CN.md)
 
-### Special Thanks
-
-Special thanks to the authors and maintainers of the open-source projects and third-party libraries used here, and to the friends who tested the app and shared feedback. Thank you for your time, ideas, and support ❤️
-
-This project is made possible by the following open-source projects, third-party components, and content sources:
-
-- [Open-Meteo](https://github.com/open-meteo/open-meteo) — Weather, forecast, air-quality, and city-search services supplying weather and place data.
-- [Kotlin](https://github.com/JetBrains/kotlin) — Application language and standard library.
-- [kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines) — Coroutines, asynchronous work, and Flow-based state.
-- [Material Components for Android](https://github.com/material-components/material-components-android) — Material widgets, themes, and dialogs.
-- [AndroidX / Jetpack](https://developer.android.com/jetpack/androidx) — Core, Annotation, AppCompat, Activity, Fragment, Lifecycle, RecyclerView, ViewPager2, SwipeRefreshLayout, and Browser for UI, state, and browser integration.
-- [DataStore](https://developer.android.com/topic/libraries/architecture/datastore) — Local preference and configuration persistence.
-- [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) — Background updates for the home-screen weather widget.
-- [Retrofit](https://github.com/square/retrofit) — HTTP API interfaces for weather and city search.
-- [OkHttp](https://github.com/square/okhttp) / [Okio](https://github.com/square/okio) — HTTP communication, buffering, and I/O; MockWebServer supports API tests.
-- [Gson](https://github.com/google/gson) — JSON parsing for network responses and local caches.
-- [Markwon](https://github.com/noties/Markwon) / [commonmark-java](https://github.com/commonmark/commonmark-java) — Parsing and rendering Markdown for offline help, legal documents, and version history.
-- [Timber](https://github.com/JakeWharton/timber) — Framework debug logging.
-- [AndroidFrameworkTemplate](https://github.com/SiXuManYan/AndroidFrameworkTemplate) — Upstream of the local core_framework module, providing shared View infrastructure and the network factory.
-- [JUnit 4](https://github.com/junit-team/junit4) / [AndroidX Test and Espresso](https://github.com/android/android-test) — JVM unit-test and Android UI-test infrastructure.
-- [Robolectric](https://github.com/robolectric/robolectric) — Android framework behavior testing on the local JVM.
-- [Gradle](https://github.com/gradle/gradle) / [Android Gradle Plugin](https://android.googlesource.com/platform/tools/base/) — Build tooling for the Android app and library modules.
-
-See [Data sources and open-source components](docs/THIRD_PARTY_NOTICES.md) for weather-data attribution, component licences, and framework provenance (Chinese).
-
----
-
 <img src="docs/brand/hydrogen-weather-logo.svg" width="112" alt="Hydrogen Weather: Clear Sky, Light Cloud logo" />
 
 An Android weather app inspired by the Hydrogen OS 10 weather app on the OnePlus 7 Pro. It uses native XML, Views and Canvas for the interface, 15 weather animations and tilt parallax. Weather data comes from [Open-Meteo](https://open-meteo.com/), with no API key required.
@@ -67,13 +40,13 @@ Command line on macOS / Linux:
 ```bash
 # Set JAVA_HOME to your installation; this is a common macOS path.
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-sh ./scripts/package.sh debug
+bash ./scripts/package.sh debug
 
 adb install -r "app/release/HydrogenWeather_1.3_YYYY-MM-DD_debug.apk"
 adb shell am start -n com.sugar.weather/.MainActivity
 ```
 
-On Windows, use `gradlew.bat :app:assembleDebug`. The repository's `gradlew` has no executable bit, so macOS / Linux examples invoke it through `sh`.
+On Windows, use `gradlew.bat :app:assembleDebug`. Run the packaging entry point with Bash. It invokes the repository's non-executable Gradle Wrapper internally with `sh ./gradlew`.
 
 APKs are named `HydrogenWeather_<versionName>_<yyyy-MM-dd>_<buildType>.apk` and exported to `app/release/`. Replace `YYYY-MM-DD` in the install example with the actual build date. Debug uses Android's default `debug.jks` without project signing credentials. Release uses `app/jks/weather.jks`; supply local credentials before Release packaging. See the bilingual [packaging guide](scripts/README.md) and [development rules](AGENTS.md). Release builds enable R8 code optimization and shrinking. Local SDK paths in `local.properties` and machine-specific JDK bindings in `gradle/gradle-daemon-jvm.properties` are not committed. The root `.gitignore` also excludes local signing files under `app/jks/` and Android Studio configuration under `.idea/`. After cloning, let the IDE regenerate local configuration and supply project signing keys separately for Release packaging.
 
@@ -168,3 +141,28 @@ In the sunny daytime scene, the flat-to-upright pitch range produces a smaller v
 | [Weather API selection](docs/free-weather-apis.md) | Alternatives and historical research (Chinese) |
 
 For bugs or rights-holder feedback, please use [repository Issues](https://github.com/SiXuManYan/hydrogen-weather-animation/issues).
+
+### Special Thanks
+
+Special thanks to the authors and maintainers of the open-source projects and third-party libraries used here, and to the friends who tested the app and shared feedback. Thank you for your time, ideas, and support ❤️
+
+This project is made possible by the following open-source projects, third-party components, and content sources:
+
+- [Open-Meteo](https://github.com/open-meteo/open-meteo) — Weather, forecast, air-quality, and city-search services supplying weather and place data.
+- [Kotlin](https://github.com/JetBrains/kotlin) — Application language and standard library.
+- [kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines) — Coroutines, asynchronous work, and Flow-based state.
+- [Material Components for Android](https://github.com/material-components/material-components-android) — Material widgets, themes, and dialogs.
+- [AndroidX / Jetpack](https://developer.android.com/jetpack/androidx) — Core, Annotation, AppCompat, Activity, Fragment, Lifecycle, RecyclerView, ViewPager2, SwipeRefreshLayout, and Browser for UI, state, and browser integration.
+- [DataStore](https://developer.android.com/topic/libraries/architecture/datastore) — Local preference and configuration persistence.
+- [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) — Background updates for the home-screen weather widget.
+- [Retrofit](https://github.com/square/retrofit) — HTTP API interfaces for weather and city search.
+- [OkHttp](https://github.com/square/okhttp) / [Okio](https://github.com/square/okio) — HTTP communication, buffering, and I/O; MockWebServer supports API tests.
+- [Gson](https://github.com/google/gson) — JSON parsing for network responses and local caches.
+- [Markwon](https://github.com/noties/Markwon) / [commonmark-java](https://github.com/commonmark/commonmark-java) — Parsing and rendering Markdown for offline help, legal documents, and version history.
+- [Timber](https://github.com/JakeWharton/timber) — Framework debug logging.
+- [AndroidFrameworkTemplate](https://github.com/SiXuManYan/AndroidFrameworkTemplate) — Upstream of the local core_framework module, providing shared View infrastructure and the network factory.
+- [JUnit 4](https://github.com/junit-team/junit4) / [AndroidX Test and Espresso](https://github.com/android/android-test) — JVM unit-test and Android UI-test infrastructure.
+- [Robolectric](https://github.com/robolectric/robolectric) — Android framework behavior testing on the local JVM.
+- [Gradle](https://github.com/gradle/gradle) / [Android Gradle Plugin](https://android.googlesource.com/platform/tools/base/) — Build tooling for the Android app and library modules.
+
+See [Data sources and open-source components](docs/THIRD_PARTY_NOTICES.md) for weather-data attribution, component licences, and framework provenance (Chinese).

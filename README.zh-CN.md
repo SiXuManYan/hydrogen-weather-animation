@@ -2,33 +2,6 @@
 
 [English](README.md)
 
-### Special Thanks
-
-特别感谢所有开源项目与第三方库的作者和维护者，也感谢身边参与测试、提出建议的朋友们。你们的时间、智慧与支持，让本项目得以不断完善 ❤️
-
-本项目的实现离不开以下开源项目、第三方组件与内容来源的帮助：
-
-- [Open-Meteo](https://github.com/open-meteo/open-meteo) — 天气、预报、空气质量及城市搜索服务，提供应用使用的天气与地名数据。
-- [Kotlin](https://github.com/JetBrains/kotlin) — 应用开发语言与标准库。
-- [kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines) — 协程、异步任务与 Flow 状态流。
-- [Material Components for Android](https://github.com/material-components/material-components-android) — Material 界面控件、主题与对话框。
-- [AndroidX / Jetpack](https://developer.android.com/jetpack/androidx) — Core、Annotation、AppCompat、Activity、Fragment、Lifecycle、RecyclerView、ViewPager2、SwipeRefreshLayout 与 Browser，提供界面、状态与浏览器集成。
-- [DataStore](https://developer.android.com/topic/libraries/architecture/datastore) — 本机偏好与配置持久化。
-- [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) — 桌面天气微件的后台刷新任务。
-- [Retrofit](https://github.com/square/retrofit) — 天气与城市搜索的 HTTP API 接口。
-- [OkHttp](https://github.com/square/okhttp) / [Okio](https://github.com/square/okio) — HTTP 通信、缓冲与 IO，MockWebServer 用于接口测试。
-- [Gson](https://github.com/google/gson) — 网络响应与本机缓存的 JSON 解析。
-- [Markwon](https://github.com/noties/Markwon) / [commonmark-java](https://github.com/commonmark/commonmark-java) — 离线帮助、法律说明与版本日志的 Markdown 解析和排版。
-- [Timber](https://github.com/JakeWharton/timber) — 框架调试日志。
-- [AndroidFrameworkTemplate](https://github.com/SiXuManYan/AndroidFrameworkTemplate) — 本地 core_framework 的上游，提供通用 View 基础设施和网络工厂。
-- [JUnit 4](https://github.com/junit-team/junit4) / [AndroidX Test 与 Espresso](https://github.com/android/android-test) — JVM 单元测试与 Android 界面测试基础。
-- [Robolectric](https://github.com/robolectric/robolectric) — 本地 JVM 上的 Android 框架行为测试支持。
-- [Gradle](https://github.com/gradle/gradle) / [Android Gradle Plugin](https://android.googlesource.com/platform/tools/base/) — Android 应用和库模块的构建工具链。
-
-天气数据署名、组件许可与框架来源见[数据来源与开源组件](docs/THIRD_PARTY_NOTICES.md)。
-
----
-
 <img src="docs/brand/hydrogen-weather-logo.svg" width="112" alt="氢天气 Logo：晴空轻云" />
 
 以一加 7 Pro 的 Hydrogen OS 10 天气应用为视觉参考，用原生 XML + View + Canvas 实现天气界面、15 种天气动画和随手机倾斜变化的视差效果。天气数据来自 [Open-Meteo](https://open-meteo.com/)，无需 API Key。
@@ -67,13 +40,13 @@ macOS / Linux 命令行：
 ```bash
 # 按本机安装位置设置 JAVA_HOME；以下是 macOS 的常见路径。
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-sh ./scripts/package.sh debug
+bash ./scripts/package.sh debug
 
 adb install -r "app/release/HydrogenWeather_1.3_YYYY-MM-DD_debug.apk"
 adb shell am start -n com.sugar.weather/.MainActivity
 ```
 
-Windows 使用 `gradlew.bat :app:assembleDebug`。仓库中的 `gradlew` 没有可执行位，因此 macOS / Linux 示例通过 `sh` 调用。
+Windows 使用 `gradlew.bat :app:assembleDebug`。打包入口使用 Bash；脚本内部通过 `sh ./gradlew` 调用没有可执行位的 Gradle Wrapper。
 
 APK 按 `HydrogenWeather_<versionName>_<yyyy-MM-dd>_<buildType>.apk` 命名并导出到 `app/release/`，安装示例中的 `YYYY-MM-DD` 需替换为实际构建日期。Debug 使用 Android 默认 `debug.jks`，无需项目签名凭据；Release 使用 `app/jks/weather.jks`，打包前需提供本机凭据，详见[打包说明](scripts/README.md)和[开发规则](AGENTS.md)。Release 构建启用 R8 代码优化与压缩。`local.properties` 的 SDK 路径和 `gradle/gradle-daemon-jvm.properties` 的本机 JDK 绑定不提交到仓库。根 `.gitignore` 同时排除本机签名目录 `app/jks/` 和 Android Studio 配置目录 `.idea/`；克隆后由 IDE 重新生成本机配置，打包 Release 时另行提供项目签名密钥。
 
@@ -168,3 +141,28 @@ adb shell am start -n com.sugar.weather/.MainActivity \
 | [天气 API 选型](docs/free-weather-apis.md) | 备选服务和历史调研 |
 
 问题与权利人反馈请通过 [仓库 Issues](https://github.com/SiXuManYan/hydrogen-weather-animation/issues) 联系。
+
+### Special Thanks
+
+特别感谢所有开源项目与第三方库的作者和维护者，也感谢身边参与测试、提出建议的朋友们。你们的时间、智慧与支持，让本项目得以不断完善 ❤️
+
+本项目的实现离不开以下开源项目、第三方组件与内容来源的帮助：
+
+- [Open-Meteo](https://github.com/open-meteo/open-meteo) — 天气、预报、空气质量及城市搜索服务，提供应用使用的天气与地名数据。
+- [Kotlin](https://github.com/JetBrains/kotlin) — 应用开发语言与标准库。
+- [kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines) — 协程、异步任务与 Flow 状态流。
+- [Material Components for Android](https://github.com/material-components/material-components-android) — Material 界面控件、主题与对话框。
+- [AndroidX / Jetpack](https://developer.android.com/jetpack/androidx) — Core、Annotation、AppCompat、Activity、Fragment、Lifecycle、RecyclerView、ViewPager2、SwipeRefreshLayout 与 Browser，提供界面、状态与浏览器集成。
+- [DataStore](https://developer.android.com/topic/libraries/architecture/datastore) — 本机偏好与配置持久化。
+- [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) — 桌面天气微件的后台刷新任务。
+- [Retrofit](https://github.com/square/retrofit) — 天气与城市搜索的 HTTP API 接口。
+- [OkHttp](https://github.com/square/okhttp) / [Okio](https://github.com/square/okio) — HTTP 通信、缓冲与 IO，MockWebServer 用于接口测试。
+- [Gson](https://github.com/google/gson) — 网络响应与本机缓存的 JSON 解析。
+- [Markwon](https://github.com/noties/Markwon) / [commonmark-java](https://github.com/commonmark/commonmark-java) — 离线帮助、法律说明与版本日志的 Markdown 解析和排版。
+- [Timber](https://github.com/JakeWharton/timber) — 框架调试日志。
+- [AndroidFrameworkTemplate](https://github.com/SiXuManYan/AndroidFrameworkTemplate) — 本地 core_framework 的上游，提供通用 View 基础设施和网络工厂。
+- [JUnit 4](https://github.com/junit-team/junit4) / [AndroidX Test 与 Espresso](https://github.com/android/android-test) — JVM 单元测试与 Android 界面测试基础。
+- [Robolectric](https://github.com/robolectric/robolectric) — 本地 JVM 上的 Android 框架行为测试支持。
+- [Gradle](https://github.com/gradle/gradle) / [Android Gradle Plugin](https://android.googlesource.com/platform/tools/base/) — Android 应用和库模块的构建工具链。
+
+天气数据署名、组件许可与框架来源见[数据来源与开源组件](docs/THIRD_PARTY_NOTICES.md)。
