@@ -39,7 +39,7 @@ HydrogenWeather_<versionName>_<yyyy-MM-dd>_<debug|release>.apk
 
 网络 DTO、可传输业务模型、反射缓存与其嵌套类型使用 `androidx.annotation.Keep`；相关模块直接依赖 AndroidX Annotation，App R8 规则保留这些类型及成员。UI 状态、View/Bitmap 容器等仍按实际用途判断，不以全包保留代替模型标记。这项保护不新增网络请求、数据上传或业务功能。
 
-本次工程调整仅做静态源码检查、Git 忽略与差异检查、Bash 语法和隔离的打包流程替身检查；未运行 Gradle、Android 构建、单测、Lint、安装或设备操作，也未验证实际签名证书。首次真实 Release 打包前需填写本机凭据；Debug 可直接在 Android Studio 运行或通过脚本打包。真实打包后仍需核对 APK 的签名身份和两个变体的可调试属性。
+首次真实 Release 打包前需填写本机凭据；Debug 可直接在 Android Studio 运行或通过脚本打包。真实打包后仍需核对 APK 的签名身份和两个变体的可调试属性。
 
 ## English
 
@@ -49,4 +49,4 @@ Run `bash scripts/package.sh [debug|release|all] [Gradle options]`; the default 
 
 Both export tasks copy the public AGP APK artifact to `app/release/HydrogenWeather_<versionName>_<yyyy-MM-dd>_<buildType>.apk`, preserving the original version name and using the local build date. Same-day matching exports overwrite that filename; older dates remain. Credentials and exported APKs are ignored by Git.
 
-Network/transfer models, reflective cache records and nested types use AndroidX `@Keep`, with an explicit annotation dependency and App R8 rules. This change was checked statically and with isolated script substitutes only: no Gradle build, Android tests, Lint, device workflow or real signing verification has been run. Supply local signing credentials before the first real Release package build; Debug can be run directly from Android Studio or the script.
+Network/transfer models, reflective cache records and nested types use AndroidX `@Keep`, with an explicit annotation dependency and App R8 rules. Supply local signing credentials before the first real Release package build; Debug can be run directly from Android Studio or the script.

@@ -20,7 +20,7 @@
 - **关于**：原创 Logo、当前版本、作者薯格的 GitHub 与抖音资料，以及支持章节跳转的离线文档；网页链接确认后通过浏览器标签页打开。
 - **界面主题**：全局采用 Material 3 弹窗与控件，普通页面跟随系统浅色 / 深色；天气动画保持自身场景色。
 
-当前版本 **1.3**（`versionCode = 4`）。首次启动不预置城市。本版变化见[更新日志](CHANGELOG.md)，完整操作见[使用帮助](docs/USER_GUIDE.md)，实现与验证范围见[审查记录](docs/REVIEW.md)。
+当前版本 **1.3**（`versionCode = 4`）。首次启动不预置城市。完整操作见[使用帮助](docs/USER_GUIDE.md)，实现与限制见[设计说明](docs/DESIGN.md)。
 
 ## 运行
 
@@ -58,7 +58,7 @@ sh ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest \
   :app:lintDebug :core_framework:lintDebug
 ```
 
-本轮审查修复前的检查已通过 Debug / AndroidTest APK 构建、78 个本地测试（App 65 个、Library 13 个）及两个模块的 Lint（均为 0 错误，分别 41 / 26 条警告），涵盖微件、全天气聚合、HTTP 和本机 JVM 列表用例。本轮优化按要求未重新运行构建、测试或 Lint，也未使用设备或模拟器；真实桌面显示、点击、长期后台调度和系统大字体仍待设备验收。历史执行范围见[项目审查记录](docs/REVIEW.md#验证记录)。
+真实桌面显示、点击、长期后台调度和系统大字体仍待设备验收。已完成检查的范围与限制见[项目审查记录](docs/REVIEW.md#验证记录)。
 
 ## 数据与限制
 
@@ -135,8 +135,7 @@ adb shell am start -n com.sugar.weather/.MainActivity \
 | [用户协议](docs/legal/USER_AGREEMENT.md) | 服务与使用边界；附[英文](docs/legal/en/USER_AGREEMENT.md) |
 | [品牌资产](docs/brand/README.md) | Logo 的 SVG、PNG、色彩与生成方式 |
 | [设计与实现](docs/DESIGN.md) | 数据规则、架构、缓存、页面与动画约束 |
-| [审查记录](docs/REVIEW.md) | 本次清理、待修复问题、优化顺序与验证范围 |
-| [更新日志](CHANGELOG.md) | 版本变更 |
+| [审查记录](docs/REVIEW.md) | 待修复问题、优化方向与检查范围 |
 | [隐私政策](docs/legal/PRIVACY_POLICY.md) | 权限、第三方请求、本地存储与删除；附[英文](docs/legal/en/PRIVACY_POLICY.md) |
 | [天气 API 选型](docs/free-weather-apis.md) | 备选服务和历史调研 |
 
@@ -158,7 +157,7 @@ adb shell am start -n com.sugar.weather/.MainActivity \
 - [Retrofit](https://github.com/square/retrofit) — 天气与城市搜索的 HTTP API 接口。
 - [OkHttp](https://github.com/square/okhttp) / [Okio](https://github.com/square/okio) — HTTP 通信、缓冲与 IO，MockWebServer 用于接口测试。
 - [Gson](https://github.com/google/gson) — 网络响应与本机缓存的 JSON 解析。
-- [Markwon](https://github.com/noties/Markwon) / [commonmark-java](https://github.com/commonmark/commonmark-java) — 离线帮助、法律说明与版本日志的 Markdown 解析和排版。
+- [Markwon](https://github.com/noties/Markwon) / [commonmark-java](https://github.com/commonmark/commonmark-java) — 离线文档的 Markdown 解析和排版。
 - [Timber](https://github.com/JakeWharton/timber) — 框架调试日志。
 - [AndroidFrameworkTemplate](https://github.com/SiXuManYan/AndroidFrameworkTemplate) — 本地 core_framework 的上游，提供通用 View 基础设施和网络工厂。
 - [JUnit 4](https://github.com/junit-team/junit4) / [AndroidX Test 与 Espresso](https://github.com/android/android-test) — JVM 单元测试与 Android 界面测试基础。

@@ -20,7 +20,7 @@ This project is for non-commercial learning and demonstration. It is not affilia
 - **About**: an original logo, current version, author 薯格's GitHub and Douyin details, and offline documents with chapter navigation. Website links show a confirmation before opening a browser tab. Documents are currently displayed in Simplified Chinese.
 - **Theme**: Material 3 dialogs and controls throughout, with system light/dark mode on standard surfaces. Weather animations retain their scene colors.
 
-Current version: **1.3** (`versionCode = 4`). No default city is preloaded. See the [changelog](CHANGELOG.md) for this version, [help](docs/USER_GUIDE.md) for controls and the [review record](docs/REVIEW.md) for implementation and verification scope (Chinese).
+Current version: **1.3** (`versionCode = 4`). No default city is preloaded. See [help](docs/USER_GUIDE.md) for controls and the [design guide](docs/DESIGN.md) for implementation and limitations (Chinese).
 
 ## Run
 
@@ -58,7 +58,7 @@ sh ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest \
   :app:lintDebug :core_framework:lintDebug
 ```
 
-Before the current review fixes, Debug and AndroidTest APK builds, 78 local tests (65 App and 13 Library), and Lint passed with zero errors (41 App and 26 Library warnings). That snapshot includes widget, daily-condition, HTTP and host-JVM adapter coverage. The current fixes have not been rebuilt, tested or linted, as requested; no device or emulator verification was performed for them. Real launcher rendering, clicks, long-running background scheduling and large-font layouts still need device acceptance testing. See the [review record](docs/REVIEW.md#验证记录) for historical verification scope.
+Real launcher rendering, clicks, long-running background scheduling and large-font layouts still need device acceptance testing. See the [review record](docs/REVIEW.md#验证记录) for the scope and limits of completed checks.
 
 ## Data and limitations
 
@@ -136,7 +136,6 @@ In the sunny daytime scene, the flat-to-upright pitch range produces a smaller v
 | [Brand assets](docs/brand/README.md) | Logo SVG, PNG, colors and generation (Chinese) |
 | [Design and implementation](docs/DESIGN.md) | Data rules, architecture, caching, pages and animation constraints (Chinese) |
 | [Review record](docs/REVIEW.md) | Cleanup, outstanding issues, optimization priorities and validation scope (Chinese) |
-| [Changelog](CHANGELOG.md) | Version history (Chinese) |
 | [Privacy policy](docs/legal/en/PRIVACY_POLICY.md) | Permissions, third-party requests, local storage and deletion |
 | [Weather API selection](docs/free-weather-apis.md) | Alternatives and historical research (Chinese) |
 
@@ -158,7 +157,7 @@ This project is made possible by the following open-source projects, third-party
 - [Retrofit](https://github.com/square/retrofit) — HTTP API interfaces for weather and city search.
 - [OkHttp](https://github.com/square/okhttp) / [Okio](https://github.com/square/okio) — HTTP communication, buffering, and I/O; MockWebServer supports API tests.
 - [Gson](https://github.com/google/gson) — JSON parsing for network responses and local caches.
-- [Markwon](https://github.com/noties/Markwon) / [commonmark-java](https://github.com/commonmark/commonmark-java) — Parsing and rendering Markdown for offline help, legal documents, and version history.
+- [Markwon](https://github.com/noties/Markwon) / [commonmark-java](https://github.com/commonmark/commonmark-java) — Markdown parsing and rendering for offline documents.
 - [Timber](https://github.com/JakeWharton/timber) — Framework debug logging.
 - [AndroidFrameworkTemplate](https://github.com/SiXuManYan/AndroidFrameworkTemplate) — Upstream of the local core_framework module, providing shared View infrastructure and the network factory.
 - [JUnit 4](https://github.com/junit-team/junit4) / [AndroidX Test and Espresso](https://github.com/android/android-test) — JVM unit-test and Android UI-test infrastructure.
